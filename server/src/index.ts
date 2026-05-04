@@ -1,9 +1,10 @@
-import { createServer } from 'http'
 import express from 'express'
+import { createServer } from 'http'
 import { Server } from 'socket.io'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import type { ServerToClientEvents, ClientToServerEvents } from '@hitster/shared'
+import { registerRoomHandlers } from './socket/roomHandlers.js'
 
 dotenv.config()
 
@@ -23,6 +24,8 @@ app.get('/health', (_req, res) => {
 
 io.on('connection', (socket) => {
   console.log('client connected:', socket.id)
+
+  registerRoomHandlers(io, socket)
 
   socket.on('disconnect', () => {
     console.log('client disconnected:', socket.id)
