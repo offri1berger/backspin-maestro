@@ -1,12 +1,13 @@
 import { getPlayersByRoomId, updateTurnOrder } from '../db/queries/players.js'
 import { updateRoomStatus, getRoomById } from '../db/queries/rooms.js'
+import { getRandomSong, markSongAsUsed } from './songService.js'
 import { setGameState } from '../lib/gameCache.js'
-import type { Player } from '@hitster/shared'
+import type { Player, Song } from '@hitster/shared'
 
 export const startGameService = async (
   roomCode: string,
   hostSocketId: string
-): Promise<{ players: Player[] } | { error: string }> => {
+): Promise<{ players: Player[], song: Song | null } | { error: string }> => {
   const room = await getRoomById(roomCode)
   if (!room) return { error: 'room_not_found' }
   if (room.status !== 'lobby') return { error: 'game_already_started' }
@@ -42,5 +43,27 @@ export const startGameService = async (
     timeline: [],
   }))
 
-  return { players }
+  const song = await getRandomSong(room.id)
+if (song) {
+  await markSongAsUsed(room.id, song.id)
+  await setGameState(roomCode, {
+    phase: 'song_phase',
+    currentPlayerId: firstPlayer.id,
+    currentSongId: song.id,
+    roundNumber: 1,
+    phaseStartedAt: new Date().toISOString(),
+  })
+}
+
+return {
+  players,
+  song: song ? {
+    id: song.id,
+    title: song.title,
+    artist: song.artist,
+    year: song.year,
+    previewUrl: song.preview_url,
+    deezerTrackId: song.deezer_id,
+  } : null,
+}
 }

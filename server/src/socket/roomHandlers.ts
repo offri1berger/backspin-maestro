@@ -66,12 +66,17 @@ socket.on('game:start', async (cb) => {
     const gameState = {
       phase: 'song_phase' as const,
       currentPlayerId: result.players[0].id,
-      currentSong: null,
+      currentSong: result.song,
       roundNumber: 1,
       phaseStartedAt: new Date().toISOString(),
     }
 
     io.to(roomCode).emit('game:starting', gameState, result.players)
+    
+    if (result.song) {
+      io.to(roomCode).emit('song:new', result.song)
+    }
+
     cb()
   } catch (err) {
     console.error('game:start error', err)
