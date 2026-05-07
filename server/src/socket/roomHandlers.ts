@@ -1,6 +1,7 @@
 import type { Socket, Server } from 'socket.io'
 import type { ServerToClientEvents, ClientToServerEvents } from '@hitster/shared'
 import { createRoomService, joinRoomService } from '../services/roomService.js'
+import { startGameService } from '../services/gameService.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
@@ -44,4 +45,37 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
       socket.emit('error', 'Failed to join room')
     }
   })
+
+socket.on('game:start', async (cb) => {
+  try {
+    const rooms = [...socket.rooms].filter((r) => r !== socket.id)
+    const roomCode = rooms[0]
+
+    if (!roomCode) {
+      cb('not_in_room')
+      return
+    }
+
+    const result = await startGameService(roomCode, socket.id)
+
+    if ('error' in result) {
+      cb(result.error)
+      return
+    }
+
+    const gameState = {
+      phase: 'song_phase' as const,
+      currentPlayerId: result.players[0].id,
+      currentSong: null,
+      roundNumber: 1,
+      phaseStartedAt: new Date().toISOString(),
+    }
+
+    io.to(roomCode).emit('game:starting', gameState, result.players)
+    cb()
+  } catch (err) {
+    console.error('game:start error', err)
+    socket.emit('error', 'Failed to start game')
+  }
+})
 }

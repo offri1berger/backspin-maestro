@@ -12,3 +12,6 @@ export const updatePlayerSocketId = async (id: string, socketId: string) =>
 
 export const deletePlayer = async (id: string) =>
   db.deleteFrom('players').where('players.id', '=', id).executeTakeFirstOrThrow()
+
+export const updateTurnOrder = async (id: string, turnOrder: number) =>
+  db.updateTable('players').set({ turn_order: turnOrder }).where('players.id', '=', id).executeTakeFirstOrThrow()
