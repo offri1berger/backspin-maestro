@@ -21,3 +21,9 @@ export const getRandomSong = async (roomId: string) => {
 export const markSongAsUsed = async (roomId: string, songId: string) => {
   await db.insertInto('used_songs').values({ room_id: roomId, song_id: songId }).execute()
 }
+
+export const getFreshPreviewUrl = async (deezerId: string): Promise<string | null> => {
+  const res = await fetch(`https://api.deezer.com/track/${deezerId}`)
+  const data = await res.json() as any
+  return data.preview ?? null
+}
