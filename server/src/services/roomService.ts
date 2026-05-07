@@ -1,5 +1,5 @@
 import { generateRoomCode } from '../lib/roomCode.js'
-import { createRoom, getRoomById, updateRoomHost } from '../db/queries/rooms.js'
+import { createRoom, getRoomByCode, updateRoomHost } from '../db/queries/rooms.js'
 import { createPlayer, getPlayersByRoomId } from '../db/queries/players.js'
 import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, CreateRoomResult, Decade } from '@hitster/shared'
 
@@ -33,7 +33,7 @@ export const joinRoomService = async (
   payload: JoinRoomPayload,
   socketId: string
 ): Promise<JoinRoomResult> => {
-  const room = await getRoomById(payload.roomCode)
+  const room = await getRoomByCode(payload.roomCode)
 
   if (!room) return { success: false, error: 'room_not_found' }
   if (room.status !== 'lobby') return { success: false, error: 'game_already_started' }

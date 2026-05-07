@@ -1,5 +1,9 @@
+import LobbyPage from './pages/LobbyPage'
+import { useSocket } from './hooks/useSocket'
+
 const App = () => {
-  return <div>Hitster</div>
+  useSocket()
+  return <LobbyPage />
 }
 
 export default App
