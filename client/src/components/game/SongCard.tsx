@@ -5,13 +5,14 @@ import type { Song } from '@hitster/shared'
 interface Props {
   song: Song
   draggable: boolean
+  isWaiting: boolean
 }
 
-const SongCard = ({ song, draggable }: Props) => {
+const SongCard = ({ song, draggable, isWaiting }: Props) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: 'current-song',
-    disabled: !draggable,
-  })
+  id: 'current-song',
+  disabled: !draggable || isWaiting,
+})
 
   const style = {
     transform: CSS.Translate.toString(transform),

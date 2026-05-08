@@ -1,7 +1,7 @@
 import { getPlayersByRoomId, updateTurnOrder } from '../db/queries/players.js'
 import { updateRoomStatus, getRoomByCode } from '../db/queries/rooms.js'
 import { getFreshPreviewUrl, getRandomSong, markSongAsUsed } from './songService.js'
-import { setGameState } from '../lib/gameCache.js'
+import { getGameState, setGameState } from '../lib/gameCache.js'
 import type { Player, Song } from '@hitster/shared'
 
 export const startGameService = async (
@@ -61,6 +61,48 @@ export const startGameService = async (
 
   return {
     players,
+    song: {
+      id: song.id,
+      title: song.title,
+      artist: song.artist,
+      year: song.year,
+      previewUrl: freshPreviewUrl ?? song.preview_url,
+      deezerTrackId: song.deezer_id,
+    },
+  }
+}
+
+export const nextTurnService = async (
+  roomCode: string
+): Promise<{ nextPlayerId: string, song: Song } | { error: string }> => {
+  const gameState = await getGameState(roomCode)
+  if (!gameState) return { error: 'game_not_found' }
+
+  const room = await getRoomByCode(roomCode)
+  if (!room) return { error: 'room_not_found' }
+
+  const players = await getPlayersByRoomId(room.id)
+  const sorted = players.sort((a, b) => (a.turn_order ?? 0) - (b.turn_order ?? 0))
+
+  const currentIndex = sorted.findIndex((p) => p.id === gameState.currentPlayerId)
+  const nextPlayer = sorted[(currentIndex + 1) % sorted.length]
+
+  const song = await getRandomSong(room.id)
+  if (!song) return { error: 'no_songs_left' }
+
+  await markSongAsUsed(room.id, song.id)
+  const freshPreviewUrl = await getFreshPreviewUrl(song.deezer_id)
+
+  await setGameState(roomCode, {
+    phase: 'song_phase',
+    currentPlayerId: nextPlayer.id,
+    currentSongId: song.id,
+    roundNumber: gameState.roundNumber + 1,
+    phaseStartedAt: new Date().toISOString(),
+  })
+
+  return {
+    nextPlayerId: nextPlayer.id,
     song: {
       id: song.id,
       title: song.title,

@@ -16,10 +16,13 @@ interface Props {
   currentSong: Song
   onPlace: (position: number) => void
   isMyTurn: boolean
+  isWaiting: boolean
+
 }
 
-const Timeline = ({ timeline, currentSong, onPlace, isMyTurn }: Props) => {
+const Timeline = ({ timeline, currentSong, onPlace, isMyTurn, isWaiting }: Props) => {
   const [dragging, setDragging] = useState(false)
+  const [pendingPosition, setPendingPosition] = useState<number | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -31,8 +34,13 @@ const Timeline = ({ timeline, currentSong, onPlace, isMyTurn }: Props) => {
     setDragging(false)
     const { over } = event
     if (!over) return
-    const position = Number(over.id)
-    onPlace(position)
+    setPendingPosition(Number(over.id))
+  }
+
+  const handleConfirmPlace = () => {
+    if (pendingPosition === null) return
+    onPlace(pendingPosition)
+    setPendingPosition(null)
   }
 
   const slots = timeline.length + 1
@@ -52,7 +60,7 @@ const Timeline = ({ timeline, currentSong, onPlace, isMyTurn }: Props) => {
           {Array.from({ length: slots }).map((_, i) => (
             <div key={i} className="flex flex-col gap-1">
               {isMyTurn && (
-                <TimelineSlot id={i} />
+                <TimelineSlot id={i} isSelected={pendingPosition === i} />
               )}
               {timeline[i] && (
                 <div className="bg-zinc-800 rounded-xl px-4 py-3 flex justify-between items-center">
@@ -68,15 +76,23 @@ const Timeline = ({ timeline, currentSong, onPlace, isMyTurn }: Props) => {
         </div>
 
         {isMyTurn && (
-          <div className="mt-4">
+          <div className="mt-4 flex flex-col gap-3">
             <p className="text-zinc-400 text-xs text-center mb-2">current song</p>
-            <SongCard song={currentSong} draggable />
+            <SongCard song={currentSong} draggable isWaiting={isWaiting} />
+            {pendingPosition !== null && (
+              <button
+                onClick={handleConfirmPlace}
+                className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-zinc-200 transition"
+              >
+                Place here
+              </button>
+            )}
           </div>
         )}
       </div>
 
       <DragOverlay>
-        {dragging && <SongCard song={currentSong} draggable={false} />}
+        {dragging && <SongCard song={currentSong} draggable={false} isWaiting={isWaiting} />}
       </DragOverlay>
     </DndContext>
   )

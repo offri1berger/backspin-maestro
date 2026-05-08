@@ -1,3 +1,4 @@
+import { GamePhase } from './enums'
 import type { Player, Song, RoomSettings, GameState } from './types'
 
 export interface CreateRoomPayload {
@@ -58,7 +59,7 @@ export interface ServerToClientEvents {
   'player:left': (playerId: string) => void
   'game:starting': (state: GameState, players: Player[]) => void
   'song:new': (song: Song) => void
-  'phase:changed': (phase: import('./enums').GamePhase, phaseStartedAt: string) => void
+'phase:changed': (phase: GamePhase, phaseStartedAt: string, currentPlayerId?: string) => void
   'token:earned': (playerId: string, newTotal: number) => void
   'song:skipped': (newSong: Song) => void
   'placement:result': (result: PlacementResultPayload) => void

@@ -2,21 +2,18 @@ import { create } from 'zustand'
 import type { GamePhase, Player, Song, RoomSettings } from '@hitster/shared'
 
 interface GameStore {
-  // room
   roomCode: string | null
   playerId: string | null
   settings: RoomSettings | null
-
-  // players
   players: Player[]
-
-  // game
   phase: GamePhase | null
   currentPlayerId: string | null
   currentSong: Song | null
   roundNumber: number
-
-  // actions
+  pendingPosition: number | null
+  placementResult: { correct: boolean } | null
+  isWaitingForNextTurn: boolean
+  
   setRoom: (roomCode: string, playerId: string) => void
   setPlayers: (players: Player[]) => void
   addPlayer: (player: Player) => void
@@ -24,6 +21,10 @@ interface GameStore {
   setGameStarted: (players: Player[], phase: GamePhase, currentPlayerId: string) => void
   setCurrentSong: (song: Song) => void
   setPhase: (phase: GamePhase) => void
+  setCurrentPlayerId: (id: string) => void
+  setPendingPosition: (position: number | null) => void
+  setPlacementResult: (result: { correct: boolean } | null) => void
+  setIsWaitingForNextTurn: (val: boolean) => void
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -35,6 +36,9 @@ export const useGameStore = create<GameStore>((set) => ({
   currentPlayerId: null,
   currentSong: null,
   roundNumber: 1,
+  pendingPosition: null,
+  placementResult: null,
+  isWaitingForNextTurn: false,
 
   setRoom: (roomCode, playerId) => set({ roomCode, playerId }),
   setPlayers: (players) => set({ players }),
@@ -45,4 +49,8 @@ export const useGameStore = create<GameStore>((set) => ({
     set({ players, phase, currentPlayerId }),
   setCurrentSong: (song) => set({ currentSong: song }),
   setPhase: (phase) => set({ phase }),
+  setCurrentPlayerId: (id) => set({ currentPlayerId: id }),
+  setPendingPosition: (position) => set({ pendingPosition: position }),
+  setPlacementResult: (result) => set({ placementResult: result }),
+  setIsWaitingForNextTurn: (val) => set({ isWaitingForNextTurn: val }),
 }))

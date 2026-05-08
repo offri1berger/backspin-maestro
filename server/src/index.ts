@@ -5,6 +5,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import type { ServerToClientEvents, ClientToServerEvents } from '@hitster/shared'
 import { registerRoomHandlers } from './socket/roomHandlers.js'
+import { registerGameHandlers } from './socket/gameHandlers.js'
 
 dotenv.config()
 
@@ -26,6 +27,7 @@ io.on('connection', (socket) => {
   console.log('client connected:', socket.id)
 
   registerRoomHandlers(io, socket)
+  registerGameHandlers(io, socket)
 
   socket.on('disconnect', () => {
     console.log('client disconnected:', socket.id)

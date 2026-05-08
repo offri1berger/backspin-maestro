@@ -21,12 +21,39 @@ export const useSocket = () => {
     })
 
     socket.on('song:new', (song) => {
-      setCurrentSong(song)
+  setCurrentSong(song)
+  useGameStore.getState().setIsWaitingForNextTurn(false)
+})
+
+    socket.on('phase:changed', (phase, _phaseStartedAt, currentPlayerId) => {
+      setPhase(phase)
+      if (currentPlayerId) useGameStore.getState().setCurrentPlayerId(currentPlayerId)
     })
 
-    socket.on('phase:changed', (phase) => {
-      setPhase(phase)
+    socket.on('placement:result', (result) => {
+      const store = useGameStore.getState()
+      store.setIsWaitingForNextTurn(true)
+
+      if (result.correct) {
+        const currentSong = store.currentSong
+        if (!currentSong) return
+
+        const updatedPlayers = store.players.map((p) => {
+          if (p.id !== result.playerId) return p
+          const newEntry = { song: currentSong, position: result.correctPosition }
+          const newTimeline = [...p.timeline, newEntry].sort((a, b) => a.song.year - b.song.year)
+          return { ...p, timeline: newTimeline }
+        })
+
+        store.setPlayers(updatedPlayers)
+      }
+
+      store.setPendingPosition(null)
+      store.setPlacementResult({ correct: result.correct })
+      setTimeout(() => store.setPlacementResult(null), 2000)
     })
+
+    
 
     return () => {
       socket.off('player:joined')
@@ -34,6 +61,7 @@ export const useSocket = () => {
       socket.off('game:starting')
       socket.off('song:new')
       socket.off('phase:changed')
+      socket.off('placement:result')
       socket.disconnect()
     }
   }, [])
