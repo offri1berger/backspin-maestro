@@ -18,6 +18,7 @@ interface GameStore {
   remoteDragSlot: number | null
   stealResult: StealResultPayload | null
   isStealWindowOpen: boolean
+  stealInitiatorId: string | null
 
   setRoom: (roomCode: string, playerId: string) => void
   setPlayers: (players: Player[]) => void
@@ -35,6 +36,7 @@ interface GameStore {
   setRemoteDragSlot: (slot: number | null) => void
   setStealResult: (result: StealResultPayload | null) => void
   setIsStealWindowOpen: (val: boolean) => void
+  setStealInitiatorId: (id: string | null) => void
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -54,6 +56,7 @@ export const useGameStore = create<GameStore>((set) => ({
   remoteDragSlot: null,
   stealResult: null,
   isStealWindowOpen: false,
+  stealInitiatorId: null,
 
   setRoom: (roomCode, playerId) => set({ roomCode, playerId }),
   setPlayers: (players) => set({ players }),
@@ -73,4 +76,5 @@ export const useGameStore = create<GameStore>((set) => ({
   setRemoteDragSlot: (slot) => set({ remoteDragSlot: slot }),
   setStealResult: (result) => set({ stealResult: result }),
   setIsStealWindowOpen: (val) => set({ isStealWindowOpen: val }),
+  setStealInitiatorId: (id) => set({ stealInitiatorId: id }),
 }))

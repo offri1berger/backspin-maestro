@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -23,6 +23,7 @@ interface Props {
   readOnly?: boolean
   spectatorDragSlot?: number | null
   broadcastDrag?: boolean
+  autoConfirm?: boolean
 }
 
 // Mini card for a placed song in the horizontal timeline
@@ -59,15 +60,7 @@ const MiniYearCard = ({ entry }: { entry: TimelineEntry }) => (
 export { MiniYearCard }
 
 // A horizontal droppable slot — thin line when inactive, expands when active
-const HSlot = ({
-  id,
-  isActive,
-  pendingContent,
-}: {
-  id: number
-  isActive: boolean
-  pendingContent?: React.ReactNode
-}) => {
+const HSlot = ({ id, isActive }: { id: number; isActive: boolean }) => {
   const { isOver, setNodeRef } = useDroppable({ id })
 
   return (
@@ -84,7 +77,7 @@ const HSlot = ({
       }}
     >
       {isActive ? (
-        pendingContent ?? <MysteryCardFace />
+        <MysteryCardFace />
       ) : (
         <div style={{
           width: 1,
@@ -106,6 +99,7 @@ const Timeline = ({
   readOnly = false,
   spectatorDragSlot = null,
   broadcastDrag = true,
+  autoConfirm = false,
 }: Props) => {
   const isStealWindowOpen = useGameStore((s) => s.isStealWindowOpen)
   const [dragging, setDragging] = useState(false)
@@ -138,7 +132,11 @@ const Timeline = ({
     const { over } = event
     if (isMyTurn) emitDragSlot(over ? Number(over.id) : null)
     if (!over) return
-    setPendingPosition(Number(over.id))
+    if (autoConfirm) {
+      onPlace?.(Number(over.id))
+    } else {
+      setPendingPosition(Number(over.id))
+    }
   }
 
   // only clear the pending card once the steal window is also gone
@@ -202,20 +200,24 @@ const Timeline = ({
           }}>
             {Array.from({ length: slots }).map((_, i) => {
               const showHover = hoverSlot === i && currentSong != null
-              const showPending = pendingPosition === i && !dragging && currentSong != null
+              // pending slot: plain div with draggable card — NOT a droppable (avoids DnD removeChild crash)
+              const isPendingSlot = pendingPosition === i && currentSong != null
               const showSpectator = !isMyTurn && spectatorDragSlot === i && currentSong != null
-              const isActive = showHover || showPending || showSpectator
-
-              // before lock-in: show draggable card so user can re-drag to change slot
-              // during steal window: fall back to MysteryCardFace (non-draggable, locked in)
-              const pendingContent = showPending && !isStealWindowOpen
-                ? <SongCard draggable isWaiting={false} />
-                : undefined
+              const isActive = showHover || showSpectator
 
               return (
                 <Fragment key={i}>
                   {isMyTurn ? (
-                    <HSlot id={i} isActive={isActive} pendingContent={pendingContent} />
+                    isPendingSlot ? (
+                      <div style={{
+                        flexShrink: 0, width: 96, height: 90,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <SongCard draggable isWaiting={false} />
+                      </div>
+                    ) : (
+                      <HSlot id={i} isActive={isActive} />
+                    )
                   ) : (
                     // Non-interactive spectator slot
                     <div style={{
@@ -241,7 +243,7 @@ const Timeline = ({
           </div>
         </div>
 
-        {/* Mystery card source — shown before drag */}
+        {/* Mystery card source — shown at bottom only before a slot is chosen; after drop it lives in the slot */}
         {isMyTurn && currentSong && !isWaiting && pendingPosition === null && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
             <span style={{

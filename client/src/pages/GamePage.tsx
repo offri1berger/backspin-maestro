@@ -7,7 +7,7 @@ import socket from '../socket'
 
 const PLAYER_COLORS = ['#e8a598', '#98c5e8', '#98e8b4', '#e8d598', '#c598e8', '#e898c5']
 
-function Logo() {
+const Logo = () => { 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-display)', fontSize: 20 }}>
       <div className="vinyl" style={{ width: 22, height: 22, flexShrink: 0 }} />
@@ -16,7 +16,7 @@ function Logo() {
   )
 }
 
-function SectionMark({ children }: { children: React.ReactNode }) {
+const SectionMark = ({ children }: { children: React.ReactNode }) => {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0, display: 'inline-block' }} />
@@ -36,6 +36,7 @@ const GamePage = () => {
     remoteDragSlot,
     stealResult,
     isStealWindowOpen,
+    stealInitiatorId,
     setHasGuessed,
     setRemoteDragSlot,
   } = useGameStore()
@@ -52,9 +53,13 @@ const GamePage = () => {
 
   useEffect(() => {
     socket.on('drag:update', (slot) => setRemoteDragSlot(slot))
-    socket.on('steal:extended', () => setStealWindowSeconds(10))
-    return () => { socket.off('drag:update'); socket.off('steal:extended') }
+    return () => { socket.off('drag:update') }
   }, [setRemoteDragSlot])
+
+  // when someone initiates a steal, extend the countdown to 10s
+  useEffect(() => {
+    if (stealInitiatorId) setStealWindowSeconds(10)
+  }, [stealInitiatorId])
 
   useEffect(() => { setRemoteDragSlot(null) }, [currentPlayerId, setRemoteDragSlot])
   // close steal overlay when steal window closes (timeout fired or steal resolved)
@@ -93,34 +98,240 @@ const GamePage = () => {
   const canSteal = !isMyTurn && isStealWindowOpen && stealResult === null && (myPlayer?.tokens ?? 0) >= 1
 
   // ── Steal overlay (modal) ─────────────────────────────────────────────
-  if (isAttemptingSteal && currentSong) {
-    return (
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 50,
-        background: 'rgba(0,0,0,0.6)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+if (isAttemptingSteal && currentSong) {
+  const isDanger = countdown <= 3
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        background: 'rgba(0,0,0,0.72)',
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         padding: 24,
-      }}>
-        <div style={{
-          width: '100%', maxWidth: 540,
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 620,
           background: 'var(--bg)',
-          borderRadius: 28,
-          padding: 32,
+          borderRadius: 32,
+          padding: 36,
           border: '1px solid var(--line)',
-          boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 32, color: 'var(--on-bg)', letterSpacing: '-0.02em' }}>
+          boxShadow: '0 40px 100px rgba(0,0,0,0.45)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* glow */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: isDanger
+              ? 'radial-gradient(circle at top, rgba(255,80,80,0.12), transparent 55%)'
+              : 'radial-gradient(circle at top, rgba(255,255,255,0.06), transparent 55%)',
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* top row */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            marginBottom: 24,
+            position: 'relative',
+            zIndex: 1,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: 'var(--muted)',
+                marginBottom: 8,
+              }}
+            >
+              Steal attempt
+            </div>
+
+            <h2
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 38,
+                lineHeight: 1,
+                letterSpacing: '-0.03em',
+                margin: 0,
+                color: 'var(--on-bg)',
+              }}
+            >
               Steal the card
             </h2>
-            <button
-              onClick={() => setIsAttemptingSteal(false)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 14, fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}
-            >ESC</button>
           </div>
-          <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 20, lineHeight: 1.4 }}>
-            Place correctly in <strong style={{ color: 'var(--on-bg)' }}>{activePlayer?.name}</strong>'s timeline — costs 1 ★
+
+          <button
+            onClick={() => setIsAttemptingSteal(false)}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--line)',
+              borderRadius: 999,
+              height: 36,
+              padding: '0 14px',
+              cursor: 'pointer',
+              color: 'var(--muted)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+            }}
+          >
+            ESC
+          </button>
+        </div>
+
+        {/* countdown */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginBottom: 28,
+            position: 'relative',
+            zIndex: 1,
+          }}
+        >
+          <div
+            style={{
+              width: 120,
+              height: 120,
+              borderRadius: '50%',
+              border: `6px solid ${
+                isDanger ? 'var(--bad)' : 'var(--accent)'
+              }`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background:
+                'color-mix(in oklch, var(--surface) 80%, transparent)',
+              boxShadow: isDanger
+                ? '0 0 40px rgba(255,80,80,0.35)'
+                : '0 0 40px rgba(255,255,255,0.06)',
+              transform: isDanger ? 'scale(1.04)' : 'scale(1)',
+              transition: 'all 0.2s ease',
+              animation: isDanger ? 'pulse 0.9s infinite' : 'none',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                lineHeight: 1,
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 52,
+                  color: isDanger
+                    ? 'var(--bad)'
+                    : 'var(--accent)',
+                }}
+              >
+                {countdown}
+              </span>
+
+              <span
+                style={{
+                  marginTop: 4,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9,
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                }}
+              >
+                seconds
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* description */}
+        <div
+          style={{
+            textAlign: 'center',
+            marginBottom: 28,
+            position: 'relative',
+            zIndex: 1,
+          }}
+        >
+          <p
+            style={{
+              color: 'var(--muted)',
+              fontSize: 15,
+              lineHeight: 1.5,
+              margin: 0,
+            }}
+          >
+            Place the song correctly in{' '}
+            <strong style={{ color: 'var(--on-bg)' }}>
+              {activePlayer?.name}
+            </strong>
+            's timeline.
           </p>
+
+          <div
+            style={{
+              marginTop: 10,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 12px',
+              borderRadius: 999,
+              background:
+                'color-mix(in oklch, var(--on-bg) 5%, transparent)',
+              border: '1px solid var(--line)',
+            }}
+          >
+            <span
+              style={{
+                fontSize: 14,
+              }}
+            >
+              ★
+            </span>
+
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--muted)',
+              }}
+            >
+              Costs 1 token
+            </span>
+          </div>
+        </div>
+
+        {/* timeline */}
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 1,
+          }}
+        >
           <Timeline
             timeline={activeTimeline}
             currentSong={currentSong}
@@ -128,14 +339,82 @@ const GamePage = () => {
             isMyTurn
             isWaiting={false}
             broadcastDrag={false}
+            autoConfirm
           />
         </div>
+
+        {/* pulse animation */}
+        <style>
+          {`
+            @keyframes pulse {
+              0% {
+                transform: scale(1);
+              }
+              50% {
+                transform: scale(1.06);
+              }
+              100% {
+                transform: scale(1);
+              }
+            }
+          `}
+        </style>
       </div>
-    )
-  }
+    </div>
+  )
+}
 
   // ── Placement/steal result toast ──────────────────────────────────────
   const renderToast = () => {
+    // steal result takes priority — placement:result also fires alongside it but is secondary
+    if (stealResult) {
+      const stealerName = players.find((p) => p.id === stealResult.stealerId)?.name ?? 'Someone'
+      const targetName = players.find((p) => p.id === stealResult.targetPlayerId)?.name ?? 'them'
+      const iAmStealer = stealResult.stealerId === playerId
+      const iAmTarget = stealResult.targetPlayerId === playerId
+      const success = stealResult.correct
+      // green/red is from THIS viewer's perspective, not the steal outcome globally
+      const isGoodForMe = iAmStealer ? success : iAmTarget ? stealResult.targetWasCorrect : success
+
+      let headline = ''
+      let subline = ''
+      if (success) {
+        headline = iAmStealer ? 'You stole it!' : iAmTarget ? `${stealerName} stole your card!` : `${stealerName} stole the card!`
+        subline = iAmStealer ? 'Card added to your timeline.' : iAmTarget ? 'Your card goes to their timeline.' : ''
+      } else if (stealResult.targetWasCorrect) {
+        headline = iAmStealer ? 'Steal failed — they placed correctly' : iAmTarget ? `${stealerName} tried to steal but failed!` : `${stealerName}'s steal failed`
+        subline = iAmStealer ? `${targetName} was right all along. You lost 1 ★.` : iAmTarget ? `${stealerName} placed it wrong — your card is safe.` : `${targetName} placed correctly — nothing was stolen.`
+      } else {
+        headline = iAmStealer ? 'Steal failed — wrong position' : iAmTarget ? `${stealerName} tried to steal but missed!` : `${stealerName}'s steal failed`
+        subline = iAmStealer ? 'Your position was incorrect. You lost 1 ★.' : iAmTarget ? 'Wrong position — your card stays.' : 'Wrong position — steal attempt missed.'
+      }
+
+      return (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 50,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.55)',
+          pointerEvents: 'none',
+        }}>
+          <div style={{ minWidth: 320, maxWidth: 420, borderRadius: 24, overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.4)' }}>
+            <div style={{ background: isGoodForMe ? 'var(--good)' : 'var(--bad)', padding: '20px 28px', textAlign: 'center' }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>{isGoodForMe ? '🎉' : '😬'}</div>
+              <div style={{ fontWeight: 700, fontSize: 18, color: '#fff', lineHeight: 1.3 }}>{headline}</div>
+              {subline && <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 6 }}>{subline}</div>}
+            </div>
+            <div style={{ background: 'var(--surface)', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--on-surface)' }}>{stealResult.song.title}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{stealResult.song.artist}</div>
+              </div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, color: 'var(--accent)', lineHeight: 1 }}>{stealResult.song.year}</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     if (placementResult?.correct) {
       return (
         <div style={{
@@ -149,13 +428,12 @@ const GamePage = () => {
         </div>
       )
     }
+
     if (placementResult && !placementResult.correct && placementResult.song) {
       return (
         <div style={{
           position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 40, minWidth: 280,
-          borderRadius: 20,
-          overflow: 'hidden',
+          zIndex: 40, minWidth: 280, borderRadius: 20, overflow: 'hidden',
           boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
         }}>
           <div style={{ background: 'var(--bad)', padding: '10px 20px', textAlign: 'center', color: '#fff', fontWeight: 700 }}>
@@ -171,32 +449,7 @@ const GamePage = () => {
         </div>
       )
     }
-    if (stealResult) {
-      const stealerName = players.find((p) => p.id === stealResult.stealerId)?.name ?? 'Someone'
-      const iAmStealer = stealResult.stealerId === playerId
-      const iAmTarget = stealResult.targetPlayerId === playerId
-      const headline = stealResult.correct
-        ? iAmStealer ? '✓ You stole it!' : iAmTarget ? `${stealerName} stole your card!` : `${stealerName} stole the card!`
-        : iAmStealer ? '✗ Wrong steal — token lost' : `${stealerName} failed to steal`
-      return (
-        <div style={{
-          position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 40, minWidth: 280, borderRadius: 20, overflow: 'hidden',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
-        }}>
-          <div style={{ background: stealResult.correct ? 'var(--good)' : 'var(--bad)', padding: '10px 20px', textAlign: 'center', color: '#fff', fontWeight: 700 }}>
-            {headline}
-          </div>
-          <div style={{ background: 'var(--surface)', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--on-surface)' }}>{stealResult.song.title}</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{stealResult.song.artist}</div>
-            </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--accent)', lineHeight: 1 }}>{stealResult.song.year}</div>
-          </div>
-        </div>
-      )
-    }
+
     return null
   }
 
@@ -377,10 +630,10 @@ const GamePage = () => {
             </>
           )}
 
-          {/* Opponents timelines */}
-          {players.filter((p) => p.id !== currentPlayerId && p.id !== playerId).length > 0 && (
+          {/* All other players' timelines (including viewer's own when not their turn) */}
+          {players.filter((p) => p.id !== currentPlayerId).length > 0 && (
             <div style={{ marginTop: 8 }}>
-              <SectionMark>Opponents · live</SectionMark>
+              <SectionMark>Timelines · live</SectionMark>
               <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {players
                   .filter((p) => p.id !== currentPlayerId)
@@ -420,11 +673,10 @@ const GamePage = () => {
         }}>
           <SectionMark>Bonus guess</SectionMark>
           <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8, lineHeight: 1.4 }}>
-            Optional. Name the artist <em>and</em> title for an extra ★.
+            Optional. Fill in before placing — submitted with your card.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
             <input
-              className={!isMyTurn || isWaitingForNextTurn ? '' : ''}
               placeholder="Artist"
               value={guess.artist}
               onChange={(e) => setGuess((g) => ({ ...g, artist: e.target.value }))}
@@ -452,24 +704,6 @@ const GamePage = () => {
                 opacity: !isMyTurn || isWaitingForNextTurn ? 0.4 : 1,
               }}
             />
-            <button
-              disabled={!isMyTurn || isWaitingForNextTurn || !guess.artist.trim() || !guess.title.trim()}
-              onClick={() => {
-                if (!guess.artist.trim() || !guess.title.trim()) return
-                socket.emit('song:guess', { artist: guess.artist, title: guess.title })
-                setGuess({ artist: '', title: '' })
-              }}
-              style={{
-                height: 40,
-                borderRadius: 999,
-                background: 'var(--surface)', color: 'var(--on-surface)',
-                border: 'none', cursor: 'pointer',
-                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13,
-                opacity: !isMyTurn || isWaitingForNextTurn ? 0.35 : 1,
-              }}
-            >
-              Submit guess
-            </button>
           </div>
 
           {/* Action log */}
@@ -524,29 +758,38 @@ const GamePage = () => {
       </div>
 
       {/* Steal button */}
-      {isStealWindowOpen && (
-        <div style={{
-          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 30, display: 'flex', alignItems: 'center', gap: 12,
-          padding: '10px 20px', borderRadius: 999,
-          background: 'var(--surface)', border: '1px solid var(--line)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-        }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
-            steal window
-          </span>
-          <span style={{
-            fontFamily: 'var(--font-display)', fontSize: 28, lineHeight: 1,
-            color: countdown <= 3 ? 'var(--bad)' : 'var(--accent)',
+      {isStealWindowOpen && (() => {
+        const stealerName = stealInitiatorId ? players.find((p) => p.id === stealInitiatorId)?.name : null
+        return (
+          <div style={{
+            position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 30, display: 'flex', alignItems: 'center', gap: 12,
+            padding: '10px 20px', borderRadius: 999,
+            background: 'var(--surface)', border: `1px solid ${stealerName ? 'var(--accent)' : 'var(--line)'}`,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
           }}>
-            {countdown}
-          </span>
-        </div>
-      )}
+            {stealerName ? (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)' }}>
+                ⚡ {stealerName} is stealing…
+              </span>
+            ) : (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+                steal window
+              </span>
+            )}
+            <span style={{
+              fontFamily: 'var(--font-display)', fontSize: 28, lineHeight: 1,
+              color: countdown <= 3 ? 'var(--bad)' : 'var(--accent)',
+            }}>
+              {countdown}
+            </span>
+          </div>
+        )
+      })()}
 
       {canSteal && (
         <button
-          onClick={() => { socket.emit('steal:initiated'); setIsAttemptingSteal(true) }}
+          onClick={() => { socket.emit('steal:initiated', playerId ?? ''); setIsAttemptingSteal(true) }}
           style={{
             position: 'fixed', bottom: 24, right: 24, zIndex: 30,
             padding: '12px 20px', borderRadius: 999,

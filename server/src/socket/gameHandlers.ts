@@ -185,6 +185,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       io.to(roomCode).emit('steal:result', {
         success: true, stealerId: stealer.id, targetPlayerId,
         correct: stealCorrect,
+        targetWasCorrect: pending.correct,
         song: pending.song,
       })
       io.to(roomCode).emit('placement:result', pending)
@@ -214,14 +215,17 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
     }
   })
 
-  socket.on('steal:initiated', () => {
+  socket.on('steal:initiated', (stealerId: string) => {
     const rooms = [...socket.rooms].filter((r) => r !== socket.id)
     const roomCode = rooms[0]
     if (!roomCode) return
-    if (resolvedRooms.has(roomCode)) return
 
+    // cancel the running timeout BEFORE checking resolvedRooms —
+    // this prevents the 5s timer from firing between now and the guard check
     const existing = stealTimeouts.get(roomCode)
-    if (existing) clearTimeout(existing)
+    if (existing) { clearTimeout(existing); stealTimeouts.delete(roomCode) }
+
+    if (resolvedRooms.has(roomCode)) return
 
     const pending = pendingResults.get(roomCode)
     if (!pending) return
@@ -253,7 +257,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
     }, 10000)
     stealTimeouts.set(roomCode, t)
 
-    io.to(roomCode).emit('steal:extended')
+    io.to(roomCode).emit('steal:extended', stealerId)
   })
 
   socket.on('song:skip', async (cb) => {

@@ -51,6 +51,7 @@ export interface StealResultPayload {
   stealerId: string
   targetPlayerId: string
   correct: boolean
+  targetWasCorrect: boolean  // true = active player placed correctly (steal was futile)
   song: Song
 }
 
@@ -71,7 +72,7 @@ export interface ServerToClientEvents {
   'drag:update': (slot: number | null) => void
   'tokens:updated': (playerId: string, newTotal: number) => void
   'steal:open': (targetPlayerId: string) => void
-  'steal:extended': () => void
+  'steal:extended': (stealerId: string) => void
 }
 
 export interface ClientToServerEvents {
@@ -82,7 +83,7 @@ export interface ClientToServerEvents {
   'song:skip': (cb: (error?: string) => void) => void
   'card:place': (payload: PlacePayload, cb: (error?: string) => void) => void
   'steal:attempt': (payload: StealPayload, cb: (error?: string) => void) => void
-  'steal:initiated': () => void
+  'steal:initiated': (stealerId: string) => void
   'audio:play': () => void
   'audio:pause': () => void
   'drag:move': (payload: { slot: number | null }) => void

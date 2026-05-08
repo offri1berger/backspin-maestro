@@ -27,12 +27,17 @@ export const useSocket = () => {
       store.setHasGuessed(false)
       store.setStealResult(null)
       store.setIsStealWindowOpen(false)
+      store.setStealInitiatorId(null)
     })
 
     socket.on('steal:open', () => {
       const store = useGameStore.getState()
       store.setIsWaitingForNextTurn(true)
       store.setIsStealWindowOpen(true)
+    })
+
+    socket.on('steal:extended', (stealerId) => {
+      useGameStore.getState().setStealInitiatorId(stealerId)
     })
 
     socket.on('phase:changed', (phase, _phaseStartedAt, currentPlayerId) => {
@@ -93,6 +98,7 @@ export const useSocket = () => {
         store.setPlayers(updatedPlayers)
       }
 
+      store.setStealInitiatorId(null)
       store.setStealResult(result)
       setTimeout(() => store.setStealResult(null), 3000)
     })
@@ -119,6 +125,7 @@ export const useSocket = () => {
       socket.off('placement:result')
       socket.off('token:earned')
       socket.off('steal:open')
+      socket.off('steal:extended')
       socket.off('steal:result')
       socket.off('tokens:updated')
       socket.off('game:over')
