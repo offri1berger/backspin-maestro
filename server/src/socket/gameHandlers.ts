@@ -129,4 +129,10 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
     const roomCode = rooms[0]
     if (roomCode) socket.to(roomCode).emit('audio:pause')
   })
+
+  socket.on('drag:move', ({ slot }) => {
+    const rooms = [...socket.rooms].filter((r) => r !== socket.id)
+    const roomCode = rooms[0]
+    if (roomCode) socket.to(roomCode).emit('drag:update', slot)
+  })
 }

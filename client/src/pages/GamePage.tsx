@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import AudioPlayer from '../components/game/AudioPlayer'
 import Timeline from '../components/game/Timeline'
@@ -12,23 +12,61 @@ const GamePage = () => {
     playerId,
     placementResult,
     isWaitingForNextTurn,
+    remoteDragSlot,
+    setHasGuessed,
+    setRemoteDragSlot,
   } = useGameStore()
 
-  const { setHasGuessed } = useGameStore()
   const isMyTurn = currentPlayerId === playerId
+  const activePlayer = players.find((p) => p.id === currentPlayerId)
   const myPlayer = players.find((p) => p.id === playerId)
+  const activeTimeline = activePlayer?.timeline ?? []
+  const myTimeline = myPlayer?.timeline ?? []
 
   const [guess, setGuess] = useState({ artist: '', title: '' })
+  const [viewingMyTimeline, setViewingMyTimeline] = useState(false)
+
+  useEffect(() => {
+    socket.on('drag:update', (slot) => setRemoteDragSlot(slot))
+    return () => { socket.off('drag:update') }
+  }, [setRemoteDragSlot])
+
+  useEffect(() => {
+    setRemoteDragSlot(null)
+  }, [currentPlayerId, setRemoteDragSlot])
+
+  useEffect(() => {
+    if (isWaitingForNextTurn) setRemoteDragSlot(null)
+  }, [isWaitingForNextTurn, setRemoteDragSlot])
 
   const handlePlace = (position: number) => {
     if (guess.artist.trim() && guess.title.trim()) {
       socket.emit('song:guess', { artist: guess.artist, title: guess.title })
     }
-    socket.emit('card:place', { position }, (error) => {
+    socket.emit('card:place', { position }, (error: unknown) => {
       if (error) console.error('place error:', error)
     })
     setGuess({ artist: '', title: '' })
     setHasGuessed(true)
+  }
+
+  if (viewingMyTimeline) {
+    return (
+      <div className="min-h-screen bg-zinc-950 text-white p-6">
+        <div className="max-w-lg mx-auto flex flex-col gap-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setViewingMyTimeline(false)}
+              className="text-zinc-400 hover:text-white transition text-sm"
+            >
+              ← Back
+            </button>
+            <h2 className="text-lg font-semibold">My Timeline</h2>
+          </div>
+          <Timeline timeline={myTimeline} readOnly />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -36,7 +74,7 @@ const GamePage = () => {
       <div className="max-w-lg mx-auto flex flex-col gap-6">
 
         {placementResult && (
-          <div className={`fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl font-bold text-lg ${
+          <div className={`fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl font-bold text-lg z-10 ${
             placementResult.correct ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
           }`}>
             {placementResult.message ?? (placementResult.correct ? '✓ Correct!' : '✗ Wrong!')}
@@ -61,6 +99,14 @@ const GamePage = () => {
 
         {currentSong && (
           <div className="flex flex-col gap-3">
+            {!isMyTurn && activePlayer && (
+              <p className="text-zinc-400 text-sm text-center">
+                watching{' '}
+                <span className="text-white font-medium">{activePlayer.name}</span>
+                's turn
+              </p>
+            )}
+
             {isMyTurn && !isWaitingForNextTurn && (
               <div className="flex flex-col gap-2">
                 <p className="text-xs text-zinc-400 text-center">Optional: guess for a token 🪙</p>
@@ -80,17 +126,34 @@ const GamePage = () => {
                 </div>
               </div>
             )}
+
+            {isMyTurn && (
+              <p className="text-zinc-400 text-sm text-center">
+                drag the card to the correct spot
+              </p>
+            )}
+
             <Timeline
-              timeline={myPlayer?.timeline ?? []}
+              timeline={activeTimeline}
               currentSong={currentSong}
               onPlace={handlePlace}
               isMyTurn={isMyTurn}
               isWaiting={isWaitingForNextTurn}
+              spectatorDragSlot={isMyTurn ? null : remoteDragSlot}
             />
           </div>
         )}
 
       </div>
+
+      {!isMyTurn && (
+        <button
+          onClick={() => setViewingMyTimeline(true)}
+          className="fixed bottom-6 right-6 bg-zinc-800 text-white text-sm font-medium px-4 py-2 rounded-full shadow-lg hover:bg-zinc-700 transition"
+        >
+          My Timeline
+        </button>
+      )}
     </div>
   )
 }

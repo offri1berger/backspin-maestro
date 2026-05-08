@@ -68,6 +68,7 @@ export interface ServerToClientEvents {
   'error': (message: string) => void
   'audio:play': () => void
   'audio:pause': () => void
+  'drag:update': (slot: number | null) => void
 }
 
 export interface ClientToServerEvents {
@@ -80,4 +81,5 @@ export interface ClientToServerEvents {
   'steal:attempt': (payload: StealPayload, cb: (error?: string) => void) => void
   'audio:play': () => void
   'audio:pause': () => void
+  'drag:move': (payload: { slot: number | null }) => void
 }

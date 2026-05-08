@@ -15,6 +15,7 @@ interface GameStore {
   isWaitingForNextTurn: boolean
   hasGuessed: boolean
   winnerId: string | null
+  remoteDragSlot: number | null
 
   setRoom: (roomCode: string, playerId: string) => void
   setPlayers: (players: Player[]) => void
@@ -29,6 +30,7 @@ interface GameStore {
   setIsWaitingForNextTurn: (val: boolean) => void
   setHasGuessed: (val: boolean) => void
   setGameOver: (winnerId: string) => void
+  setRemoteDragSlot: (slot: number | null) => void
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -45,6 +47,7 @@ export const useGameStore = create<GameStore>((set) => ({
   isWaitingForNextTurn: false,
   hasGuessed: false,
   winnerId: null,
+  remoteDragSlot: null,
 
   setRoom: (roomCode, playerId) => set({ roomCode, playerId }),
   setPlayers: (players) => set({ players }),
@@ -61,4 +64,5 @@ export const useGameStore = create<GameStore>((set) => ({
   setIsWaitingForNextTurn: (val) => set({ isWaitingForNextTurn: val }),
   setHasGuessed: (val) => set({ hasGuessed: val }),
   setGameOver: (winnerId) => set({ winnerId, phase: 'game_over' }),
+  setRemoteDragSlot: (slot) => set({ remoteDragSlot: slot }),
 }))
