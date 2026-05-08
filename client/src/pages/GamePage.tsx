@@ -33,7 +33,7 @@ const GamePage = () => {
           ))}
         </div>
 
-        {currentSong && <AudioPlayer song={currentSong} />}
+        {currentSong && <AudioPlayer song={currentSong} isMyTurn={isMyTurn}/>}
 
         {currentSong && (
           <Timeline

@@ -65,6 +65,8 @@ export interface ServerToClientEvents {
   'steal:result': (result: StealResultPayload) => void
   'game:over': (winnerId: string, players: Player[]) => void
   'error': (message: string) => void
+  'audio:play': () => void
+  'audio:pause': () => void
 }
 
 export interface ClientToServerEvents {
@@ -75,4 +77,6 @@ export interface ClientToServerEvents {
   'song:skip': (cb: (error?: string) => void) => void
   'card:place': (payload: PlacePayload, cb: (error?: string) => void) => void
   'steal:attempt': (payload: StealPayload, cb: (error?: string) => void) => void
+  'audio:play': () => void
+  'audio:pause': () => void
 }

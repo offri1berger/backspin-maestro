@@ -83,4 +83,15 @@ socket.on('game:start', async (cb) => {
     socket.emit('error', 'Failed to start game')
   }
 })
+socket.on('audio:play', () => {
+  const rooms = [...socket.rooms].filter((r) => r !== socket.id)
+  const roomCode = rooms[0]
+  if (roomCode) socket.to(roomCode).emit('audio:play')
+})
+
+socket.on('audio:pause', () => {
+  const rooms = [...socket.rooms].filter((r) => r !== socket.id)
+  const roomCode = rooms[0]
+  if (roomCode) socket.to(roomCode).emit('audio:pause')
+})
 }

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Song } from '@hitster/shared'
+import socket from '../../socket'
 
 interface Props {
   song: Song
+  isMyTurn: boolean
 }
 
-const AudioPlayer = ({ song }: Props) => {
+const AudioPlayer = ({ song, isMyTurn }: Props) => {
   const audioRef = useRef<HTMLAudioElement>(null)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -13,19 +15,37 @@ const AudioPlayer = ({ song }: Props) => {
   useEffect(() => {
     setPlaying(false)
     setProgress(0)
-    if (audioRef.current) {
-      audioRef.current.load()
-    }
+    if (audioRef.current) audioRef.current.load()
   }, [song.id])
+
+  useEffect(() => {
+    socket.on('audio:play', () => {
+      audioRef.current?.play()
+      setPlaying(true)
+    })
+
+    socket.on('audio:pause', () => {
+      audioRef.current?.pause()
+      setPlaying(false)
+    })
+
+    return () => {
+      socket.off('audio:play')
+      socket.off('audio:pause')
+    }
+  }, [])
 
   const toggle = () => {
     if (!audioRef.current) return
     if (playing) {
       audioRef.current.pause()
+      setPlaying(false)
+      socket.emit('audio:pause')
     } else {
       audioRef.current.play()
+      setPlaying(true)
+      socket.emit('audio:play')
     }
-    setPlaying(!playing)
   }
 
   const onTimeUpdate = () => {
@@ -36,15 +56,23 @@ const AudioPlayer = ({ song }: Props) => {
   return (
     <div className="bg-zinc-900 rounded-2xl p-6 flex flex-col gap-4">
       <div className="flex items-center gap-4">
-        <button
-          onClick={toggle}
-          className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center text-xl hover:bg-zinc-200 transition"
-        >
-          {playing ? '⏸' : '▶'}
-        </button>
+        {isMyTurn ? (
+          <button
+            onClick={toggle}
+            className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center text-xl hover:bg-zinc-200 transition"
+          >
+            {playing ? '⏸' : '▶'}
+          </button>
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center text-xl">
+            {playing ? '🔊' : '🔇'}
+          </div>
+        )}
         <div>
           <p className="font-semibold">mystery song</p>
-          <p className="text-zinc-400 text-sm">guess the year</p>
+          <p className="text-zinc-400 text-sm">
+            {isMyTurn ? 'you control the music' : 'waiting for active player'}
+          </p>
         </div>
       </div>
 
@@ -59,7 +87,7 @@ const AudioPlayer = ({ song }: Props) => {
         ref={audioRef}
         src={song.previewUrl}
         onTimeUpdate={onTimeUpdate}
-        onEnded={() => setPlaying(false)}
+        onEnded={() => { setPlaying(false); socket.emit('audio:pause') }}
       />
     </div>
   )
