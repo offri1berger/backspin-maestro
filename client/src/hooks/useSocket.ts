@@ -33,7 +33,6 @@ export const useSocket = () => {
 
     socket.on('placement:result', (result) => {
       const store = useGameStore.getState()
-      store.setIsWaitingForNextTurn(true)
 
       if (result.correct) {
         const currentSong = store.currentSong
@@ -51,20 +50,27 @@ export const useSocket = () => {
 
       store.setPendingPosition(null)
       store.setPlacementResult({ correct: result.correct })
+      store.setIsWaitingForNextTurn(true)
       setTimeout(() => store.setPlacementResult(null), 2000)
     })
 
-   socket.on('token:earned', (playerId, newTotal) => {
-  const store = useGameStore.getState()
-  const updatedPlayers = store.players.map((p) =>
-    p.id === playerId ? { ...p, tokens: newTotal } : p
-  )
-  store.setPlayers(updatedPlayers)
-  if (playerId === store.playerId) {
-    store.setPlacementResult({ correct: true, message: '🪙 Token earned!' })
-  }
-})
-    
+    socket.on('token:earned', (playerId, newTotal) => {
+      const store = useGameStore.getState()
+      const updatedPlayers = store.players.map((p) =>
+        p.id === playerId ? { ...p, tokens: newTotal } : p
+      )
+      store.setPlayers(updatedPlayers)
+      if (playerId === store.playerId) {
+        store.setPlacementResult({ correct: true, message: '🪙 Token earned!' })
+        setTimeout(() => store.setPlacementResult(null), 2000)
+      }
+    })
+
+    socket.on('game:over', (winnerId, players) => {
+      const store = useGameStore.getState()
+      store.setPlayers(players)
+      store.setGameOver(winnerId)
+    })
 
     return () => {
       socket.off('player:joined')
@@ -74,6 +80,7 @@ export const useSocket = () => {
       socket.off('phase:changed')
       socket.off('placement:result')
       socket.off('token:earned')
+      socket.off('game:over')
       socket.disconnect()
     }
   }, [])

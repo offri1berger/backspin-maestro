@@ -3,6 +3,7 @@ import { updateRoomStatus, getRoomByCode } from '../db/queries/rooms.js'
 import { getFreshPreviewUrl, getRandomSong, markSongAsUsed } from './songService.js'
 import { getGameState, setGameState } from '../lib/gameCache.js'
 import type { Player, Song } from '@hitster/shared'
+import { db } from '../db/database.js'
 
 export const startGameService = async (
   roomCode: string,
@@ -112,4 +113,18 @@ export const nextTurnService = async (
       deezerTrackId: song.deezer_id,
     },
   }
+}
+
+export const checkWinCondition = async (
+  playerId: string,
+  roomId: string,
+  songsPerPlayer: number
+): Promise<boolean> => {
+  const count = await db
+    .selectFrom('timeline_entries')
+    .select(db.fn.count('id').as('count'))
+    .where('player_id', '=', playerId)
+    .executeTakeFirstOrThrow()
+
+  return Number(count.count) >= songsPerPlayer
 }
