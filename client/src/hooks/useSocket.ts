@@ -21,9 +21,10 @@ export const useSocket = () => {
     })
 
     socket.on('song:new', (song) => {
-  setCurrentSong(song)
-  useGameStore.getState().setIsWaitingForNextTurn(false)
-})
+      setCurrentSong(song)
+      useGameStore.getState().setIsWaitingForNextTurn(false)
+      useGameStore.getState().setHasGuessed(false)
+    })
 
     socket.on('phase:changed', (phase, _phaseStartedAt, currentPlayerId) => {
       setPhase(phase)
@@ -53,6 +54,16 @@ export const useSocket = () => {
       setTimeout(() => store.setPlacementResult(null), 2000)
     })
 
+   socket.on('token:earned', (playerId, newTotal) => {
+  const store = useGameStore.getState()
+  const updatedPlayers = store.players.map((p) =>
+    p.id === playerId ? { ...p, tokens: newTotal } : p
+  )
+  store.setPlayers(updatedPlayers)
+  if (playerId === store.playerId) {
+    store.setPlacementResult({ correct: true, message: '🪙 Token earned!' })
+  }
+})
     
 
     return () => {
@@ -62,6 +73,7 @@ export const useSocket = () => {
       socket.off('song:new')
       socket.off('phase:changed')
       socket.off('placement:result')
+      socket.off('token:earned')
       socket.disconnect()
     }
   }, [])

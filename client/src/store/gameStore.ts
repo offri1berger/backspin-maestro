@@ -11,8 +11,9 @@ interface GameStore {
   currentSong: Song | null
   roundNumber: number
   pendingPosition: number | null
-  placementResult: { correct: boolean } | null
+placementResult: { correct: boolean; message?: string } | null
   isWaitingForNextTurn: boolean
+  hasGuessed: boolean
   
   setRoom: (roomCode: string, playerId: string) => void
   setPlayers: (players: Player[]) => void
@@ -23,8 +24,9 @@ interface GameStore {
   setPhase: (phase: GamePhase) => void
   setCurrentPlayerId: (id: string) => void
   setPendingPosition: (position: number | null) => void
-  setPlacementResult: (result: { correct: boolean } | null) => void
+setPlacementResult: (result: { correct: boolean; message?: string } | null) => void
   setIsWaitingForNextTurn: (val: boolean) => void
+  setHasGuessed: (val: boolean) => void
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -39,6 +41,7 @@ export const useGameStore = create<GameStore>((set) => ({
   pendingPosition: null,
   placementResult: null,
   isWaitingForNextTurn: false,
+  hasGuessed: false,
 
   setRoom: (roomCode, playerId) => set({ roomCode, playerId }),
   setPlayers: (players) => set({ players }),
@@ -53,4 +56,5 @@ export const useGameStore = create<GameStore>((set) => ({
   setPendingPosition: (position) => set({ pendingPosition: position }),
   setPlacementResult: (result) => set({ placementResult: result }),
   setIsWaitingForNextTurn: (val) => set({ isWaitingForNextTurn: val }),
+  setHasGuessed: (val) => set({ hasGuessed: val }),
 }))

@@ -6,6 +6,7 @@ import { getGameState } from '../lib/gameCache.js'
 import { getPlayersByRoomId } from '../db/queries/players.js'
 import { getRoomByCode } from '../db/queries/rooms.js'
 import { db } from '../db/database.js'
+import { handleGuessService } from '../services/guessService.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
@@ -65,4 +66,30 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       cb('server_error')
     }
   })
+  socket.on('song:guess', async (payload) => {
+  try {
+    const rooms = [...socket.rooms].filter((r) => r !== socket.id)
+    const roomCode = rooms[0]
+    if (!roomCode) return
+
+    const result = await handleGuessService(roomCode, socket.id, payload.artist, payload.title)
+
+    if ('error' in result) {
+      console.error('guess error:', result.error)
+      return
+    }
+
+    if (result.correct) {
+      const player = await db
+        .selectFrom('players')
+        .selectAll()
+        .where('socket_id', '=', socket.id)
+        .executeTakeFirstOrThrow()
+
+      io.to(roomCode).emit('token:earned', player.id, result.tokens)
+    }
+  } catch (err) {
+    console.error('song:guess error', err)
+  }
+})
 }
