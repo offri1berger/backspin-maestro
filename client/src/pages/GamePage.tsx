@@ -1,9 +1,19 @@
 import { useGameStore } from '../store/gameStore'
 import AudioPlayer from '../components/game/AudioPlayer'
+import Timeline from '../components/game/Timeline'
+import socket from '../socket'
 
 const GamePage = () => {
-  const { currentSong, players, currentPlayerId, playerId } = useGameStore()
+  const { currentSong, players, currentPlayerId, playerId, phase } = useGameStore()
   const isMyTurn = currentPlayerId === playerId
+
+  const handlePlace = (position: number) => {
+    socket.emit('card:place', { position }, (error) => {
+      if (error) console.error('place error:', error)
+    })
+  }
+
+  const myPlayer = players.find((p) => p.id === playerId)
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white p-6">
@@ -18,16 +28,21 @@ const GamePage = () => {
               }`}
             >
               <p className="text-sm">{p.name}</p>
-              <p className="text-xs text-zinc-400">{p.tokens} tokens</p>
+              <p className="text-xs text-zinc-400">{p.tokens} 🪙</p>
             </div>
           ))}
         </div>
 
         {currentSong && <AudioPlayer song={currentSong} />}
 
-        <div className="text-center text-zinc-400 text-sm">
-          {isMyTurn ? 'Your turn — place the song on your timeline' : `Waiting for ${players.find(p => p.id === currentPlayerId)?.name}...`}
-        </div>
+        {currentSong && (
+          <Timeline
+            timeline={myPlayer?.timeline ?? []}
+            currentSong={currentSong}
+            onPlace={handlePlace}
+            isMyTurn={isMyTurn}
+          />
+        )}
 
       </div>
     </div>
