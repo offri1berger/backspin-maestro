@@ -49,9 +49,12 @@ export const useSocket = () => {
       }
 
       store.setPendingPosition(null)
-      store.setPlacementResult({ correct: result.correct })
+      store.setPlacementResult({
+        correct: result.correct,
+        song: result.correct ? undefined : result.song,
+      })
       store.setIsWaitingForNextTurn(true)
-      setTimeout(() => store.setPlacementResult(null), 2000)
+      setTimeout(() => store.setPlacementResult(null), result.correct ? 2000 : 3000)
     })
 
     socket.on('token:earned', (playerId, newTotal) => {

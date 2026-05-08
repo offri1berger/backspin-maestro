@@ -73,11 +73,24 @@ const GamePage = () => {
     <div className="min-h-screen bg-zinc-950 text-white p-6">
       <div className="max-w-lg mx-auto flex flex-col gap-6">
 
-        {placementResult && (
-          <div className={`fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl font-bold text-lg z-10 ${
-            placementResult.correct ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-          }`}>
-            {placementResult.message ?? (placementResult.correct ? '✓ Correct!' : '✗ Wrong!')}
+        {placementResult?.correct && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl font-bold text-lg z-10 bg-green-500 text-white">
+            {placementResult.message ?? '✓ Correct!'}
+          </div>
+        )}
+
+        {placementResult && !placementResult.correct && placementResult.song && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-10 w-80">
+            <div className="bg-red-600 rounded-t-2xl px-4 py-2 text-center font-bold text-white">
+              ✗ Wrong!
+            </div>
+            <div className="bg-zinc-800 rounded-b-2xl px-4 py-3 flex justify-between items-center shadow-xl">
+              <div>
+                <p className="font-semibold text-sm text-white">{placementResult.song.title}</p>
+                <p className="text-zinc-400 text-xs">{placementResult.song.artist}</p>
+              </div>
+              <span className="text-white font-bold text-sm">{placementResult.song.year}</span>
+            </div>
           </div>
         )}
 

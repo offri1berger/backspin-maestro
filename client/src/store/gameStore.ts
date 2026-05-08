@@ -11,7 +11,7 @@ interface GameStore {
   currentSong: Song | null
   roundNumber: number
   pendingPosition: number | null
-  placementResult: { correct: boolean; message?: string } | null
+  placementResult: { correct: boolean; message?: string; song?: Song } | null
   isWaitingForNextTurn: boolean
   hasGuessed: boolean
   winnerId: string | null
@@ -26,7 +26,7 @@ interface GameStore {
   setPhase: (phase: GamePhase) => void
   setCurrentPlayerId: (id: string) => void
   setPendingPosition: (position: number | null) => void
-  setPlacementResult: (result: { correct: boolean; message?: string } | null) => void
+  setPlacementResult: (result: { correct: boolean; message?: string; song?: Song } | null) => void
   setIsWaitingForNextTurn: (val: boolean) => void
   setHasGuessed: (val: boolean) => void
   setGameOver: (winnerId: string) => void
