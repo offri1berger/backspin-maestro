@@ -2,7 +2,28 @@ import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import AudioPlayer from '../components/game/AudioPlayer'
 import Timeline from '../components/game/Timeline'
+import { MiniYearCard } from '../components/game/Timeline'
 import socket from '../socket'
+
+const PLAYER_COLORS = ['#e8a598', '#98c5e8', '#98e8b4', '#e8d598', '#c598e8', '#e898c5']
+
+function Logo() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-display)', fontSize: 20 }}>
+      <div className="vinyl" style={{ width: 22, height: 22, flexShrink: 0 }} />
+      <span style={{ color: 'var(--on-bg)' }}>Hitster</span>
+    </div>
+  )
+}
+
+function SectionMark({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0, display: 'inline-block' }} />
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)' }}>{children}</span>
+    </div>
+  )
+}
 
 const GamePage = () => {
   const {
@@ -13,6 +34,8 @@ const GamePage = () => {
     placementResult,
     isWaitingForNextTurn,
     remoteDragSlot,
+    stealResult,
+    isStealWindowOpen,
     setHasGuessed,
     setRemoteDragSlot,
   } = useGameStore()
@@ -21,23 +44,28 @@ const GamePage = () => {
   const activePlayer = players.find((p) => p.id === currentPlayerId)
   const myPlayer = players.find((p) => p.id === playerId)
   const activeTimeline = activePlayer?.timeline ?? []
-  const myTimeline = myPlayer?.timeline ?? []
 
   const [guess, setGuess] = useState({ artist: '', title: '' })
-  const [viewingMyTimeline, setViewingMyTimeline] = useState(false)
+  const [isAttemptingSteal, setIsAttemptingSteal] = useState(false)
+  const [countdown, setCountdown] = useState(0)
+  const [stealWindowSeconds, setStealWindowSeconds] = useState(5)
 
   useEffect(() => {
     socket.on('drag:update', (slot) => setRemoteDragSlot(slot))
-    return () => { socket.off('drag:update') }
+    socket.on('steal:extended', () => setStealWindowSeconds(10))
+    return () => { socket.off('drag:update'); socket.off('steal:extended') }
   }, [setRemoteDragSlot])
 
-  useEffect(() => {
-    setRemoteDragSlot(null)
-  }, [currentPlayerId, setRemoteDragSlot])
+  useEffect(() => { setRemoteDragSlot(null) }, [currentPlayerId, setRemoteDragSlot])
+  // close steal overlay when steal window closes (timeout fired or steal resolved)
+  useEffect(() => { if (!isStealWindowOpen) setIsAttemptingSteal(false) }, [isStealWindowOpen])
 
   useEffect(() => {
-    if (isWaitingForNextTurn) setRemoteDragSlot(null)
-  }, [isWaitingForNextTurn, setRemoteDragSlot])
+    if (!isStealWindowOpen) { setCountdown(0); setStealWindowSeconds(5); return }
+    setCountdown(stealWindowSeconds)
+    const iv = setInterval(() => setCountdown((c) => (c <= 1 ? (clearInterval(iv), 0) : c - 1)), 1000)
+    return () => clearInterval(iv)
+  }, [isStealWindowOpen, stealWindowSeconds])
 
   const handlePlace = (position: number) => {
     if (guess.artist.trim() && guess.title.trim()) {
@@ -50,121 +78,485 @@ const GamePage = () => {
     setHasGuessed(true)
   }
 
-  if (viewingMyTimeline) {
+  const handleSkip = () => {
+    socket.emit('song:skip', (error) => { if (error) console.error('skip error:', error) })
+  }
+
+  const handleStealAttempt = (position: number) => {
+    if (!currentPlayerId) return
+    socket.emit('steal:attempt', { targetPlayerId: currentPlayerId, position }, (error) => {
+      if (error) console.error('steal error:', error)
+    })
+    setIsAttemptingSteal(false)
+  }
+
+  const canSteal = !isMyTurn && isStealWindowOpen && stealResult === null && (myPlayer?.tokens ?? 0) >= 1
+
+  // ── Steal overlay (modal) ─────────────────────────────────────────────
+  if (isAttemptingSteal && currentSong) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white p-6">
-        <div className="max-w-lg mx-auto flex flex-col gap-6">
-          <div className="flex items-center gap-3">
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 50,
+        background: 'rgba(0,0,0,0.6)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 24,
+      }}>
+        <div style={{
+          width: '100%', maxWidth: 540,
+          background: 'var(--bg)',
+          borderRadius: 28,
+          padding: 32,
+          border: '1px solid var(--line)',
+          boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 32, color: 'var(--on-bg)', letterSpacing: '-0.02em' }}>
+              Steal the card
+            </h2>
             <button
-              onClick={() => setViewingMyTimeline(false)}
-              className="text-zinc-400 hover:text-white transition text-sm"
-            >
-              ← Back
-            </button>
-            <h2 className="text-lg font-semibold">My Timeline</h2>
+              onClick={() => setIsAttemptingSteal(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 14, fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}
+            >ESC</button>
           </div>
-          <Timeline timeline={myTimeline} readOnly />
+          <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 20, lineHeight: 1.4 }}>
+            Place correctly in <strong style={{ color: 'var(--on-bg)' }}>{activePlayer?.name}</strong>'s timeline — costs 1 ★
+          </p>
+          <Timeline
+            timeline={activeTimeline}
+            currentSong={currentSong}
+            onPlace={handleStealAttempt}
+            isMyTurn
+            isWaiting={false}
+            broadcastDrag={false}
+          />
         </div>
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-zinc-950 text-white p-6">
-      <div className="max-w-lg mx-auto flex flex-col gap-6">
-
-        {placementResult?.correct && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl font-bold text-lg z-10 bg-green-500 text-white">
-            {placementResult.message ?? '✓ Correct!'}
-          </div>
-        )}
-
-        {placementResult && !placementResult.correct && placementResult.song && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-10 w-80">
-            <div className="bg-red-600 rounded-t-2xl px-4 py-2 text-center font-bold text-white">
-              ✗ Wrong!
-            </div>
-            <div className="bg-zinc-800 rounded-b-2xl px-4 py-3 flex justify-between items-center shadow-xl">
-              <div>
-                <p className="font-semibold text-sm text-white">{placementResult.song.title}</p>
-                <p className="text-zinc-400 text-xs">{placementResult.song.artist}</p>
-              </div>
-              <span className="text-white font-bold text-sm">{placementResult.song.year}</span>
-            </div>
-          </div>
-        )}
-
-        <div className="flex justify-between items-center">
-          {players.map((p) => (
-            <div
-              key={p.id}
-              className={`text-center px-3 py-2 rounded-lg ${
-                p.id === currentPlayerId ? 'bg-zinc-700' : ''
-              }`}
-            >
-              <p className="text-sm">{p.name}</p>
-              <p className="text-xs text-zinc-400">{p.tokens} 🪙</p>
-            </div>
-          ))}
+  // ── Placement/steal result toast ──────────────────────────────────────
+  const renderToast = () => {
+    if (placementResult?.correct) {
+      return (
+        <div style={{
+          position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 40, padding: '12px 24px', borderRadius: 999,
+          background: 'var(--good)', color: '#fff',
+          fontWeight: 700, fontSize: 16,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+        }}>
+          {placementResult.message ?? '✓ Correct!'}
         </div>
-
-        {currentSong && <AudioPlayer song={currentSong} isMyTurn={isMyTurn} />}
-
-        {currentSong && (
-          <div className="flex flex-col gap-3">
-            {!isMyTurn && activePlayer && (
-              <p className="text-zinc-400 text-sm text-center">
-                watching{' '}
-                <span className="text-white font-medium">{activePlayer.name}</span>
-                's turn
-              </p>
-            )}
-
-            {isMyTurn && !isWaitingForNextTurn && (
-              <div className="flex flex-col gap-2">
-                <p className="text-xs text-zinc-400 text-center">Optional: guess for a token 🪙</p>
-                <div className="flex gap-2">
-                  <input
-                    placeholder="Artist"
-                    value={guess.artist}
-                    onChange={(e) => setGuess((g) => ({ ...g, artist: e.target.value }))}
-                    className="flex-1 bg-zinc-800 text-white placeholder-zinc-500 px-3 py-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-white"
-                  />
-                  <input
-                    placeholder="Title"
-                    value={guess.title}
-                    onChange={(e) => setGuess((g) => ({ ...g, title: e.target.value }))}
-                    className="flex-1 bg-zinc-800 text-white placeholder-zinc-500 px-3 py-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-white"
-                  />
-                </div>
-              </div>
-            )}
-
-            {isMyTurn && (
-              <p className="text-zinc-400 text-sm text-center">
-                drag the card to the correct spot
-              </p>
-            )}
-
-            <Timeline
-              timeline={activeTimeline}
-              currentSong={currentSong}
-              onPlace={handlePlace}
-              isMyTurn={isMyTurn}
-              isWaiting={isWaitingForNextTurn}
-              spectatorDragSlot={isMyTurn ? null : remoteDragSlot}
-            />
+      )
+    }
+    if (placementResult && !placementResult.correct && placementResult.song) {
+      return (
+        <div style={{
+          position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 40, minWidth: 280,
+          borderRadius: 20,
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+        }}>
+          <div style={{ background: 'var(--bad)', padding: '10px 20px', textAlign: 'center', color: '#fff', fontWeight: 700 }}>
+            ✗ Wrong placement
           </div>
-        )}
+          <div style={{ background: 'var(--surface)', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--on-surface)' }}>{placementResult.song.title}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{placementResult.song.artist}</div>
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--accent)', lineHeight: 1 }}>{placementResult.song.year}</div>
+          </div>
+        </div>
+      )
+    }
+    if (stealResult) {
+      const stealerName = players.find((p) => p.id === stealResult.stealerId)?.name ?? 'Someone'
+      const iAmStealer = stealResult.stealerId === playerId
+      const iAmTarget = stealResult.targetPlayerId === playerId
+      const headline = stealResult.correct
+        ? iAmStealer ? '✓ You stole it!' : iAmTarget ? `${stealerName} stole your card!` : `${stealerName} stole the card!`
+        : iAmStealer ? '✗ Wrong steal — token lost' : `${stealerName} failed to steal`
+      return (
+        <div style={{
+          position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 40, minWidth: 280, borderRadius: 20, overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+        }}>
+          <div style={{ background: stealResult.correct ? 'var(--good)' : 'var(--bad)', padding: '10px 20px', textAlign: 'center', color: '#fff', fontWeight: 700 }}>
+            {headline}
+          </div>
+          <div style={{ background: 'var(--surface)', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--on-surface)' }}>{stealResult.song.title}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{stealResult.song.artist}</div>
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--accent)', lineHeight: 1 }}>{stealResult.song.year}</div>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
 
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      {renderToast()}
+
+      {/* ── Top bar ── */}
+      <div style={{
+        padding: '16px 28px',
+        borderBottom: '1px solid var(--line)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: 'var(--bg)',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+          <Logo />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)' }}>Room</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, letterSpacing: '0.18em', color: 'var(--accent)', fontWeight: 600 }}>
+            {useGameStore.getState().roomCode ?? '—'}
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+            {players.length} players
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+            First to 10 cards wins
+          </span>
+        </div>
       </div>
 
-      {!isMyTurn && (
+      {/* ── Three-column body ── */}
+      <div style={{
+        flex: 1,
+        display: 'grid',
+        gridTemplateColumns: '260px 1fr 300px',
+        minHeight: 0,
+      }}>
+
+        {/* ── LEFT RAIL: Players + shortcuts ── */}
+        <aside style={{
+          padding: '20px 20px',
+          borderRight: '1px solid var(--line)',
+          overflowY: 'auto',
+          background: 'var(--bg)',
+        }}>
+          <SectionMark>Crowd</SectionMark>
+          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {players.map((p, i) => {
+              const active = p.id === currentPlayerId
+              const isMe = p.id === playerId
+              return (
+                <div key={p.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 12px',
+                  borderRadius: 14,
+                  background: active ? 'var(--accent)' : 'transparent',
+                  color: active ? 'var(--accent-ink)' : 'var(--on-bg)',
+                  border: active ? 'none' : '1px solid var(--line)',
+                }}>
+                  <div style={{
+                    width: 34, height: 34, borderRadius: '50%',
+                    background: PLAYER_COLORS[i % PLAYER_COLORS.length],
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'var(--font-display)', fontSize: 18,
+                    color: '#1a1612', flexShrink: 0,
+                  }}>{p.name.charAt(0).toUpperCase()}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>
+                      {p.name}{isMe ? ' (you)' : ''}
+                    </div>
+                    <div style={{
+                      fontFamily: 'var(--font-mono)', fontSize: 9,
+                      letterSpacing: '0.1em',
+                      opacity: active ? 0.8 : 0.6,
+                      marginTop: 2,
+                    }}>{p.timeline.length}/10 cards · {p.tokens}★</div>
+                  </div>
+                  {active && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700 }}>
+                      now
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          <div style={{ marginTop: 28 }}>
+            <SectionMark>Shortcuts</SectionMark>
+            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[['SPACE', 'Play / pause'], ['← →', 'Move card'], ['↵', 'Lock placement'], ['G', 'Guess input']].map(([k, v]) => (
+                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <kbd style={{
+                    fontFamily: 'var(--font-mono)', fontSize: 10,
+                    padding: '3px 7px', borderRadius: 6,
+                    border: '1px solid var(--line)',
+                    background: 'color-mix(in oklch, var(--on-bg) 4%, transparent)',
+                    minWidth: 34, textAlign: 'center',
+                    color: 'var(--on-bg)',
+                  }}>{k}</kbd>
+                  <span style={{ fontSize: 11, color: 'var(--muted)' }}>{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* ── CENTER: Stage ── */}
+        <main style={{
+          padding: '24px 32px',
+          overflowY: 'auto',
+          display: 'flex', flexDirection: 'column', gap: 18,
+        }}>
+          {currentSong && <AudioPlayer song={currentSong} isMyTurn={isMyTurn} />}
+
+          {currentSong && (
+            <>
+              {/* Timeline heading */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <div>
+                  <SectionMark>
+                    {isMyTurn ? `Your timeline · ${myPlayer?.name}` : `${activePlayer?.name}'s timeline`}
+                  </SectionMark>
+                  {isMyTurn && activeTimeline.length > 0 && (
+                    <h2 style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: 24, margin: '6px 0 0',
+                      letterSpacing: '-0.02em', color: 'var(--on-bg)',
+                    }}>
+                      Place between{' '}
+                      <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>
+                        {activeTimeline[Math.max(0, 1) - 1]?.song.year ?? '?'}
+                      </em>
+                      {' '}and{' '}
+                      <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>
+                        {activeTimeline[1]?.song.year ?? '?'}
+                      </em>.
+                    </h2>
+                  )}
+                  {!isMyTurn && (
+                    <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--muted)' }}>
+                      Watching <strong style={{ color: 'var(--on-bg)' }}>{activePlayer?.name}</strong>'s turn
+                    </p>
+                  )}
+                </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+                  drag · or click slot
+                </span>
+              </div>
+
+              <Timeline
+                timeline={activeTimeline}
+                currentSong={currentSong}
+                onPlace={handlePlace}
+                isMyTurn={isMyTurn}
+                isWaiting={isWaitingForNextTurn}
+                spectatorDragSlot={isMyTurn ? null : remoteDragSlot}
+              />
+
+              {/* Skip button */}
+              {isMyTurn && !isWaitingForNextTurn && (myPlayer?.tokens ?? 0) >= 1 && (
+                <button
+                  onClick={handleSkip}
+                  style={{
+                    alignSelf: 'center',
+                    background: 'none', border: '1px solid var(--line)',
+                    borderRadius: 999, padding: '8px 20px',
+                    fontFamily: 'var(--font-mono)', fontSize: 11,
+                    letterSpacing: '0.12em', textTransform: 'uppercase',
+                    color: 'var(--muted)', cursor: 'pointer',
+                  }}
+                >
+                  Skip · spend 1 ★
+                </button>
+              )}
+            </>
+          )}
+
+          {/* Opponents timelines */}
+          {players.filter((p) => p.id !== currentPlayerId && p.id !== playerId).length > 0 && (
+            <div style={{ marginTop: 8 }}>
+              <SectionMark>Opponents · live</SectionMark>
+              <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {players
+                  .filter((p) => p.id !== currentPlayerId)
+                  .map((p) => (
+                    <div key={p.id}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                        <div style={{
+                          width: 24, height: 24, borderRadius: '50%',
+                          background: PLAYER_COLORS[(players.indexOf(p)) % PLAYER_COLORS.length],
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontFamily: 'var(--font-display)', fontSize: 13, color: '#1a1612',
+                        }}>{p.name.charAt(0).toUpperCase()}</div>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--on-bg)' }}>{p.name}</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--muted)' }}>
+                          {p.timeline.length} cards · {p.tokens}★
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
+                        {p.timeline.length === 0
+                          ? <span style={{ fontSize: 11, color: 'var(--muted)', fontStyle: 'italic' }}>no cards yet</span>
+                          : p.timeline.map((entry, j) => <MiniYearCard key={j} entry={entry} />)
+                        }
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </main>
+
+        {/* ── RIGHT RAIL: Guess + log ── */}
+        <aside style={{
+          padding: '20px 20px',
+          borderLeft: '1px solid var(--line)',
+          overflowY: 'auto',
+          background: 'var(--bg)',
+        }}>
+          <SectionMark>Bonus guess</SectionMark>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8, lineHeight: 1.4 }}>
+            Optional. Name the artist <em>and</em> title for an extra ★.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
+            <input
+              className={!isMyTurn || isWaitingForNextTurn ? '' : ''}
+              placeholder="Artist"
+              value={guess.artist}
+              onChange={(e) => setGuess((g) => ({ ...g, artist: e.target.value }))}
+              disabled={!isMyTurn || isWaitingForNextTurn}
+              style={{
+                height: 44, borderRadius: 12,
+                border: '1px solid var(--line)',
+                background: 'transparent', color: 'var(--on-bg)',
+                padding: '0 14px', fontSize: 14,
+                fontFamily: 'var(--font-body)', outline: 'none',
+                opacity: !isMyTurn || isWaitingForNextTurn ? 0.4 : 1,
+              }}
+            />
+            <input
+              placeholder="Title"
+              value={guess.title}
+              onChange={(e) => setGuess((g) => ({ ...g, title: e.target.value }))}
+              disabled={!isMyTurn || isWaitingForNextTurn}
+              style={{
+                height: 44, borderRadius: 12,
+                border: '1px solid var(--line)',
+                background: 'transparent', color: 'var(--on-bg)',
+                padding: '0 14px', fontSize: 14,
+                fontFamily: 'var(--font-body)', outline: 'none',
+                opacity: !isMyTurn || isWaitingForNextTurn ? 0.4 : 1,
+              }}
+            />
+            <button
+              disabled={!isMyTurn || isWaitingForNextTurn || !guess.artist.trim() || !guess.title.trim()}
+              onClick={() => {
+                if (!guess.artist.trim() || !guess.title.trim()) return
+                socket.emit('song:guess', { artist: guess.artist, title: guess.title })
+                setGuess({ artist: '', title: '' })
+              }}
+              style={{
+                height: 40,
+                borderRadius: 999,
+                background: 'var(--surface)', color: 'var(--on-surface)',
+                border: 'none', cursor: 'pointer',
+                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13,
+                opacity: !isMyTurn || isWaitingForNextTurn ? 0.35 : 1,
+              }}
+            >
+              Submit guess
+            </button>
+          </div>
+
+          {/* Action log */}
+          <div style={{ marginTop: 28 }}>
+            <SectionMark>Action log</SectionMark>
+            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {stealResult && (() => {
+                const stealerName = players.find((p) => p.id === stealResult.stealerId)?.name ?? 'Someone'
+                return (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 6, flexShrink: 0, background: stealResult.correct ? 'var(--good)' : 'var(--bad)', display: 'inline-block' }} />
+                    <div>
+                      <div style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--on-bg)' }}>
+                        <b>{stealerName}</b> {stealResult.correct ? 'stole successfully' : 'failed to steal'}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+              {placementResult && (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 6, flexShrink: 0, background: placementResult.correct ? 'var(--good)' : 'var(--bad)', display: 'inline-block' }} />
+                  <div style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--on-bg)' }}>
+                    <b>{activePlayer?.name}</b> {placementResult.correct ? 'placed correctly' : 'missed placement'}
+                    {placementResult.song && !placementResult.correct && (
+                      <span style={{ color: 'var(--muted)' }}> · {placementResult.song.title} ({placementResult.song.year})</span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Deck mini stats */}
+          <div style={{ marginTop: 28, padding: '14px 16px', border: '1px solid var(--line)', borderRadius: 16 }}>
+            <SectionMark>Deck</SectionMark>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+              {[
+                ['Players', `${players.length}`],
+                ['Cards needed', '10'],
+                ['Your cards', `${myPlayer?.timeline.length ?? 0}`],
+                ['Your ★', `${myPlayer?.tokens ?? 0}`],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>{k}</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--accent)', marginTop: 2, lineHeight: 1 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {/* Steal button */}
+      {isStealWindowOpen && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 30, display: 'flex', alignItems: 'center', gap: 12,
+          padding: '10px 20px', borderRadius: 999,
+          background: 'var(--surface)', border: '1px solid var(--line)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+        }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+            steal window
+          </span>
+          <span style={{
+            fontFamily: 'var(--font-display)', fontSize: 28, lineHeight: 1,
+            color: countdown <= 3 ? 'var(--bad)' : 'var(--accent)',
+          }}>
+            {countdown}
+          </span>
+        </div>
+      )}
+
+      {canSteal && (
         <button
-          onClick={() => setViewingMyTimeline(true)}
-          className="fixed bottom-6 right-6 bg-zinc-800 text-white text-sm font-medium px-4 py-2 rounded-full shadow-lg hover:bg-zinc-700 transition"
+          onClick={() => { socket.emit('steal:initiated'); setIsAttemptingSteal(true) }}
+          style={{
+            position: 'fixed', bottom: 24, right: 24, zIndex: 30,
+            padding: '12px 20px', borderRadius: 999,
+            background: 'var(--accent)', color: 'var(--accent-ink)',
+            border: 'none', cursor: 'pointer',
+            fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+          }}
         >
-          My Timeline
+          Steal! · 1 ★
         </button>
       )}
     </div>

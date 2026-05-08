@@ -21,7 +21,7 @@ export const createRoomService = async (
     name: payload.hostName,
     socket_id: socketId,
     is_host: true,
-    tokens: 0,
+    tokens: 2,
   })
 
   await updateRoomHost(room.id, player.id)
@@ -46,7 +46,7 @@ export const joinRoomService = async (
     name: payload.playerName,
     socket_id: socketId,
     is_host: false,
-    tokens: 0,
+    tokens: 2,
   })
 
   return {

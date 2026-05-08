@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { GamePhase, Player, Song, RoomSettings } from '@hitster/shared'
+import type { GamePhase, Player, Song, RoomSettings, StealResultPayload } from '@hitster/shared'
 
 interface GameStore {
   roomCode: string | null
@@ -16,6 +16,8 @@ interface GameStore {
   hasGuessed: boolean
   winnerId: string | null
   remoteDragSlot: number | null
+  stealResult: StealResultPayload | null
+  isStealWindowOpen: boolean
 
   setRoom: (roomCode: string, playerId: string) => void
   setPlayers: (players: Player[]) => void
@@ -31,6 +33,8 @@ interface GameStore {
   setHasGuessed: (val: boolean) => void
   setGameOver: (winnerId: string) => void
   setRemoteDragSlot: (slot: number | null) => void
+  setStealResult: (result: StealResultPayload | null) => void
+  setIsStealWindowOpen: (val: boolean) => void
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -48,6 +52,8 @@ export const useGameStore = create<GameStore>((set) => ({
   hasGuessed: false,
   winnerId: null,
   remoteDragSlot: null,
+  stealResult: null,
+  isStealWindowOpen: false,
 
   setRoom: (roomCode, playerId) => set({ roomCode, playerId }),
   setPlayers: (players) => set({ players }),
@@ -65,4 +71,6 @@ export const useGameStore = create<GameStore>((set) => ({
   setHasGuessed: (val) => set({ hasGuessed: val }),
   setGameOver: (winnerId) => set({ winnerId, phase: 'game_over' }),
   setRemoteDragSlot: (slot) => set({ remoteDragSlot: slot }),
+  setStealResult: (result) => set({ stealResult: result }),
+  setIsStealWindowOpen: (val) => set({ isStealWindowOpen: val }),
 }))

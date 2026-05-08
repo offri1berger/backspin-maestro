@@ -1,15 +1,32 @@
 import type { Socket, Server } from 'socket.io'
-import type { ServerToClientEvents, ClientToServerEvents } from '@hitster/shared'
+import type { ServerToClientEvents, ClientToServerEvents, PlacementResultPayload } from '@hitster/shared'
 import { validatePlacement } from '../services/placementService.js'
 import { nextTurnService, checkWinCondition } from '../services/gameService.js'
 import { handleGuessService } from '../services/guessService.js'
-import { getGameState } from '../lib/gameCache.js'
-import { getPlayersByRoomId } from '../db/queries/players.js'
+import { getRandomSong, markSongAsUsed, getFreshPreviewUrl } from '../services/songService.js'
+import { getGameState, setGameState } from '../lib/gameCache.js'
+import { getPlayersByRoomId, updatePlayerTokens } from '../db/queries/players.js'
 import { getRoomByCode, updateRoomStatus } from '../db/queries/rooms.js'
 import { db } from '../db/database.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
+
+// pending placement results — held until steal window closes
+const pendingResults = new Map<string, PlacementResultPayload>()
+// pending auto-advance timeouts — cancelled if someone steals
+const stealTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+// rooms where the steal window has already been resolved (guards race between timeout + steal)
+const resolvedRooms = new Set<string>()
+
+const advanceTurn = async (io: IoServer, roomCode: string) => {
+  stealTimeouts.delete(roomCode)
+  pendingResults.delete(roomCode)
+  const next = await nextTurnService(roomCode)
+  if ('error' in next) return
+  io.to(roomCode).emit('phase:changed', 'song_phase', new Date().toISOString(), next.nextPlayerId)
+  io.to(roomCode).emit('song:new', next.song)
+}
 
 export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
   socket.on('card:place', async (payload, cb) => {
@@ -28,65 +45,254 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       const player = players.find((p) => p.socket_id === socket.id)
       if (!player) { cb('player_not_found'); return }
 
-      const song = await db
-        .selectFrom('songs')
-        .selectAll()
-        .where('id', '=', gameState.currentSongId!)
-        .executeTakeFirstOrThrow()
+      const song = await db.selectFrom('songs').selectAll()
+        .where('id', '=', gameState.currentSongId!).executeTakeFirstOrThrow()
 
       const result = await validatePlacement(roomCode, player.id, payload.position)
       if ('error' in result) { cb(result.error); return }
 
-      io.to(roomCode).emit('placement:result', {
+      const placementPayload: PlacementResultPayload = {
         playerId: player.id,
         correct: result.correct,
         song: {
-          id: song.id,
-          title: song.title,
-          artist: song.artist,
-          year: song.year,
-          previewUrl: song.preview_url,
-          deezerTrackId: song.deezer_id,
+          id: song.id, title: song.title, artist: song.artist,
+          year: song.year, previewUrl: song.preview_url, deezerTrackId: song.deezer_id,
         },
         correctPosition: result.correctPosition,
-      })
+      }
+
+      pendingResults.set(roomCode, placementPayload)
+      resolvedRooms.delete(roomCode) // reset from any previous round
+
+      // signal steal window is open — don't reveal result yet
+      io.to(roomCode).emit('steal:open', player.id)
 
       cb()
 
-      setTimeout(async () => {
+      const t = setTimeout(async () => {
+        // synchronous guard — must be before any await
+        if (resolvedRooms.has(roomCode)) return
+        resolvedRooms.add(roomCode)
+        stealTimeouts.delete(roomCode)
+
+        io.to(roomCode).emit('placement:result', placementPayload)
+        pendingResults.delete(roomCode)
+
         if (result.correct) {
           const freshRoom = await getRoomByCode(roomCode)
           if (!freshRoom) return
-
-          const freshPlayers = await getPlayersByRoomId(freshRoom.id)
-          const freshPlayer = freshPlayers.find((p) => p.socket_id === socket.id)
-          if (!freshPlayer) return
-
-          const won = await checkWinCondition(freshPlayer.id, freshRoom.id, freshRoom.songs_per_player)
-
+          const won = await checkWinCondition(player.id, freshRoom.id, freshRoom.songs_per_player)
           if (won) {
+            const freshPlayers = await getPlayersByRoomId(freshRoom.id)
             await updateRoomStatus(freshRoom.id, 'finished')
-            io.to(roomCode).emit('game:over', freshPlayer.id, freshPlayers.map((p) => ({
-              id: p.id,
-              name: p.name,
-              tokens: p.tokens,
-              isHost: p.is_host,
-              turnOrder: p.turn_order ?? 0,
-              timeline: [],
+            io.to(roomCode).emit('game:over', player.id, freshPlayers.map((p) => ({
+              id: p.id, name: p.name, tokens: p.tokens,
+              isHost: p.is_host, turnOrder: p.turn_order ?? 0, timeline: [],
             })))
             return
           }
         }
 
-        const next = await nextTurnService(roomCode)
-        if ('error' in next) return
-
-        io.to(roomCode).emit('phase:changed', 'song_phase', new Date().toISOString(), next.nextPlayerId)
-        io.to(roomCode).emit('song:new', next.song)
-      }, 2000)
-
+        // 3s card reveal before advancing
+        setTimeout(() => advanceTurn(io, roomCode), 3000)
+      }, 5000)
+      stealTimeouts.set(roomCode, t)
     } catch (err) {
       console.error('card:place error', err)
+      cb('server_error')
+    }
+  })
+
+  socket.on('steal:attempt', async (payload, cb) => {
+    try {
+      const { targetPlayerId, position } = payload
+      const rooms = [...socket.rooms].filter((r) => r !== socket.id)
+      const roomCode = rooms[0]
+      if (!roomCode) { cb('not_in_room'); return }
+
+      // synchronous guard — claim the window before any await so the timeout can't race us
+      if (resolvedRooms.has(roomCode)) { cb('steal_window_closed'); return }
+      resolvedRooms.add(roomCode)
+
+      const timeout = stealTimeouts.get(roomCode)
+      if (timeout) { clearTimeout(timeout); stealTimeouts.delete(roomCode) }
+
+      const gameState = await getGameState(roomCode)
+      if (!gameState) { cb('game_not_found'); return }
+      if (!gameState.currentSongId) { cb('no_current_song'); return }
+
+      const pending = pendingResults.get(roomCode)
+      if (!pending) { cb('no_pending_result'); return }
+
+      const room = await getRoomByCode(roomCode)
+      if (!room) { cb('room_not_found'); return }
+
+      const players = await getPlayersByRoomId(room.id)
+      const stealer = players.find((p) => p.socket_id === socket.id)
+      if (!stealer) { cb('player_not_found'); return }
+      if (stealer.id === targetPlayerId) { cb('cannot_steal_from_self'); return }
+      if (stealer.tokens < 1) { cb('insufficient_tokens'); return }
+
+      const song = await db.selectFrom('songs').selectAll()
+        .where('id', '=', gameState.currentSongId).executeTakeFirstOrThrow()
+
+      await updatePlayerTokens(stealer.id, stealer.tokens - 1)
+      io.to(roomCode).emit('tokens:updated', stealer.id, stealer.tokens - 1)
+
+      let stealCorrect = false
+
+      if (!pending.correct) {
+        // active player was wrong — check if stealer's position is right in target's timeline
+        const targetTimeline = await db
+          .selectFrom('timeline_entries')
+          .innerJoin('songs', 'songs.id', 'timeline_entries.song_id')
+          .select(['timeline_entries.position', 'songs.year'])
+          .where('timeline_entries.player_id', '=', targetPlayerId)
+          .orderBy('timeline_entries.position', 'asc')
+          .execute()
+
+        const prevOk = !targetTimeline[position - 1] || targetTimeline[position - 1].year <= song.year
+        const nextOk = !targetTimeline[position] || targetTimeline[position].year >= song.year
+        stealCorrect = prevOk && nextOk
+
+        if (stealCorrect) {
+          await db.transaction().execute(async (trx) => {
+            const existing = await trx.selectFrom('timeline_entries')
+              .select(['id', 'position'])
+              .where('player_id', '=', stealer.id)
+              .orderBy('position', 'desc')
+              .execute()
+
+            for (const entry of existing) {
+              await trx.updateTable('timeline_entries')
+                .set({ position: entry.position + 1 })
+                .where('id', '=', entry.id).execute()
+            }
+
+            await trx.insertInto('timeline_entries').values({
+              player_id: stealer.id,
+              song_id: song.id,
+              position: 0,
+            }).execute()
+          })
+        }
+      }
+
+      await setGameState(roomCode, { ...gameState, phase: 'song_phase' })
+      pendingResults.delete(roomCode)
+
+      // reveal the steal outcome first, then the original placement result
+      io.to(roomCode).emit('steal:result', {
+        success: true, stealerId: stealer.id, targetPlayerId,
+        correct: stealCorrect,
+        song: pending.song,
+      })
+      io.to(roomCode).emit('placement:result', pending)
+
+      cb()
+
+      setTimeout(async () => {
+        if (stealCorrect) {
+          const freshRoom = await getRoomByCode(roomCode)
+          if (!freshRoom) return
+          const won = await checkWinCondition(stealer.id, freshRoom.id, freshRoom.songs_per_player)
+          if (won) {
+            const freshPlayers = await getPlayersByRoomId(freshRoom.id)
+            await updateRoomStatus(freshRoom.id, 'finished')
+            io.to(roomCode).emit('game:over', stealer.id, freshPlayers.map((p) => ({
+              id: p.id, name: p.name, tokens: p.tokens,
+              isHost: p.is_host, turnOrder: p.turn_order ?? 0, timeline: [],
+            })))
+            return
+          }
+        }
+        await advanceTurn(io, roomCode)
+      }, 3000)
+    } catch (err) {
+      console.error('steal:attempt error', err)
+      cb('server_error')
+    }
+  })
+
+  socket.on('steal:initiated', () => {
+    const rooms = [...socket.rooms].filter((r) => r !== socket.id)
+    const roomCode = rooms[0]
+    if (!roomCode) return
+    if (resolvedRooms.has(roomCode)) return
+
+    const existing = stealTimeouts.get(roomCode)
+    if (existing) clearTimeout(existing)
+
+    const pending = pendingResults.get(roomCode)
+    if (!pending) return
+
+    const t = setTimeout(async () => {
+      if (resolvedRooms.has(roomCode)) return
+      resolvedRooms.add(roomCode)
+      stealTimeouts.delete(roomCode)
+
+      io.to(roomCode).emit('placement:result', pending)
+      pendingResults.delete(roomCode)
+
+      if (pending.correct) {
+        const freshRoom = await getRoomByCode(roomCode)
+        if (!freshRoom) return
+        const won = await checkWinCondition(pending.playerId, freshRoom.id, freshRoom.songs_per_player)
+        if (won) {
+          const freshPlayers = await getPlayersByRoomId(freshRoom.id)
+          await updateRoomStatus(freshRoom.id, 'finished')
+          io.to(roomCode).emit('game:over', pending.playerId, freshPlayers.map((p) => ({
+            id: p.id, name: p.name, tokens: p.tokens,
+            isHost: p.is_host, turnOrder: p.turn_order ?? 0, timeline: [],
+          })))
+          return
+        }
+      }
+
+      setTimeout(() => advanceTurn(io, roomCode), 3000)
+    }, 10000)
+    stealTimeouts.set(roomCode, t)
+
+    io.to(roomCode).emit('steal:extended')
+  })
+
+  socket.on('song:skip', async (cb) => {
+    try {
+      const rooms = [...socket.rooms].filter((r) => r !== socket.id)
+      const roomCode = rooms[0]
+      if (!roomCode) { cb('not_in_room'); return }
+
+      const gameState = await getGameState(roomCode)
+      if (!gameState) { cb('game_not_found'); return }
+
+      const room = await getRoomByCode(roomCode)
+      if (!room) { cb('room_not_found'); return }
+
+      const players = await getPlayersByRoomId(room.id)
+      const player = players.find((p) => p.socket_id === socket.id)
+      if (!player) { cb('player_not_found'); return }
+      if (player.id !== gameState.currentPlayerId) { cb('not_your_turn'); return }
+      if (player.tokens < 1) { cb('insufficient_tokens'); return }
+
+      await updatePlayerTokens(player.id, player.tokens - 1)
+      io.to(roomCode).emit('tokens:updated', player.id, player.tokens - 1)
+
+      const song = await getRandomSong(room.id)
+      if (!song) { cb('no_songs_left'); return }
+
+      await markSongAsUsed(room.id, song.id)
+      const freshPreviewUrl = await getFreshPreviewUrl(song.deezer_id)
+      await setGameState(roomCode, { ...gameState, currentSongId: song.id })
+
+      io.to(roomCode).emit('song:new', {
+        id: song.id, title: song.title, artist: song.artist,
+        year: song.year, previewUrl: freshPreviewUrl ?? song.preview_url,
+        deezerTrackId: song.deezer_id,
+      })
+
+      cb()
+    } catch (err) {
+      console.error('song:skip error', err)
       cb('server_error')
     }
   })
@@ -98,19 +304,11 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       if (!roomCode) return
 
       const result = await handleGuessService(roomCode, socket.id, payload.artist, payload.title)
-
-      if ('error' in result) {
-        console.error('guess error:', result.error)
-        return
-      }
+      if ('error' in result) { console.error('guess error:', result.error); return }
 
       if (result.correct) {
-        const player = await db
-          .selectFrom('players')
-          .selectAll()
-          .where('socket_id', '=', socket.id)
-          .executeTakeFirstOrThrow()
-
+        const player = await db.selectFrom('players').selectAll()
+          .where('socket_id', '=', socket.id).executeTakeFirstOrThrow()
         io.to(roomCode).emit('token:earned', player.id, result.tokens)
       }
     } catch (err) {

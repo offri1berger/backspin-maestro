@@ -32,7 +32,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
       const newPlayer = {
         id: result.playerId!,
         name: payload.playerName,
-        tokens: 0,
+        tokens: 2,
         isHost: false,
         turnOrder: 0,
         timeline: [],

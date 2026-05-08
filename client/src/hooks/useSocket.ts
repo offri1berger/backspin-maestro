@@ -21,9 +21,18 @@ export const useSocket = () => {
     })
 
     socket.on('song:new', (song) => {
+      const store = useGameStore.getState()
       setCurrentSong(song)
-      useGameStore.getState().setIsWaitingForNextTurn(false)
-      useGameStore.getState().setHasGuessed(false)
+      store.setIsWaitingForNextTurn(false)
+      store.setHasGuessed(false)
+      store.setStealResult(null)
+      store.setIsStealWindowOpen(false)
+    })
+
+    socket.on('steal:open', () => {
+      const store = useGameStore.getState()
+      store.setIsWaitingForNextTurn(true)
+      store.setIsStealWindowOpen(true)
     })
 
     socket.on('phase:changed', (phase, _phaseStartedAt, currentPlayerId) => {
@@ -48,7 +57,9 @@ export const useSocket = () => {
         store.setPlayers(updatedPlayers)
       }
 
+      store.setRemoteDragSlot(null)
       store.setPendingPosition(null)
+      store.setIsStealWindowOpen(false)
       store.setPlacementResult({
         correct: result.correct,
         song: result.correct ? undefined : result.song,
@@ -69,6 +80,30 @@ export const useSocket = () => {
       }
     })
 
+    socket.on('steal:result', (result) => {
+      const store = useGameStore.getState()
+
+      if (result.correct) {
+        const updatedPlayers = store.players.map((p) => {
+          if (p.id !== result.stealerId) return p
+          const newEntry = { song: result.song, position: p.timeline.length }
+          const newTimeline = [...p.timeline, newEntry].sort((a, b) => a.song.year - b.song.year)
+          return { ...p, timeline: newTimeline }
+        })
+        store.setPlayers(updatedPlayers)
+      }
+
+      store.setStealResult(result)
+      setTimeout(() => store.setStealResult(null), 3000)
+    })
+
+    socket.on('tokens:updated', (playerId, newTotal) => {
+      const store = useGameStore.getState()
+      store.setPlayers(store.players.map((p) =>
+        p.id === playerId ? { ...p, tokens: newTotal } : p
+      ))
+    })
+
     socket.on('game:over', (winnerId, players) => {
       const store = useGameStore.getState()
       store.setPlayers(players)
@@ -83,6 +118,9 @@ export const useSocket = () => {
       socket.off('phase:changed')
       socket.off('placement:result')
       socket.off('token:earned')
+      socket.off('steal:open')
+      socket.off('steal:result')
+      socket.off('tokens:updated')
       socket.off('game:over')
       socket.disconnect()
     }

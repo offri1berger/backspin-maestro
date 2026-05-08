@@ -69,6 +69,9 @@ export interface ServerToClientEvents {
   'audio:play': () => void
   'audio:pause': () => void
   'drag:update': (slot: number | null) => void
+  'tokens:updated': (playerId: string, newTotal: number) => void
+  'steal:open': (targetPlayerId: string) => void
+  'steal:extended': () => void
 }
 
 export interface ClientToServerEvents {
@@ -79,6 +82,7 @@ export interface ClientToServerEvents {
   'song:skip': (cb: (error?: string) => void) => void
   'card:place': (payload: PlacePayload, cb: (error?: string) => void) => void
   'steal:attempt': (payload: StealPayload, cb: (error?: string) => void) => void
+  'steal:initiated': () => void
   'audio:play': () => void
   'audio:pause': () => void
   'drag:move': (payload: { slot: number | null }) => void
