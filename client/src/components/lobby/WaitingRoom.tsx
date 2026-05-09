@@ -1,5 +1,6 @@
 import type { Player } from '@hitster/shared'
-import { Logo, ArrowIcon } from './Logo'
+import { ArrowIcon, Logo } from '../ui/Logo'
+
 
 function PlayerRow({ player }: { player: Player }) {
   return (

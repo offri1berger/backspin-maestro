@@ -6,19 +6,15 @@ import { GuessRail } from '../components/game/GuessRail'
 import { GameStage } from '../components/game/GameStage'
 import { StealOverlay } from '../components/game/StealOverlay'
 import { ResultToast } from '../components/game/ResultToast'
-import AudioPlayer from '../components/game/AudioPlayer'
-
-const Logo = () => (
-  <div className="flex items-center gap-2 font-display text-xl">
-    <div className="vinyl w-[22px] h-[22px] shrink-0" />
-    <span className="text-on-bg">Hitster</span>
-  </div>
-)
+import { Logo } from '../components/ui/Logo'
+import StealPill from './game/StealPill'
+import MobilePlayerBar from './game/MobilePlayerBar'
+import MobileBottomSheet from './game/MobileBottomSheet'
 
 const GamePage = () => {
   const {
     players, currentPlayerId, playerId, isWaitingForNextTurn,
-    stealResult, isStealWindowOpen, stealInitiatorId, currentSong,
+    stealResult, isStealWindowOpen, stealInitiatorId,
     setHasGuessed, setRemoteDragSlot,
   } = useGameStore()
 
@@ -31,7 +27,6 @@ const GamePage = () => {
   const [countdown, setCountdown] = useState(0)
   const [stealWindowSeconds, setStealWindowSeconds] = useState(5)
 
-  // Mobile: controlled pending position + confirmed state
   const [mobilePending, setMobilePending] = useState<number | null>(null)
   const [mobileConfirmed, setMobileConfirmed] = useState(false)
 
@@ -84,7 +79,9 @@ const GamePage = () => {
   }
 
   const roomCode = useGameStore((s) => s.roomCode) ?? '—'
-  const stealerName = stealInitiatorId ? players.find((p) => p.id === stealInitiatorId)?.name : null
+  const stealerName = stealInitiatorId
+    ? (players.find((p) => p.id === stealInitiatorId)?.name ?? null)
+    : null
 
   if (isAttemptingSteal) {
     return (
@@ -100,27 +97,19 @@ const GamePage = () => {
     <div className="min-h-screen bg-bg flex flex-col">
       <ResultToast />
 
-      {/* ── DESKTOP layout (lg+) ────────────────────────────────────────────── */}
+      {/* ── DESKTOP layout (lg+) ─────────────────────────────────────────── */}
       <div className="hidden lg:flex flex-col flex-1 min-h-0">
-        {/* Top bar */}
         <div className="px-7 py-4 border-b border-line flex items-center justify-between bg-bg shrink-0">
           <div className="flex items-center gap-6">
             <Logo />
             <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Room</span>
-            <span className="font-mono text-base tracking-[0.18em] text-accent font-semibold">
-              {roomCode}
-            </span>
-            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
-              {players.length} players
-            </span>
+            <span className="font-mono text-base tracking-[0.18em] text-accent font-semibold">{roomCode}</span>
+            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">{players.length} players</span>
           </div>
-          <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
-            First to 10 cards wins
-          </span>
+          <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">First to 10 cards wins</span>
         </div>
 
-        {/* Three-column body */}
-        <div className="flex-1 grid min-h-0" style={{ gridTemplateColumns: '260px 1fr 300px' }}>
+        <div className="flex-1 grid min-h-0 grid-cols-[260px_1fr_300px]">
           <PlayerRail />
           <GameStage onPlace={handlePlace} onSkip={handleSkip} />
           <GuessRail
@@ -131,95 +120,30 @@ const GamePage = () => {
           />
         </div>
 
-        {/* Steal window countdown pill */}
-        {isStealWindowOpen && (
-          <div
-            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-5 py-2.5 rounded-full bg-surface border ${stealerName ? 'border-accent' : 'border-line'}`}
-            style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}
-          >
-            {stealerName ? (
-              <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-accent">
-                ⚡ {stealerName} is stealing…
-              </span>
-            ) : (
-              <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
-                steal window
-              </span>
-            )}
-            <span className={`font-display text-[28px] leading-none ${countdown <= 3 ? 'text-bad' : 'text-accent'}`}>
-              {countdown}
-            </span>
-          </div>
-        )}
+        {isStealWindowOpen && <StealPill stealerName={stealerName} countdown={countdown} />}
 
-        {/* Steal button */}
         {canSteal && (
           <button
             onClick={handleStealInitiate}
-            className="fixed bottom-6 right-6 z-30 px-5 py-3 rounded-full bg-accent text-accent-ink border-0 cursor-pointer font-body font-bold text-sm"
-            style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}
+            className="fixed bottom-6 right-6 z-30 px-5 py-3 rounded-full bg-accent text-accent-ink border-0 cursor-pointer font-body font-bold text-sm shadow-[0_8px_24px_rgba(0,0,0,0.2)]"
           >
             Steal! · 1 ★
           </button>
         )}
       </div>
 
-      {/* ── MOBILE layout (below lg) ────────────────────────────────────────── */}
-      <div className="flex flex-col lg:hidden" style={{ minHeight: '100dvh' }}>
-        {/* Top bar */}
+      {/* ── MOBILE layout (below lg) ─────────────────────────────────────── */}
+      <div className="flex flex-col lg:hidden min-h-dvh">
         <div className="px-4 py-2.5 border-b border-line flex items-center justify-between bg-bg shrink-0">
           <Logo />
           <div className="flex items-center gap-3">
-            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
-              {players.length}p · first to 10
-            </span>
-            <span className="font-mono text-[11px] tracking-[0.18em] text-accent font-semibold">
-              {roomCode}
-            </span>
+            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">{players.length}p · first to 10</span>
+            <span className="font-mono text-[11px] tracking-[0.18em] text-accent font-semibold">{roomCode}</span>
           </div>
         </div>
 
-        {/* Player bar — equal-width cards, full width, no scroll */}
-        <div className="flex gap-2 px-3 py-2.5 border-b border-line bg-bg shrink-0">
-          {players.map((p) => {
-            const active = p.id === currentPlayerId
-            return (
-              <div
-                key={p.id}
-                style={{
-                  flex: 1,
-                  padding: '10px 8px 8px',
-                  borderRadius: 14,
-                  background: active ? 'var(--color-accent)' : 'transparent',
-                  color: active ? 'var(--color-accent-ink)' : 'var(--color-on-bg)',
-                  border: active ? 'none' : '1px solid var(--color-line)',
-                  textAlign: 'center' as const,
-                  minWidth: 0,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 13, fontWeight: 600,
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                  }}
-                >
-                  {p.name}
-                </div>
-                <div
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10, letterSpacing: '0.08em',
-                    marginTop: 2, opacity: 0.8,
-                  }}
-                >
-                  {p.timeline.length}/10 · {p.tokens}★
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        <MobilePlayerBar />
 
-        {/* Scrollable timeline area */}
         <div
           className="flex-1 overflow-y-auto px-4 pt-4"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 360px)' }}
@@ -236,85 +160,23 @@ const GamePage = () => {
           />
         </div>
 
-        {/* Fixed bottom sheet */}
-        <div
-          className="fixed bottom-0 left-0 right-0 bg-bg border-t border-line z-20 px-4 pt-3 flex flex-col gap-2"
-          style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 16px))' }}
-        >
-          {/* Steal window status */}
-          {isStealWindowOpen && (
-            <div
-              className={`flex items-center justify-between px-4 py-2 rounded-full bg-surface border ${stealerName ? 'border-accent' : 'border-line'}`}
-            >
-              <span className={`font-mono tracking-[0.1em] uppercase ${stealerName ? 'text-accent' : 'text-muted'}`} style={{ fontSize: 10 }}>
-                {stealerName ? `⚡ ${stealerName} is stealing…` : 'steal window open'}
-              </span>
-              <span className={`font-display text-[22px] leading-none ${countdown <= 3 ? 'text-bad' : 'text-accent'}`}>
-                {countdown}
-              </span>
-            </div>
-          )}
-
-          {/* Compact audio player */}
-          {currentSong && (
-            <AudioPlayer song={currentSong} isMyTurn={isMyTurn} compact />
-          )}
-
-          {/* Steal button */}
-          {canSteal && (
-            <button
-              onClick={handleStealInitiate}
-              className="w-full rounded-full bg-accent text-accent-ink border-0 cursor-pointer font-body font-bold flex items-center justify-center"
-              style={{ height: 48, fontSize: 15 }}
-            >
-              Steal! · 1 ★
-            </button>
-          )}
-
-          {/* Guess inputs (only on my turn, before placing) */}
-          {isMyTurn && !isWaitingForNextTurn && !mobileConfirmed && (
-            <div className="flex flex-col gap-2">
-              {(['artist', 'title'] as const).map((field) => (
-                <input
-                  key={field}
-                  placeholder={`${field.charAt(0).toUpperCase() + field.slice(1)} (optional bonus guess)`}
-                  value={guess[field]}
-                  onChange={(e) => setGuess((g) => ({ ...g, [field]: e.target.value }))}
-                  className="h-12 rounded-xl border border-line bg-transparent text-on-bg px-4 font-body outline-none w-full"
-                  style={{ fontSize: 16 }}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Skip button (only when no pending placement) */}
-          {isMyTurn && !isWaitingForNextTurn && !mobileConfirmed && mobilePending === null && (myPlayer?.tokens ?? 0) >= 1 && (
-            <button
-              onClick={handleSkip}
-              className="w-full rounded-full bg-transparent border border-line font-mono tracking-[0.12em] uppercase text-muted cursor-pointer"
-              style={{ height: 40, fontSize: 11 }}
-            >
-              Skip · spend 1 ★
-            </button>
-          )}
-
-          {/* Lock in placement button */}
-          {isMyTurn && !isWaitingForNextTurn && mobilePending !== null && !mobileConfirmed && (
-            <button
-              onClick={() => {
-                setMobileConfirmed(true)
-                handlePlace(mobilePending, () => setMobileConfirmed(false))
-              }}
-              className="w-full rounded-full bg-accent text-accent-ink border-0 cursor-pointer font-body font-semibold flex items-center justify-center gap-2"
-              style={{ height: 56, fontSize: 16 }}
-            >
-              Lock in placement
-              <svg width="14" height="14" viewBox="0 0 14 14">
-                <path d="M3 7l3 3 5-6" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          )}
-        </div>
+        <MobileBottomSheet
+          isMyTurn={isMyTurn}
+          canSteal={canSteal}
+          mobilePending={mobilePending}
+          mobileConfirmed={mobileConfirmed}
+          guess={guess}
+          myPlayer={myPlayer}
+          stealerName={stealerName}
+          countdown={countdown}
+          onStealInitiate={handleStealInitiate}
+          onSkip={handleSkip}
+          onGuessChange={(field, value) => setGuess((g) => ({ ...g, [field]: value }))}
+          onConfirm={() => {
+            setMobileConfirmed(true)
+            handlePlace(mobilePending!, () => setMobileConfirmed(false))
+          }}
+        />
       </div>
     </div>
   )

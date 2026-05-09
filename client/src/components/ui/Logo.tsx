@@ -1,4 +1,4 @@
-export function Logo() {
+export const Logo = () => {
   return (
     <div className="flex items-center gap-2 font-display text-[22px] tracking-[-0.01em] text-on-bg">
       <div className="vinyl w-7 h-7" />
@@ -7,7 +7,7 @@ export function Logo() {
   )
 }
 
-export function ArrowIcon() {
+export const ArrowIcon = () => {
   return (
     <svg width="16" height="16" viewBox="0 0 14 14">
       <path

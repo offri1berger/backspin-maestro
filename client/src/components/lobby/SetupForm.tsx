@@ -1,7 +1,7 @@
 import type { Decade } from '@hitster/shared'
-import ImagePicker from '../ImagePicker'
+import ImagePicker from '../ui/ImagePicker'
 import { AVATARS } from '../../lib/avatars'
-import { Logo, ArrowIcon } from './Logo'
+import { Logo, ArrowIcon } from '../ui/Logo'
 
 const DECADES: { label: string; value: Decade }[] = [
   { label: 'All', value: 'all' },
@@ -13,7 +13,7 @@ const DECADES: { label: string; value: Decade }[] = [
   { label: '10s', value: '10s' },
 ]
 
-function DecadePicker({ decade, onChange }: { decade: Decade; onChange: (d: Decade) => void }) {
+const DecadePicker = ({ decade, onChange }: { decade: Decade; onChange: (d: Decade) => void }) => {
   return (
     <div>
       <label className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Decade</label>
@@ -50,14 +50,14 @@ export interface SetupFormProps {
   onSubmit: () => void
 }
 
-export function SetupForm({
+export const SetupForm = ({
   tab, onTabChange,
   name, onNameChange,
   roomCode, onRoomCodeChange,
   decade, onDecadeChange,
   avatar, onAvatarChange,
   onSubmit,
-}: SetupFormProps) {
+}: SetupFormProps) => {
   const isCreate = tab === 'create'
   const disabled = isCreate ? !name.trim() : !name.trim() || !roomCode.trim()
 

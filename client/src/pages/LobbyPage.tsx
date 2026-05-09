@@ -5,7 +5,7 @@ import { useGameStore } from '../store/gameStore'
 import { WaitingRoom } from '../components/lobby/WaitingRoom'
 import { HeroPanel } from '../components/lobby/HeroPanel'
 import { SetupForm } from '../components/lobby/SetupForm'
-import { Logo } from '../components/lobby/Logo'
+import { Logo } from '../components/ui/Logo'
 
 const NAV_LINKS = ['How to play', 'Songbook', 'Sign in']
 

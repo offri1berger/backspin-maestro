@@ -2,7 +2,7 @@ import { useSocket } from './hooks/useSocket'
 import { useGameStore } from './store/gameStore'
 import LobbyPage from './pages/LobbyPage'
 import GamePage from './pages/GamePage'
-import GameOverPage from './pages/GameOver'
+import GameOverPage from './pages/GameOverPage'
 
 const App = () => {
   useSocket()

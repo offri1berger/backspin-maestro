@@ -1,14 +1,6 @@
 import { useGameStore } from '../store/gameStore'
 import { MiniYearCard } from '../components/game/Timeline'
-
-function Logo() {
-  return (
-    <div className="flex items-center gap-2 font-display text-[20px] text-on-bg">
-      <div className="vinyl w-[22px] h-[22px]" />
-      <span>Hitster</span>
-    </div>
-  )
-}
+import { Logo } from '../components/ui/Logo'
 
 const GameOverPage = () => {
   const { players, winnerId, playerId } = useGameStore()
