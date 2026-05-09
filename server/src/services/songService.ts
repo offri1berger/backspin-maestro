@@ -18,7 +18,12 @@ export const markSongAsUsed = async (roomId: string, songId: string) => {
 }
 
 export const getFreshPreviewUrl = async (deezerId: string): Promise<string | null> => {
-  const res = await fetch(`https://api.deezer.com/track/${deezerId}`)
-  const data = await res.json() as any
-  return data.preview ?? null
+  try {
+    const res = await fetch(`https://api.deezer.com/track/${deezerId}`)
+    if (!res.ok) return null
+    const data = await res.json() as any
+    return data.preview ?? null
+  } catch {
+    return null
+  }
 }

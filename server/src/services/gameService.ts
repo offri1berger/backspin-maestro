@@ -19,7 +19,11 @@ export const startGameService = async (
   if (!host?.is_host) return { error: 'not_host' }
   if (dbPlayers.length < 2) return { error: 'not_enough_players' }
 
-  const shuffled = [...dbPlayers].sort(() => Math.random() - 0.5)
+  const shuffled = [...dbPlayers]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
 
   await Promise.all(shuffled.map((p, i) => updateTurnOrder(p.id, i)))
 

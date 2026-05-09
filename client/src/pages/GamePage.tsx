@@ -55,13 +55,15 @@ const GamePage = () => {
     return () => clearInterval(iv)
   }, [isStealWindowOpen, stealWindowSeconds])
 
-  const handlePlace = (position: number) => {
+  const handlePlace = (position: number, onError?: () => void) => {
     if (guess.artist.trim() && guess.title.trim()) {
       socket.emit('song:guess', { artist: guess.artist, title: guess.title })
     }
-    socket.emit('card:place', { position }, (error) => { if (error) console.error('place error:', error) })
-    setGuess({ artist: '', title: '' })
-    setHasGuessed(true)
+    socket.emit('card:place', { position }, (error) => {
+      if (error) { console.error('place error:', error); onError?.(); return }
+      setGuess({ artist: '', title: '' })
+      setHasGuessed(true)
+    })
   }
 
   const handleSkip = () => {
@@ -301,7 +303,7 @@ const GamePage = () => {
             <button
               onClick={() => {
                 setMobileConfirmed(true)
-                handlePlace(mobilePending)
+                handlePlace(mobilePending, () => setMobileConfirmed(false))
               }}
               className="w-full rounded-full bg-accent text-accent-ink border-0 cursor-pointer font-body font-semibold flex items-center justify-center gap-2"
               style={{ height: 56, fontSize: 16 }}

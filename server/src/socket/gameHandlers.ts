@@ -53,12 +53,24 @@ const buildGameOverPlayers = async (freshPlayers: Awaited<ReturnType<typeof getP
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
 
+const STEAL_WINDOW_MS = 5_000
+const STEAL_EXTENDED_MS = 10_000
+const CARD_REVEAL_MS = 3_000
+
 // pending placement results — held until steal window closes
 const pendingResults = new Map<string, PlacementResultPayload>()
 // pending auto-advance timeouts — cancelled if someone steals
 const stealTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 // rooms where the steal window has already been resolved (guards race between timeout + steal)
 const resolvedRooms = new Set<string>()
+
+const cleanupRoomState = (roomCode: string) => {
+  const t = stealTimeouts.get(roomCode)
+  if (t) clearTimeout(t)
+  stealTimeouts.delete(roomCode)
+  pendingResults.delete(roomCode)
+  resolvedRooms.delete(roomCode)
+}
 
 const advanceTurn = async (io: IoServer, roomCode: string) => {
   stealTimeouts.delete(roomCode)
@@ -105,11 +117,8 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       pendingResults.set(roomCode, placementPayload)
       resolvedRooms.delete(roomCode) // reset from any previous round
 
-      // signal steal window is open — don't reveal result yet
-      io.to(roomCode).emit('steal:open', player.id)
-
-      cb()
-
+      // Register the timeout BEFORE calling cb() — prevents steal:initiated from
+      // racing in between cb() and stealTimeouts.set() and losing the cancel handle
       const t = setTimeout(async () => {
         // synchronous guard — must be before any await
         if (resolvedRooms.has(roomCode)) return
@@ -127,15 +136,21 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
             const freshPlayers = await getPlayersByRoomId(freshRoom.id)
             await updateRoomStatus(freshRoom.id, 'finished')
             await deleteUsedSongs(freshRoom.id)
+            cleanupRoomState(roomCode)
             io.to(roomCode).emit('game:over', player.id, await buildGameOverPlayers(freshPlayers))
             return
           }
         }
 
         // 3s card reveal before advancing
-        setTimeout(() => advanceTurn(io, roomCode), 3000)
-      }, 5000)
+        setTimeout(() => advanceTurn(io, roomCode), CARD_REVEAL_MS)
+      }, STEAL_WINDOW_MS)
       stealTimeouts.set(roomCode, t)
+
+      // signal steal window open and ack AFTER timeout is registered so steal:initiated
+      // always has a valid cancel handle to clear
+      io.to(roomCode).emit('steal:open', player.id)
+      cb()
     } catch (err) {
       console.error('card:place error', err)
       cb('server_error')
@@ -169,6 +184,9 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       const players = await getPlayersByRoomId(room.id)
       const stealer = players.find((p) => p.socket_id === socket.id)
       if (!stealer) { cb('player_not_found'); return }
+      // verify target is in the same room — prevents cross-room steal if player ID is known
+      const targetPlayer = players.find((p) => p.id === targetPlayerId)
+      if (!targetPlayer) { cb('target_not_found'); return }
       if (stealer.id === targetPlayerId) { cb('cannot_steal_from_self'); return }
       if (stealer.tokens < 1) { cb('insufficient_tokens'); return }
 
@@ -195,30 +213,36 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
         stealCorrect = prevOk && nextOk
 
         if (stealCorrect) {
-          await db.transaction().execute(async (trx) => {
-            const stealerTimeline = await trx
-              .selectFrom('timeline_entries')
-              .innerJoin('songs', 'songs.id', 'timeline_entries.song_id')
-              .select(['timeline_entries.id', 'timeline_entries.position', 'songs.year'])
-              .where('timeline_entries.player_id', '=', stealer.id)
-              .orderBy('timeline_entries.position', 'asc')
-              .execute()
+          try {
+            await db.transaction().execute(async (trx) => {
+              const stealerTimeline = await trx
+                .selectFrom('timeline_entries')
+                .innerJoin('songs', 'songs.id', 'timeline_entries.song_id')
+                .select(['timeline_entries.id', 'timeline_entries.position', 'songs.year'])
+                .where('timeline_entries.player_id', '=', stealer.id)
+                .orderBy('timeline_entries.position', 'asc')
+                .execute()
 
-            const insertIdx = stealerTimeline.findIndex((t) => t.year > song.year)
-            const insertPosition = insertIdx === -1 ? stealerTimeline.length : insertIdx
+              const insertIdx = stealerTimeline.findIndex((t) => t.year > song.year)
+              const insertPosition = insertIdx === -1 ? stealerTimeline.length : insertIdx
 
-            for (const entry of stealerTimeline.filter((t) => t.position >= insertPosition).reverse()) {
-              await trx.updateTable('timeline_entries')
-                .set({ position: entry.position + 1 })
-                .where('id', '=', entry.id).execute()
-            }
+              for (const entry of stealerTimeline.filter((t) => t.position >= insertPosition).reverse()) {
+                await trx.updateTable('timeline_entries')
+                  .set({ position: entry.position + 1 })
+                  .where('id', '=', entry.id).execute()
+              }
 
-            await trx.insertInto('timeline_entries').values({
-              player_id: stealer.id,
-              song_id: song.id,
-              position: insertPosition,
-            }).execute()
-          })
+              await trx.insertInto('timeline_entries').values({
+                player_id: stealer.id,
+                song_id: song.id,
+                position: insertPosition,
+              }).execute()
+            })
+          } catch (txErr) {
+            // Transaction rolled back — do not update cache so it stays consistent with DB
+            cb('server_error')
+            return
+          }
         }
       }
 
@@ -245,12 +269,13 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
             const freshPlayers = await getPlayersByRoomId(freshRoom.id)
             await updateRoomStatus(freshRoom.id, 'finished')
             await deleteUsedSongs(freshRoom.id)
+            cleanupRoomState(roomCode)
             io.to(roomCode).emit('game:over', stealer.id, await buildGameOverPlayers(freshPlayers))
             return
           }
         }
         await advanceTurn(io, roomCode)
-      }, 3000)
+      }, CARD_REVEAL_MS)
     } catch (err) {
       console.error('steal:attempt error', err)
       cb('server_error')
@@ -288,13 +313,14 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
           const freshPlayers = await getPlayersByRoomId(freshRoom.id)
           await updateRoomStatus(freshRoom.id, 'finished')
           await deleteUsedSongs(freshRoom.id)
+          cleanupRoomState(roomCode)
           io.to(roomCode).emit('game:over', pending.playerId, await buildGameOverPlayers(freshPlayers))
           return
         }
       }
 
-      setTimeout(() => advanceTurn(io, roomCode), 3000)
-    }, 10000)
+      setTimeout(() => advanceTurn(io, roomCode), CARD_REVEAL_MS)
+    }, STEAL_EXTENDED_MS)
     stealTimeouts.set(roomCode, t)
 
     io.to(roomCode).emit('steal:extended', stealerId)
