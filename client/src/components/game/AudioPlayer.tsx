@@ -63,7 +63,7 @@ const AudioPlayer = ({ song, isMyTurn }: Props) => {
   const fmt = (s: number) => `0:${String(Math.floor(s)).padStart(2, '0')}`
 
   return (
-    <div className="bg-surface text-on-surface rounded-[28px] p-7 flex items-center gap-7 relative overflow-hidden">
+    <div className="bg-surface text-on-surface rounded-[28px] p-7 flex items-center gap-7 relative overflow-hidden h-[240px]">
       {/* Spinning vinyl */}
       <div className="w-[140px] h-[140px] shrink-0 relative">
         <div
