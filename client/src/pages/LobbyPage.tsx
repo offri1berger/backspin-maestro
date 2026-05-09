@@ -2,6 +2,7 @@ import { useState } from 'react'
 import socket from '../socket'
 import { useGameStore } from '../store/gameStore'
 import type { Decade } from '@hitster/shared'
+import ImagePicker from '../components/ImagePicker'
 import { AVATARS } from '../lib/avatars'
 
 const DECADES: { label: string; value: Decade }[] = [
@@ -28,7 +29,7 @@ const LobbyPage = () => {
   const [roomCode, setRoomCode] = useState('')
   const [tab, setTab] = useState<'create' | 'join'>('create')
   const [decade, setDecade] = useState<Decade>('all')
-  const [avatar, setAvatar] = useState<string | undefined>(AVATARS[0] ?? undefined)
+  const [avatar, setAvatar] = useState<string | undefined>(undefined)
   const { setRoom, setPlayers, players, roomCode: currentRoomCode } = useGameStore()
 
   const handleCreate = () => {
@@ -227,40 +228,28 @@ const LobbyPage = () => {
         </div>
 
         <div className="flex flex-col gap-4">
-          {/* Avatar picker */}
-          {AVATARS.length > 0 && (
-            <div>
-              <label className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">
-                Your avatar
-              </label>
-              <div className="flex gap-2.5 mt-2 overflow-x-auto pb-1">
-                {AVATARS.map((src) => (
-                  <button
-                    key={src}
-                    type="button"
-                    onClick={() => setAvatar(src)}
-                    className={`w-16 h-16 rounded-full p-0 border-none bg-transparent cursor-pointer flex-shrink-0 overflow-hidden transition-shadow duration-150 ${
-                      avatar === src ? 'ring-2 ring-accent' : ''
-                    }`}
-                  >
-                    <img src={src} alt="" className="w-full h-full object-cover block" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Name */}
-          <div>
-            <label className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">
-              Your name
-            </label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
-              className="block w-full mt-2 h-[52px] rounded-[14px] border border-line bg-transparent text-on-bg px-[18px] text-base font-body outline-none box-border focus:border-accent"
+          {/* Name + avatar */}
+          <div className="flex items-center gap-3">
+            <ImagePicker
+              options={AVATARS}
+              value={avatar}
+              onChange={setAvatar}
+              fallback={name.trim() ? name.trim().charAt(0).toUpperCase() : '?'}
+              label="avatar"
             />
+
+            {/* Name input */}
+            <div className="flex-1">
+              <label className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">
+                Your name
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                className="block w-full mt-2 h-[52px] rounded-[14px] border border-line bg-transparent text-on-bg px-[18px] text-base font-body outline-none box-border focus:border-accent"
+              />
+            </div>
           </div>
 
           {/* Join code input */}

@@ -1,9 +1,10 @@
 import { useGameStore } from '../store/gameStore'
+import { MiniYearCard } from '../components/game/Timeline'
 
 function Logo() {
   return (
     <div className="flex items-center gap-2 font-display text-[20px] text-on-bg">
-      <div className="vinyl" style={{ width: 22, height: 22 }} />
+      <div className="vinyl w-[22px] h-[22px]" />
       <span>Hitster</span>
     </div>
   )
@@ -16,15 +17,15 @@ const GameOverPage = () => {
   const isWinner = winnerId === playerId
 
   return (
-    <div className="min-h-screen bg-bg grid" style={{ gridTemplateColumns: '1.1fr 1fr' }}>
+    <div className="min-h-screen bg-bg grid grid-cols-[1.1fr_1fr]">
 
       {/* ── LEFT: Winner hero ── */}
       <div className="px-16 py-14 flex flex-col relative overflow-hidden">
         {/* Stacked vinyl records (decorative) */}
-        <div style={{ position: 'absolute', right: -100, bottom: -80, width: 440, height: 440 }}>
-          <div className="vinyl" style={{ position: 'absolute', left: 80, top: 60, width: 300, height: 300, transform: 'rotate(-12deg)', opacity: 0.45 }} />
-          <div className="vinyl" style={{ position: 'absolute', left: 30, top: 30, width: 340, height: 340, transform: 'rotate(6deg)', opacity: 0.75 }} />
-          <div className="vinyl vinyl-spin" style={{ position: 'absolute', left: 0, top: 0, width: 380, height: 380 }} />
+        <div className="absolute -right-[100px] -bottom-[80px] w-[440px] h-[440px]">
+          <div className="vinyl absolute left-[80px] top-[60px] w-[300px] h-[300px] -rotate-12 opacity-45" />
+          <div className="vinyl absolute left-[30px] top-[30px] w-[340px] h-[340px] rotate-6 opacity-75" />
+          <div className="vinyl vinyl-spin absolute left-0 top-0 w-[380px] h-[380px]" />
         </div>
 
         <div className="relative flex justify-between items-center">
@@ -38,9 +39,9 @@ const GameOverPage = () => {
           <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-accent">
             {isWinner ? 'You won! 🎉' : "Tonight's winner"}
           </div>
-          <h1 className="font-display mt-3.5 mb-0 tracking-[-0.02em] text-on-bg" style={{ fontSize: 100, lineHeight: 0.9 }}>
+          <h1 className="font-display text-[100px] leading-[0.9] mt-3.5 mb-0 tracking-[-0.02em] text-on-bg">
             {winner?.name}<br />
-            <em className="italic text-accent" style={{ fontSize: 72 }}>tops the charts.</em>
+            <em className="italic text-accent text-[72px]">tops the charts.</em>
           </h1>
           <p className="mt-6 text-muted text-base max-w-[420px] leading-[1.55]">
             {winner?.timeline.length} correct placements · {winner?.tokens} bonus stars.
@@ -61,51 +62,62 @@ const GameOverPage = () => {
           {ranked.map((p, i) => (
             <div
               key={p.id}
-              className="flex items-center gap-4 px-5 py-4 rounded-2xl"
-              style={{
-                border: i === 0 ? '1.5px solid var(--color-accent)' : '1px solid var(--color-line)',
-                background: i === 0 ? 'color-mix(in oklch, var(--color-accent) 8%, transparent)' : 'transparent',
-              }}
+              className={`flex flex-col rounded-2xl overflow-hidden ${
+                i === 0
+                  ? 'border-[1.5px] border-accent bg-accent/8'
+                  : 'border border-line'
+              }`}
             >
-              {/* Rank */}
-              <span className={`font-display text-[36px] w-10 leading-none flex-shrink-0 ${i === 0 ? 'text-accent' : 'text-muted'}`}>
-                {i + 1}
-              </span>
+              <div className="flex items-center gap-4 px-5 py-4">
+                {/* Rank */}
+                <span className={`font-display text-[36px] w-10 leading-none shrink-0 ${i === 0 ? 'text-accent' : 'text-muted'}`}>
+                  {i + 1}
+                </span>
 
-              {/* Avatar */}
-              {p.avatar
-                ? (
-                  <img
-                    src={p.avatar}
-                    alt={p.name}
-                    className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                  />
-                )
-                : (
-                  <div className="w-10 h-10 rounded-full bg-line flex items-center justify-center font-display text-[20px] text-on-bg flex-shrink-0">
-                    {p.name.charAt(0).toUpperCase()}
+                {/* Avatar */}
+                {p.avatar
+                  ? (
+                    <img
+                      src={p.avatar}
+                      alt={p.name}
+                      className="w-10 h-10 rounded-full object-cover shrink-0"
+                    />
+                  )
+                  : (
+                    <div className="w-10 h-10 rounded-full bg-line flex items-center justify-center font-display text-[20px] text-on-bg shrink-0">
+                      {p.name.charAt(0).toUpperCase()}
+                    </div>
+                  )
+                }
+
+                {/* Name + score */}
+                <div className="flex-1 min-w-0">
+                  <div className="text-base font-semibold text-on-bg">{p.name}</div>
+                  <div className="font-mono text-[10px] tracking-[0.1em] text-muted mt-0.5">
+                    {p.timeline.length} cards · {p.tokens}★
                   </div>
-                )
-              }
+                </div>
 
-              {/* Name + score */}
-              <div className="flex-1 min-w-0">
-                <div className="text-base font-semibold text-on-bg">{p.name}</div>
-                <div className="font-mono text-[10px] tracking-[0.1em] text-muted mt-0.5">
-                  {p.timeline.length} cards · {p.tokens}★
+                {/* Mini progress bar */}
+                <div className="flex gap-[3px] shrink-0">
+                  {Array.from({ length: 10 }).map((_, j) => (
+                    <div
+                      key={j}
+                      className={`w-[7px] h-[22px] rounded-[2px] ${j < p.timeline.length ? 'bg-accent' : 'bg-line'}`}
+                      style={{ opacity: j < p.timeline.length ? (i === 0 ? 1 : 0.55) : 1 }}
+                    />
+                  ))}
                 </div>
               </div>
 
-              {/* Mini progress bar */}
-              <div className="flex gap-[3px] flex-shrink-0">
-                {Array.from({ length: 10 }).map((_, j) => (
-                  <div
-                    key={j}
-                    className={`w-[7px] h-[22px] rounded-[2px] ${j < p.timeline.length ? 'bg-accent' : 'bg-line'}`}
-                    style={{ opacity: j < p.timeline.length ? (i === 0 ? 1 : 0.55) : 1 }}
-                  />
-                ))}
-              </div>
+              {/* Timeline cards */}
+              {p.timeline.length > 0 && (
+                <div className="flex gap-1.5 overflow-x-auto px-5 pb-4">
+                  {p.timeline.map((entry, j) => (
+                    <MiniYearCard key={j} entry={entry} />
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>

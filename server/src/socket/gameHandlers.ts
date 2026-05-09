@@ -9,6 +9,47 @@ import { getPlayersByRoomId, updatePlayerTokens } from '../db/queries/players.js
 import { getRoomByCode, updateRoomStatus } from '../db/queries/rooms.js'
 import { db } from '../db/database.js'
 
+const getPlayerTimeline = async (playerId: string) => {
+  const entries = await db
+    .selectFrom('timeline_entries')
+    .innerJoin('songs', 'songs.id', 'timeline_entries.song_id')
+    .select([
+      'timeline_entries.position',
+      'songs.id',
+      'songs.title',
+      'songs.artist',
+      'songs.year',
+      'songs.preview_url',
+      'songs.deezer_id',
+    ])
+    .where('timeline_entries.player_id', '=', playerId)
+    .orderBy('timeline_entries.position', 'asc')
+    .execute()
+
+  return entries.map((e) => ({
+    position: e.position,
+    song: {
+      id: e.id,
+      title: e.title,
+      artist: e.artist,
+      year: e.year,
+      previewUrl: e.preview_url,
+      deezerTrackId: e.deezer_id,
+    },
+  }))
+}
+
+const buildGameOverPlayers = async (freshPlayers: Awaited<ReturnType<typeof getPlayersByRoomId>>) =>
+  Promise.all(freshPlayers.map(async (p) => ({
+    id: p.id,
+    name: p.name,
+    avatar: p.avatar ?? undefined,
+    tokens: p.tokens,
+    isHost: p.is_host,
+    turnOrder: p.turn_order ?? 0,
+    timeline: await getPlayerTimeline(p.id),
+  })))
+
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
 
@@ -85,10 +126,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
           if (won) {
             const freshPlayers = await getPlayersByRoomId(freshRoom.id)
             await updateRoomStatus(freshRoom.id, 'finished')
-            io.to(roomCode).emit('game:over', player.id, freshPlayers.map((p) => ({
-              id: p.id, name: p.name, tokens: p.tokens,
-              isHost: p.is_host, turnOrder: p.turn_order ?? 0, timeline: [],
-            })))
+            io.to(roomCode).emit('game:over', player.id, await buildGameOverPlayers(freshPlayers))
             return
           }
         }
@@ -157,13 +195,18 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
 
         if (stealCorrect) {
           await db.transaction().execute(async (trx) => {
-            const existing = await trx.selectFrom('timeline_entries')
-              .select(['id', 'position'])
-              .where('player_id', '=', stealer.id)
-              .orderBy('position', 'desc')
+            const stealerTimeline = await trx
+              .selectFrom('timeline_entries')
+              .innerJoin('songs', 'songs.id', 'timeline_entries.song_id')
+              .select(['timeline_entries.id', 'timeline_entries.position', 'songs.year'])
+              .where('timeline_entries.player_id', '=', stealer.id)
+              .orderBy('timeline_entries.position', 'asc')
               .execute()
 
-            for (const entry of existing) {
+            const insertIdx = stealerTimeline.findIndex((t) => t.year > song.year)
+            const insertPosition = insertIdx === -1 ? stealerTimeline.length : insertIdx
+
+            for (const entry of stealerTimeline.filter((t) => t.position >= insertPosition).reverse()) {
               await trx.updateTable('timeline_entries')
                 .set({ position: entry.position + 1 })
                 .where('id', '=', entry.id).execute()
@@ -172,7 +215,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
             await trx.insertInto('timeline_entries').values({
               player_id: stealer.id,
               song_id: song.id,
-              position: 0,
+              position: insertPosition,
             }).execute()
           })
         }
@@ -200,10 +243,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
           if (won) {
             const freshPlayers = await getPlayersByRoomId(freshRoom.id)
             await updateRoomStatus(freshRoom.id, 'finished')
-            io.to(roomCode).emit('game:over', stealer.id, freshPlayers.map((p) => ({
-              id: p.id, name: p.name, tokens: p.tokens,
-              isHost: p.is_host, turnOrder: p.turn_order ?? 0, timeline: [],
-            })))
+            io.to(roomCode).emit('game:over', stealer.id, await buildGameOverPlayers(freshPlayers))
             return
           }
         }
@@ -245,10 +285,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
         if (won) {
           const freshPlayers = await getPlayersByRoomId(freshRoom.id)
           await updateRoomStatus(freshRoom.id, 'finished')
-          io.to(roomCode).emit('game:over', pending.playerId, freshPlayers.map((p) => ({
-            id: p.id, name: p.name, tokens: p.tokens,
-            isHost: p.is_host, turnOrder: p.turn_order ?? 0, timeline: [],
-          })))
+          io.to(roomCode).emit('game:over', pending.playerId, await buildGameOverPlayers(freshPlayers))
           return
         }
       }
