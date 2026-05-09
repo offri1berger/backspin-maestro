@@ -5,6 +5,9 @@ import { useGameStore } from '../store/gameStore'
 import { WaitingRoom } from '../components/lobby/WaitingRoom'
 import { HeroPanel } from '../components/lobby/HeroPanel'
 import { SetupForm } from '../components/lobby/SetupForm'
+import { Logo } from '../components/lobby/Logo'
+
+const NAV_LINKS = ['How to play', 'Songbook', 'Sign in']
 
 const LobbyPage = () => {
   const [name, setName]         = useState('')
@@ -21,7 +24,7 @@ const LobbyPage = () => {
     socket.emit('room:create', {
       hostName: name,
       avatar,
-      settings: { songsPerPlayer: 2, decadeFilter: decade },
+      settings: { songsPerPlayer: 5, decadeFilter: decade },
     }, (result) => {
       setRoom(result.roomCode, result.playerId)
       setPlayers([{ id: result.playerId, name, avatar, tokens: 2, isHost: true, turnOrder: 0, timeline: [] }])
@@ -50,7 +53,20 @@ const LobbyPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-bg lg:grid lg:grid-cols-[1.1fr_1fr]">
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden bg-bg lg:grid lg:grid-rows-[auto_1fr] lg:grid-cols-[1.1fr_1fr]">
+      {/* Full-width top nav — desktop only */}
+      <div className="hidden lg:flex col-span-2 px-16 py-5 border-b border-line items-center justify-between">
+        <Logo />
+        <nav className="flex gap-7">
+          {NAV_LINKS.map((l) => (
+            <span key={l} className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted cursor-pointer">
+              {l}
+            </span>
+          ))}
+        </nav>
+      </div>
+
+      {/* Two-column content */}
       <div className="hidden lg:block">
         <HeroPanel />
       </div>

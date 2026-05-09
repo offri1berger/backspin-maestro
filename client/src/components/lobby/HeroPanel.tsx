@@ -1,7 +1,3 @@
-import { Logo } from './Logo'
-
-const NAV_LINKS = ['How to play', 'Songbook', 'Sign in']
-
 const STATS = [
   { val: '200,000+', label: 'tracks' },
   { val: '8',        label: 'decades' },
@@ -10,21 +6,10 @@ const STATS = [
 
 export function HeroPanel() {
   return (
-    <div className="px-16 py-14 flex flex-col relative overflow-hidden">
-      <div className="vinyl vinyl-spin absolute left-[-220px] bottom-[-220px] w-[480px] h-[480px] opacity-[0.85]" />
+    <div className="h-full px-16 py-14 flex flex-col relative overflow-hidden bg-gradient-to-br from-accent/10 to-accent/20">
+      <div className="vinyl vinyl-spin absolute left-[-220px] bottom-[-220px] w-[480px] h-[400px] opacity-[0.85]" />
 
-      <div className="relative flex items-center justify-between">
-        <Logo />
-        <nav className="flex gap-7">
-          {NAV_LINKS.map((l) => (
-            <span key={l} className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted cursor-pointer">
-              {l}
-            </span>
-          ))}
-        </nav>
-      </div>
-
-      <div className="relative flex-1 flex flex-col justify-center">
+      <div className="relative flex-1 flex flex-col justify-start pt-16">
         <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-accent">
           Side A · 2–6 players · No app needed
         </p>

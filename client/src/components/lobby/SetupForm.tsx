@@ -62,7 +62,7 @@ export function SetupForm({
   const disabled = isCreate ? !name.trim() : !name.trim() || !roomCode.trim()
 
   return (
-    <div className="min-h-screen flex flex-col px-5 py-6 lg:px-16 lg:py-14 bg-bg-2 lg:border-l border-line">
+    <div className="min-h-screen lg:h-screen flex flex-col px-5 py-6 lg:px-16 lg:py-14 bg-bg-2 lg:border-l border-line lg:overflow-hidden">
       {/* Mobile-only logo */}
       <div className="lg:hidden mb-5">
         <Logo />
@@ -149,9 +149,7 @@ export function SetupForm({
         )}
       </div>
 
-      <div className="flex-1 flex items-center justify-center min-h-[80px] py-4">
-        <div className="vinyl vinyl-spin w-[120px] h-[120px] opacity-60" />
-      </div>
+      <div className="flex-1 lg:max-h-16" />
 
       <button
         onClick={onSubmit}
