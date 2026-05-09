@@ -40,18 +40,11 @@ export interface TimelineEntriesTable {
   placed_at: Generated<Date>
 }
 
-export interface UsedSongsTable {
-  id: Generated<string>
-  room_id: string
-  song_id: string
-}
-
 export interface DB {
   songs: SongsTable
   rooms: RoomsTable
   players: PlayersTable
   timeline_entries: TimelineEntriesTable
-  used_songs: UsedSongsTable
 }
 
 export type Song = Selectable<SongsTable>

@@ -1,25 +1,20 @@
 import { db } from '../db/database.js'
 import { sql } from 'kysely'
+import { addUsedSong, getUsedSongIds } from '../lib/gameCache.js'
 
 export const getRandomSong = async (roomId: string) => {
-  const song = await db
-    .selectFrom('songs')
-    .selectAll()
-    .where('id', 'not in', (qb) =>
-      qb
-        .selectFrom('used_songs')
-        .select('song_id')
-        .where('room_id', '=', roomId)
-    )
-    .orderBy(sql`RANDOM()`)
-    .limit(1)
-    .executeTakeFirst()
+  const usedIds = await getUsedSongIds(roomId)
 
-  return song ?? null
+  let query = db.selectFrom('songs').selectAll().orderBy(sql`RANDOM()`).limit(1)
+  if (usedIds.length > 0) {
+    query = query.where('id', 'not in', usedIds)
+  }
+
+  return (await query.executeTakeFirst()) ?? null
 }
 
 export const markSongAsUsed = async (roomId: string, songId: string) => {
-  await db.insertInto('used_songs').values({ room_id: roomId, song_id: songId }).execute()
+  await addUsedSong(roomId, songId)
 }
 
 export const getFreshPreviewUrl = async (deezerId: string): Promise<string | null> => {

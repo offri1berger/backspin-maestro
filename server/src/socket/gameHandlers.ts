@@ -4,7 +4,7 @@ import { validatePlacement } from '../services/placementService.js'
 import { nextTurnService, checkWinCondition } from '../services/gameService.js'
 import { handleGuessService } from '../services/guessService.js'
 import { getRandomSong, markSongAsUsed, getFreshPreviewUrl } from '../services/songService.js'
-import { getGameState, setGameState } from '../lib/gameCache.js'
+import { getGameState, setGameState, deleteUsedSongs } from '../lib/gameCache.js'
 import { getPlayersByRoomId, updatePlayerTokens } from '../db/queries/players.js'
 import { getRoomByCode, updateRoomStatus } from '../db/queries/rooms.js'
 import { db } from '../db/database.js'
@@ -126,6 +126,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
           if (won) {
             const freshPlayers = await getPlayersByRoomId(freshRoom.id)
             await updateRoomStatus(freshRoom.id, 'finished')
+            await deleteUsedSongs(freshRoom.id)
             io.to(roomCode).emit('game:over', player.id, await buildGameOverPlayers(freshPlayers))
             return
           }
@@ -243,6 +244,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
           if (won) {
             const freshPlayers = await getPlayersByRoomId(freshRoom.id)
             await updateRoomStatus(freshRoom.id, 'finished')
+            await deleteUsedSongs(freshRoom.id)
             io.to(roomCode).emit('game:over', stealer.id, await buildGameOverPlayers(freshPlayers))
             return
           }
@@ -285,6 +287,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
         if (won) {
           const freshPlayers = await getPlayersByRoomId(freshRoom.id)
           await updateRoomStatus(freshRoom.id, 'finished')
+          await deleteUsedSongs(freshRoom.id)
           io.to(roomCode).emit('game:over', pending.playerId, await buildGameOverPlayers(freshPlayers))
           return
         }
