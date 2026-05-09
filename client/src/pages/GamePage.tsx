@@ -83,7 +83,7 @@ const GamePage = () => {
     setIsAttemptingSteal(true)
   }
 
-  const roomCode = useGameStore.getState().roomCode ?? '—'
+  const roomCode = useGameStore((s) => s.roomCode) ?? '—'
   const stealerName = stealInitiatorId ? players.find((p) => p.id === stealInitiatorId)?.name : null
 
   if (isAttemptingSteal) {

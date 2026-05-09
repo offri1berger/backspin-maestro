@@ -11,7 +11,6 @@ import {
 import type { Song, TimelineEntry } from '@hitster/shared'
 import SongCard, { MysteryCardFace } from './SongCard'
 import socket from '../../socket'
-import { useGameStore } from '../../store/gameStore'
 import MiniYearCard from './timeline/MiniYearCard'
 import VerticalYearCard from './timeline/VerticalYearCard'
 import HSlot from './timeline/HSlot'
@@ -51,7 +50,6 @@ const Timeline = ({
   onPendingChange,
   showPlaceButton = true,
 }: Props) => {
-  const isStealWindowOpen = useGameStore((s) => s.isStealWindowOpen)
   const [dragging, setDragging] = useState(false)
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null)
   const [pendingPositionInternal, setPendingPositionInternal] = useState<number | null>(null)
@@ -97,8 +95,8 @@ const Timeline = ({
   }
 
   useEffect(() => {
-    if (isWaiting && !isStealWindowOpen) setPending(null)
-  }, [isWaiting, isStealWindowOpen])
+    setPending(null)
+  }, [isWaiting])
 
   const handleConfirmPlace = () => {
     if (pendingPos === null || !onPlace) return

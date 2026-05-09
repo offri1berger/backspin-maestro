@@ -64,16 +64,8 @@ socket.on('game:start', async (cb) => {
       return
     }
 
-    const gameState = {
-      phase: 'song_phase' as const,
-      currentPlayerId: result.players[0].id,
-      currentSong: result.song,
-      roundNumber: 1,
-      phaseStartedAt: new Date().toISOString(),
-    }
+    io.to(roomCode).emit('game:starting', result.gameState, result.players)
 
-    io.to(roomCode).emit('game:starting', gameState, result.players)
-    
     if (result.song) {
       io.to(roomCode).emit('song:new', result.song)
     }
