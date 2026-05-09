@@ -3,34 +3,16 @@ import { CSS } from '@dnd-kit/utilities'
 
 // Mystery card — same dimensions as MiniYearCard, accent background to distinguish from revealed cards
 export const MysteryCardFace = () => (
-  <div style={{
-    flexShrink: 0,
-    width: 82,
-    padding: '8px 8px 10px',
-    borderRadius: 10,
-    background: 'var(--accent)',
-    userSelect: 'none',
-  }}>
-    <div style={{
-      fontFamily: 'var(--font-display)',
-      fontSize: 26, lineHeight: 1,
-      color: 'var(--accent-ink)',
-      letterSpacing: '-0.02em',
-      opacity: 0.7,
-    }}>?</div>
-    <div style={{
-      fontSize: 9, fontWeight: 600, marginTop: 6,
-      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-      color: 'var(--accent-ink)',
-    }}>mystery</div>
-    <div style={{
-      fontFamily: 'var(--font-mono)', fontSize: 8,
-      color: 'var(--accent-ink)',
-      letterSpacing: '0.05em',
-      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-      marginTop: 1,
-      opacity: 0.65,
-    }}>song</div>
+  <div className="shrink-0 w-[82px] p-[8px_8px_10px] rounded-[10px] bg-accent select-none">
+    <div className="font-display text-[26px] leading-none text-accent-ink tracking-[-0.02em] opacity-70">
+      ?
+    </div>
+    <div className="text-[9px] font-semibold mt-1.5 whitespace-nowrap overflow-hidden text-ellipsis text-accent-ink">
+      mystery
+    </div>
+    <div className="font-mono text-[8px] text-accent-ink tracking-[0.05em] whitespace-nowrap overflow-hidden text-ellipsis mt-px opacity-65">
+      song
+    </div>
   </div>
 )
 

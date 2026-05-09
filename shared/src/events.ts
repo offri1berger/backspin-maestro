@@ -3,6 +3,7 @@ import type { Player, Song, RoomSettings, GameState } from './types'
 
 export interface CreateRoomPayload {
   hostName: string
+  avatar?: string
   settings: RoomSettings
 }
 
@@ -14,6 +15,7 @@ export interface CreateRoomResult {
 export interface JoinRoomPayload {
   roomCode: string
   playerName: string
+  avatar?: string
 }
 
 export interface JoinRoomResult {
@@ -60,7 +62,7 @@ export interface ServerToClientEvents {
   'player:left': (playerId: string) => void
   'game:starting': (state: GameState, players: Player[]) => void
   'song:new': (song: Song) => void
-'phase:changed': (phase: GamePhase, phaseStartedAt: string, currentPlayerId?: string) => void
+  'phase:changed': (phase: GamePhase, phaseStartedAt: string, currentPlayerId?: string) => void
   'token:earned': (playerId: string, newTotal: number) => void
   'song:skipped': (newSong: Song) => void
   'placement:result': (result: PlacementResultPayload) => void

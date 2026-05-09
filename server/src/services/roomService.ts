@@ -19,6 +19,7 @@ export const createRoomService = async (
   const player = await createPlayer({
     room_id: room.id,
     name: payload.hostName,
+    avatar: payload.avatar ?? null,
     socket_id: socketId,
     is_host: true,
     tokens: 2,
@@ -44,6 +45,7 @@ export const joinRoomService = async (
   const player = await createPlayer({
     room_id: room.id,
     name: payload.playerName,
+    avatar: payload.avatar ?? null,
     socket_id: socketId,
     is_host: false,
     tokens: 2,
@@ -56,6 +58,7 @@ export const joinRoomService = async (
     players: existingPlayers.map((p) => ({
       id: p.id,
       name: p.name,
+      avatar: p.avatar ?? undefined,
       tokens: p.tokens,
       isHost: p.is_host,
       turnOrder: p.turn_order ?? 0,

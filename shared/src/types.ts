@@ -17,6 +17,7 @@ export interface TimelineEntry {
 export interface Player {
   id: string
   name: string
+  avatar?: string
   tokens: number
   isHost: boolean
   turnOrder: number

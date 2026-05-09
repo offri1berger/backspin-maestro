@@ -8,9 +8,9 @@ import { StealOverlay } from '../components/game/StealOverlay'
 import { ResultToast } from '../components/game/ResultToast'
 
 const Logo = () => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-display)', fontSize: 20 }}>
-    <div className="vinyl" style={{ width: 22, height: 22, flexShrink: 0 }} />
-    <span style={{ color: 'var(--on-bg)' }}>Hitster</span>
+  <div className="flex items-center gap-2 font-display text-xl">
+    <div className="vinyl w-[22px] h-[22px] shrink-0" />
+    <span className="text-on-bg">Hitster</span>
   </div>
 )
 
@@ -83,32 +83,28 @@ const GamePage = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+    <div className="min-h-screen bg-bg flex flex-col">
       <ResultToast />
 
       {/* Top bar */}
-      <div style={{
-        padding: '16px 28px', borderBottom: '1px solid var(--line)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'var(--bg)', flexShrink: 0,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+      <div className="px-7 py-4 border-b border-line flex items-center justify-between bg-bg shrink-0">
+        <div className="flex items-center gap-6">
           <Logo />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)' }}>Room</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, letterSpacing: '0.18em', color: 'var(--accent)', fontWeight: 600 }}>
+          <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Room</span>
+          <span className="font-mono text-base tracking-[0.18em] text-accent font-semibold">
             {useGameStore.getState().roomCode ?? '—'}
           </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+          <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
             {players.length} players
           </span>
         </div>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+        <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
           First to 10 cards wins
         </span>
       </div>
 
       {/* Three-column body */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '260px 1fr 300px', minHeight: 0 }}>
+      <div className="flex-1 grid min-h-0" style={{ gridTemplateColumns: '260px 1fr 300px' }}>
         <PlayerRail />
         <GameStage onPlace={handlePlace} onSkip={handleSkip} />
         <GuessRail
@@ -123,23 +119,20 @@ const GamePage = () => {
       {isStealWindowOpen && (() => {
         const stealerName = stealInitiatorId ? players.find((p) => p.id === stealInitiatorId)?.name : null
         return (
-          <div style={{
-            position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-            zIndex: 30, display: 'flex', alignItems: 'center', gap: 12,
-            padding: '10px 20px', borderRadius: 999,
-            background: 'var(--surface)', border: `1px solid ${stealerName ? 'var(--accent)' : 'var(--line)'}`,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-          }}>
+          <div
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-5 py-2.5 rounded-full bg-surface border ${stealerName ? 'border-accent' : 'border-line'}`}
+            style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}
+          >
             {stealerName ? (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)' }}>
+              <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-accent">
                 ⚡ {stealerName} is stealing…
               </span>
             ) : (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+              <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
                 steal window
               </span>
             )}
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, lineHeight: 1, color: countdown <= 3 ? 'var(--bad)' : 'var(--accent)' }}>
+            <span className={`font-display text-[28px] leading-none ${countdown <= 3 ? 'text-bad' : 'text-accent'}`}>
               {countdown}
             </span>
           </div>
@@ -150,14 +143,8 @@ const GamePage = () => {
       {canSteal && (
         <button
           onClick={handleStealInitiate}
-          style={{
-            position: 'fixed', bottom: 24, right: 24, zIndex: 30,
-            padding: '12px 20px', borderRadius: 999,
-            background: 'var(--accent)', color: 'var(--accent-ink)',
-            border: 'none', cursor: 'pointer',
-            fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-          }}
+          className="fixed bottom-6 right-6 z-30 px-5 py-3 rounded-full bg-accent text-accent-ink border-0 cursor-pointer font-body font-bold text-sm"
+          style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}
         >
           Steal! · 1 ★
         </button>

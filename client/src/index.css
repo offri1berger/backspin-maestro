@@ -1,31 +1,35 @@
 @import "tailwindcss";
 
-/* ── Design tokens ── */
-:root {
-  --bg:          #efe8d9;
-  --bg-2:        #e6dec9;
-  --surface:     #1a1612;
-  --surface-2:   #2a221b;
-  --on-surface:  #f3ecdb;
-  --on-bg:       #1a1612;
-  --muted:       #6b5f4d;
-  --muted-2:     #8a7d68;
-  --line:        #c9bfa6;
-  --accent:      oklch(0.62 0.15 40);
-  --accent-ink:  #1a1612;
-  --accent-soft: oklch(0.92 0.05 40);
-  --good:        oklch(0.58 0.13 145);
-  --bad:         oklch(0.55 0.18 25);
-  --vinyl:       #0c0a08;
+@theme {
+  /* Colors */
+  --color-bg:          #efe8d9;
+  --color-bg-2:        #e6dec9;
+  --color-surface:     #1a1612;
+  --color-surface-2:   #2a221b;
+  --color-on-surface:  #f3ecdb;
+  --color-on-bg:       #1a1612;
+  --color-muted:       #6b5f4d;
+  --color-muted-2:     #8a7d68;
+  --color-line:        #c9bfa6;
+  --color-accent:      oklch(0.62 0.15 40);
+  --color-accent-ink:  #1a1612;
+  --color-accent-soft: oklch(0.92 0.05 40);
+  --color-good:        oklch(0.58 0.13 145);
+  --color-bad:         oklch(0.55 0.18 25);
+
+  /* Fonts */
   --font-display: 'Instrument Serif', Georgia, serif;
   --font-body:    'Geist', system-ui, sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, monospace;
 }
 
+/* vinyl colour not needed as a Tailwind utility */
+:root { --vinyl: #0c0a08; }
+
 html, body {
   margin: 0; padding: 0;
-  background: var(--bg);
-  color: var(--on-bg);
+  background: var(--color-bg);
+  color: var(--color-on-bg);
   font-family: var(--font-body);
 }
 
@@ -35,16 +39,16 @@ html, body {
   border-radius: 50%;
   background:
     radial-gradient(circle at center,
-      var(--accent) 0 11%,
-      var(--vinyl)  11.5% 40%,
-      #14110d 40% 41%,
-      var(--vinyl)  41% 47%,
-      #14110d 47% 48%,
-      var(--vinyl)  48% 56%,
-      #14110d 56% 57%,
-      var(--vinyl)  57% 70%,
-      #14110d 70% 71%,
-      var(--vinyl)  71% 100%);
+      var(--color-accent) 0 11%,
+      var(--vinyl)        11.5% 40%,
+      #14110d             40% 41%,
+      var(--vinyl)        41% 47%,
+      #14110d             47% 48%,
+      var(--vinyl)        48% 56%,
+      #14110d             56% 57%,
+      var(--vinyl)        57% 70%,
+      #14110d             70% 71%,
+      var(--vinyl)        71% 100%);
   box-shadow: 0 30px 60px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.05);
 }
 .vinyl::after {
@@ -77,30 +81,11 @@ html, body {
   50%       { height: 100%; }
 }
 
-/* ── Global text helpers ── */
-.display-type {
-  font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  line-height: 0.92;
-}
+/* ── Reusable helpers ── */
 .eyebrow {
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--muted);
-  font-weight: 500;
-}
-.eyebrow-accent { color: var(--accent) !important; }
-
-/* ── Paper grain ── */
-.grain::before {
-  content: '';
-  position: absolute; inset: 0;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='5'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.18'/></svg>");
-  opacity: 0.5;
-  mix-blend-mode: multiply;
-  z-index: 0;
+  color: var(--color-muted);
 }

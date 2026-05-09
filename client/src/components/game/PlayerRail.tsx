@@ -5,51 +5,41 @@ export const PlayerRail = () => {
   const { players, currentPlayerId, playerId } = useGameStore()
 
   return (
-    <aside style={{
-      padding: '20px',
-      borderRight: '1px solid var(--line)',
-      overflowY: 'auto',
-      background: 'var(--bg)',
-    }}>
+    <aside className="p-5 border-r border-line overflow-y-auto bg-bg">
       <SectionMark>Crowd</SectionMark>
 
-      <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div className="mt-3 flex flex-col gap-2">
         {players.map((p, i) => {
           const active = p.id === currentPlayerId
           const isMe = p.id === playerId
           return (
-            <div key={p.id} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '10px 12px', borderRadius: 14,
-              background: active ? 'var(--accent)' : 'transparent',
-              color: active ? 'var(--accent-ink)' : 'var(--on-bg)',
-              border: active ? 'none' : '1px solid var(--line)',
-            }}>
-              <div style={{
-                width: 34, height: 34, borderRadius: '50%',
-                background: PLAYER_COLORS[i % PLAYER_COLORS.length],
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'var(--font-display)', fontSize: 18,
-                color: '#1a1612', flexShrink: 0,
-              }}>
-                {p.name.charAt(0).toUpperCase()}
+            <div
+              key={p.id}
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-[14px] ${
+                active
+                  ? 'bg-accent text-accent-ink border-0'
+                  : 'bg-transparent text-on-bg border border-line'
+              }`}
+            >
+              <div
+                className="w-[34px] h-[34px] rounded-full shrink-0 overflow-hidden flex items-center justify-center font-display text-lg text-[#1a1612]"
+                style={{ background: PLAYER_COLORS[i % PLAYER_COLORS.length] }}
+              >
+                {p.avatar
+                  ? <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" />
+                  : p.name.charAt(0).toUpperCase()
+                }
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-semibold">
                   {p.name}{isMe ? ' (you)' : ''}
                 </div>
-                <div style={{
-                  fontFamily: 'var(--font-mono)', fontSize: 9,
-                  letterSpacing: '0.1em', opacity: active ? 0.8 : 0.6, marginTop: 2,
-                }}>
+                <div className={`font-mono text-[9px] tracking-[0.1em] mt-0.5 ${active ? 'opacity-80' : 'opacity-60'}`}>
                   {p.timeline.length}/10 cards · {p.tokens}★
                 </div>
               </div>
               {active && (
-                <span style={{
-                  fontFamily: 'var(--font-mono)', fontSize: 9,
-                  letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700,
-                }}>
+                <span className="font-mono text-[9px] tracking-[0.15em] uppercase font-bold">
                   now
                 </span>
               )}
@@ -58,19 +48,16 @@ export const PlayerRail = () => {
         })}
       </div>
 
-      <div style={{ marginTop: 28 }}>
+      <div className="mt-7">
         <SectionMark>Shortcuts</SectionMark>
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="mt-3 flex flex-col gap-2">
           {([['SPACE', 'Play / pause'], ['← →', 'Move card'], ['↵', 'Lock placement'], ['G', 'Guess input']] as const).map(([k, v]) => (
-            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <kbd style={{
-                fontFamily: 'var(--font-mono)', fontSize: 10,
-                padding: '3px 7px', borderRadius: 6,
-                border: '1px solid var(--line)',
-                background: 'color-mix(in oklch, var(--on-bg) 4%, transparent)',
-                minWidth: 34, textAlign: 'center', color: 'var(--on-bg)',
-              }}>{k}</kbd>
-              <span style={{ fontSize: 11, color: 'var(--muted)' }}>{v}</span>
+            <div key={k} className="flex items-center gap-2.5">
+              <kbd
+                className="font-mono text-[10px] px-[7px] py-[3px] rounded-md border border-line text-on-bg min-w-[34px] text-center"
+                style={{ background: 'color-mix(in oklch, var(--color-on-bg) 4%, transparent)' }}
+              >{k}</kbd>
+              <span className="text-[11px] text-muted">{v}</span>
             </div>
           ))}
         </div>

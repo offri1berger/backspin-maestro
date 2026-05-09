@@ -24,6 +24,7 @@ export interface PlayersTable {
   id: Generated<string>
   room_id: string
   name: string
+  avatar: string | null
   socket_id: string | null
   tokens: number
   is_host: boolean

@@ -30,6 +30,7 @@ export const startGameService = async (
   const players: Player[] = shuffled.map((p, i) => ({
     id: p.id,
     name: p.name,
+    avatar: p.avatar ?? undefined,
     tokens: p.tokens,
     isHost: p.is_host,
     turnOrder: i,

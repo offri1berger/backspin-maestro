@@ -19,35 +19,35 @@ export const GameStage = ({ onPlace, onSkip }: Props) => {
   const otherPlayers = players.filter((p) => p.id !== currentPlayerId)
 
   return (
-    <main style={{ padding: '24px 32px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <main className="px-8 py-6 overflow-y-auto flex flex-col gap-[18px]">
       {currentSong && <AudioPlayer song={currentSong} isMyTurn={isMyTurn} />}
 
       {currentSong && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <div className="flex justify-between items-baseline">
             <div>
               <SectionMark>
                 {isMyTurn ? `Your timeline · ${myPlayer?.name}` : `${activePlayer?.name}'s timeline`}
               </SectionMark>
               {isMyTurn && activeTimeline.length > 0 && (
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, margin: '6px 0 0', letterSpacing: '-0.02em', color: 'var(--on-bg)' }}>
+                <h2 className="font-display text-2xl mt-1.5 tracking-[-0.02em] text-on-bg">
                   Place between{' '}
-                  <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>
+                  <em className="italic text-accent">
                     {activeTimeline[0]?.song.year ?? '?'}
                   </em>
                   {' '}and{' '}
-                  <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>
+                  <em className="italic text-accent">
                     {activeTimeline[1]?.song.year ?? '?'}
                   </em>.
                 </h2>
               )}
               {!isMyTurn && (
-                <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--muted)' }}>
-                  Watching <strong style={{ color: 'var(--on-bg)' }}>{activePlayer?.name}</strong>'s turn
+                <p className="mt-1.5 text-sm text-muted">
+                  Watching <strong className="text-on-bg">{activePlayer?.name}</strong>'s turn
                 </p>
               )}
             </div>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
               drag · or click slot
             </span>
           </div>
@@ -64,13 +64,7 @@ export const GameStage = ({ onPlace, onSkip }: Props) => {
           {isMyTurn && !isWaitingForNextTurn && (myPlayer?.tokens ?? 0) >= 1 && (
             <button
               onClick={onSkip}
-              style={{
-                alignSelf: 'center', background: 'none', border: '1px solid var(--line)',
-                borderRadius: 999, padding: '8px 20px',
-                fontFamily: 'var(--font-mono)', fontSize: 11,
-                letterSpacing: '0.12em', textTransform: 'uppercase',
-                color: 'var(--muted)', cursor: 'pointer',
-              }}
+              className="self-center bg-transparent border border-line rounded-full px-5 py-2 font-mono text-[11px] tracking-[0.12em] uppercase text-muted cursor-pointer"
             >
               Skip · spend 1 ★
             </button>
@@ -79,28 +73,29 @@ export const GameStage = ({ onPlace, onSkip }: Props) => {
       )}
 
       {otherPlayers.length > 0 && (
-        <div style={{ marginTop: 8 }}>
+        <div className="mt-2">
           <SectionMark>Timelines · live</SectionMark>
-          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="mt-3.5 flex flex-col gap-4">
             {otherPlayers.map((p) => (
               <div key={p.id}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                  <div style={{
-                    width: 24, height: 24, borderRadius: '50%',
-                    background: PLAYER_COLORS[players.indexOf(p) % PLAYER_COLORS.length],
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'var(--font-display)', fontSize: 13, color: '#1a1612',
-                  }}>
-                    {p.name.charAt(0).toUpperCase()}
+                <div className="flex items-center gap-2.5 mb-1.5">
+                  <div
+                    className="w-6 h-6 rounded-full shrink-0 overflow-hidden flex items-center justify-center font-display text-[13px] text-[#1a1612]"
+                    style={{ background: PLAYER_COLORS[players.indexOf(p) % PLAYER_COLORS.length] }}
+                  >
+                    {p.avatar
+                      ? <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" />
+                      : p.name.charAt(0).toUpperCase()
+                    }
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--on-bg)' }}>{p.name}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--muted)' }}>
+                  <span className="text-[13px] font-semibold text-on-bg">{p.name}</span>
+                  <span className="font-mono text-[9px] tracking-[0.1em] text-muted">
                     {p.timeline.length} cards · {p.tokens}★
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
+                <div className="flex gap-1.5 overflow-x-auto">
                   {p.timeline.length === 0
-                    ? <span style={{ fontSize: 11, color: 'var(--muted)', fontStyle: 'italic' }}>no cards yet</span>
+                    ? <span className="text-[11px] text-muted italic">no cards yet</span>
                     : p.timeline.map((entry, j) => <MiniYearCard key={j} entry={entry} />)
                   }
                 </div>

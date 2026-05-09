@@ -17,65 +17,63 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
   const isDanger = countdown <= 3
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 50,
-      background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(10px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
-    }}>
-      <div style={{
-        width: '100%', maxWidth: 620,
-        background: 'var(--bg)', borderRadius: 32, padding: 36,
-        border: '1px solid var(--line)', boxShadow: '0 40px 100px rgba(0,0,0,0.45)',
-        position: 'relative', overflow: 'hidden',
-      }}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(10px)' }}
+    >
+      <div
+        className="w-full max-w-[620px] bg-bg rounded-[32px] p-9 border border-line relative overflow-hidden"
+        style={{ boxShadow: '0 40px 100px rgba(0,0,0,0.45)' }}
+      >
         {/* background glow */}
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: isDanger
-            ? 'radial-gradient(circle at top, rgba(255,80,80,0.12), transparent 55%)'
-            : 'radial-gradient(circle at top, rgba(255,255,255,0.06), transparent 55%)',
-        }} />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: isDanger
+              ? 'radial-gradient(circle at top, rgba(255,80,80,0.12), transparent 55%)'
+              : 'radial-gradient(circle at top, rgba(255,255,255,0.06), transparent 55%)',
+          }}
+        />
 
         {/* header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, position: 'relative', zIndex: 1 }}>
+        <div className="flex items-start justify-between mb-6 relative z-[1]">
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8 }}>
+            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-muted mb-2">
               Steal attempt
             </div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 38, lineHeight: 1, letterSpacing: '-0.03em', margin: 0, color: 'var(--on-bg)' }}>
+            <h2 className="font-display text-[38px] leading-none tracking-[-0.03em] m-0 text-on-bg">
               Steal the card
             </h2>
           </div>
           <button
             onClick={onClose}
-            style={{
-              background: 'transparent', border: '1px solid var(--line)',
-              borderRadius: 999, height: 36, padding: '0 14px',
-              cursor: 'pointer', color: 'var(--muted)',
-              fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase',
-            }}
+            className="bg-transparent border border-line rounded-full h-9 px-3.5 cursor-pointer text-muted font-mono text-[10px] tracking-[0.14em] uppercase"
           >
             ESC
           </button>
         </div>
 
         {/* countdown ring */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28, position: 'relative', zIndex: 1 }}>
-          <div style={{
-            width: 120, height: 120, borderRadius: '50%',
-            border: `6px solid ${isDanger ? 'var(--bad)' : 'var(--accent)'}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'color-mix(in oklch, var(--surface) 80%, transparent)',
-            boxShadow: isDanger ? '0 0 40px rgba(255,80,80,0.35)' : '0 0 40px rgba(255,255,255,0.06)',
-            transform: isDanger ? 'scale(1.04)' : 'scale(1)',
-            transition: 'all 0.2s ease',
-            animation: isDanger ? 'pulse 0.9s infinite' : 'none',
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1 }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: 52, color: isDanger ? 'var(--bad)' : 'var(--accent)' }}>
+        <div className="flex justify-center mb-7 relative z-[1]">
+          <div
+            className="w-[120px] h-[120px] rounded-full flex items-center justify-center"
+            style={{
+              border: `6px solid ${isDanger ? 'var(--color-bad)' : 'var(--color-accent)'}`,
+              background: 'color-mix(in oklch, var(--color-surface) 80%, transparent)',
+              boxShadow: isDanger ? '0 0 40px rgba(255,80,80,0.35)' : '0 0 40px rgba(255,255,255,0.06)',
+              transform: isDanger ? 'scale(1.04)' : 'scale(1)',
+              transition: 'all 0.2s ease',
+              animation: isDanger ? 'pulse 0.9s infinite' : 'none',
+            }}
+          >
+            <div className="flex flex-col items-center leading-none">
+              <span
+                className="font-display text-[52px]"
+                style={{ color: isDanger ? 'var(--color-bad)' : 'var(--color-accent)' }}
+              >
                 {countdown}
               </span>
-              <span style={{ marginTop: 4, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+              <span className="mt-1 font-mono text-[9px] tracking-[0.16em] uppercase text-muted">
                 seconds
               </span>
             </div>
@@ -83,25 +81,21 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
         </div>
 
         {/* description */}
-        <div style={{ textAlign: 'center', marginBottom: 28, position: 'relative', zIndex: 1 }}>
-          <p style={{ color: 'var(--muted)', fontSize: 15, lineHeight: 1.5, margin: 0 }}>
+        <div className="text-center mb-7 relative z-[1]">
+          <p className="text-muted text-[15px] leading-relaxed m-0">
             Place the song correctly in{' '}
-            <strong style={{ color: 'var(--on-bg)' }}>{activePlayer?.name}</strong>'s timeline.
+            <strong className="text-on-bg">{activePlayer?.name}</strong>'s timeline.
           </p>
-          <div style={{
-            marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '6px 12px', borderRadius: 999,
-            background: 'color-mix(in oklch, var(--on-bg) 5%, transparent)', border: '1px solid var(--line)',
-          }}>
-            <span style={{ fontSize: 14 }}>★</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+          <div className="mt-2.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-line" style={{ background: 'color-mix(in oklch, var(--color-on-bg) 5%, transparent)' }}>
+            <span className="text-sm">★</span>
+            <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-muted">
               Costs 1 token
             </span>
           </div>
         </div>
 
         {/* timeline */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
+        <div className="relative z-[1]">
           <Timeline
             timeline={activeTimeline}
             currentSong={currentSong}

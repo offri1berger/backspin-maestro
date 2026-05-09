@@ -2,6 +2,7 @@ import { useState } from 'react'
 import socket from '../socket'
 import { useGameStore } from '../store/gameStore'
 import type { Decade } from '@hitster/shared'
+import { AVATARS } from '../lib/avatars'
 
 const DECADES: { label: string; value: Decade }[] = [
   { label: 'All', value: 'all' },
@@ -12,16 +13,10 @@ const DECADES: { label: string; value: Decade }[] = [
   { label: '00s', value: '00s' },
   { label: '10s', value: '10s' },
 ]
-const PLAYER_COLORS = ['#e8a598', '#98c5e8', '#98e8b4', '#e8d598', '#c598e8', '#e898c5']
 
 function Logo() {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 8,
-      fontFamily: 'var(--font-display)', fontSize: 22,
-      letterSpacing: '-0.01em',
-      color: 'var(--on-bg)',
-    }}>
+    <div className="flex items-center gap-2 font-display text-[22px] tracking-[-0.01em] text-on-bg">
       <div style={{ width: 28, height: 28 }} className="vinyl" />
       <span>Hitster</span>
     </div>
@@ -33,6 +28,7 @@ const LobbyPage = () => {
   const [roomCode, setRoomCode] = useState('')
   const [tab, setTab] = useState<'create' | 'join'>('create')
   const [decade, setDecade] = useState<Decade>('all')
+  const [avatar, setAvatar] = useState<string | undefined>(AVATARS[0] ?? undefined)
   const { setRoom, setPlayers, players, roomCode: currentRoomCode } = useGameStore()
 
   const handleCreate = () => {
@@ -40,12 +36,14 @@ const LobbyPage = () => {
     socket.connect()
     socket.emit('room:create', {
       hostName: name,
+      avatar,
       settings: { songsPerPlayer: 10, decadeFilter: decade.toLowerCase() as Decade },
     }, (result) => {
       setRoom(result.roomCode, result.playerId)
       setPlayers([{
         id: result.playerId,
         name,
+        avatar,
         tokens: 2,
         isHost: true,
         turnOrder: 0,
@@ -60,12 +58,13 @@ const LobbyPage = () => {
     socket.emit('room:join', {
       roomCode: roomCode.toUpperCase(),
       playerName: name,
+      avatar,
     }, (result) => {
       if (!result.success) { alert(result.error); return }
       setRoom(result.roomCode!, result.playerId!)
       setPlayers([
         ...(result.players ?? []),
-        { id: result.playerId!, name, tokens: 0, isHost: false, turnOrder: 0, timeline: [] },
+        { id: result.playerId!, name, avatar, tokens: 0, isHost: false, turnOrder: 0, timeline: [] },
       ])
     })
   }
@@ -79,58 +78,46 @@ const LobbyPage = () => {
   // ── Waiting room (after create/join) ──────────────────────────────────
   if (currentRoomCode) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'var(--bg)',
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
+      <div className="min-h-screen bg-bg flex flex-col">
         {/* Top bar */}
-        <div style={{
-          padding: '20px 40px',
-          borderBottom: '1px solid var(--line)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
+        <div className="px-10 py-5 border-b border-line flex items-center justify-between">
           <Logo />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)' }}>Room</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 20, letterSpacing: '0.18em', color: 'var(--accent)', fontWeight: 600 }}>{currentRoomCode}</span>
+          <div className="flex items-center gap-4">
+            <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Room</span>
+            <span className="font-mono text-[20px] tracking-[0.18em] text-accent font-semibold">{currentRoomCode}</span>
           </div>
         </div>
 
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
-          <div style={{ width: '100%', maxWidth: 480 }}>
+        <div className="flex-1 flex items-center justify-center p-10">
+          <div className="w-full max-w-[480px]">
             {/* Players */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent inline-block" />
+              <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">
                 Players ({players.length}/6)
               </span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 32 }}>
-              {players.map((p, i) => (
-                <div key={p.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '14px 18px',
-                  borderRadius: 16,
-                  border: '1px solid var(--line)',
-                  background: 'transparent',
-                }}>
-                  <div style={{
-                    width: 38, height: 38, borderRadius: '50%',
-                    background: PLAYER_COLORS[i % PLAYER_COLORS.length],
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'var(--font-display)', fontSize: 20,
-                    color: '#1a1612', flexShrink: 0,
-                  }}>{p.name.charAt(0).toUpperCase()}</div>
-                  <span style={{ flex: 1, fontSize: 16, fontWeight: 600, color: 'var(--on-bg)' }}>{p.name}</span>
+            <div className="flex flex-col gap-2 mb-8">
+              {players.map((p) => (
+                <div key={p.id} className="flex items-center gap-3.5 px-[18px] py-3.5 rounded-2xl border border-line bg-transparent">
+                  {p.avatar
+                    ? (
+                      <img
+                        src={p.avatar}
+                        alt={p.name}
+                        className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                      />
+                    )
+                    : (
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center font-display text-[20px] flex-shrink-0 overflow-hidden bg-line text-on-bg">
+                        {p.name.charAt(0).toUpperCase()}
+                      </div>
+                    )
+                  }
+                  <span className="flex-1 text-base font-semibold text-on-bg">{p.name}</span>
                   {p.isHost && (
-                    <span style={{
-                      fontFamily: 'var(--font-mono)', fontSize: 10,
-                      letterSpacing: '0.15em', textTransform: 'uppercase',
-                      color: 'var(--muted)',
-                    }}>host</span>
+                    <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">host</span>
                   )}
                 </div>
               ))}
@@ -139,15 +126,11 @@ const LobbyPage = () => {
             <button
               onClick={handleStart}
               disabled={players.length < 2}
-              style={{
-                width: '100%', height: 60, borderRadius: 999,
-                background: players.length < 2 ? 'var(--line)' : 'var(--accent)',
-                color: players.length < 2 ? 'var(--muted)' : 'var(--accent-ink)',
-                border: 'none', cursor: players.length < 2 ? 'not-allowed' : 'pointer',
-                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 17,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                transition: 'background 0.15s',
-              }}
+              className={`w-full h-[60px] rounded-full border-none flex items-center justify-center gap-2.5 font-body font-semibold text-[17px] transition-colors duration-150 ${
+                players.length < 2
+                  ? 'bg-line text-muted cursor-not-allowed'
+                  : 'bg-accent text-accent-ink cursor-pointer'
+              }`}
             >
               Cut the deck
               <svg width="16" height="16" viewBox="0 0 14 14">
@@ -155,7 +138,7 @@ const LobbyPage = () => {
               </svg>
             </button>
             {players.length < 2 && (
-              <p style={{ textAlign: 'center', marginTop: 12, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+              <p className="text-center mt-3 font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
                 waiting for more players…
               </p>
             )}
@@ -167,19 +150,10 @@ const LobbyPage = () => {
 
   // ── Home / setup ──────────────────────────────────────────────────────
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--bg)',
-      display: 'grid',
-      gridTemplateColumns: '1.1fr 1fr',
-    }}>
+    <div className="min-h-screen bg-bg grid" style={{ gridTemplateColumns: '1.1fr 1fr' }}>
 
       {/* ── LEFT: Hero ── */}
-      <div style={{
-        padding: '56px 64px 48px',
-        display: 'flex', flexDirection: 'column',
-        position: 'relative', overflow: 'hidden',
-      }}>
+      <div className="px-16 py-14 flex flex-col relative overflow-hidden">
         {/* Decorative spinning vinyl in bottom-left */}
         <div
           className="vinyl vinyl-spin"
@@ -190,124 +164,109 @@ const LobbyPage = () => {
         />
 
         {/* Nav */}
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="relative flex items-center justify-between">
           <Logo />
-          <div style={{ display: 'flex', gap: 28 }}>
+          <div className="flex gap-7">
             {['How to play', 'Songbook', 'Sign in'].map((l) => (
-              <span key={l} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)', cursor: 'pointer' }}>{l}</span>
+              <span key={l} className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted cursor-pointer">{l}</span>
             ))}
           </div>
         </div>
 
         {/* Hero copy */}
-        <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--accent)' }}>
+        <div className="relative flex-1 flex flex-col justify-center">
+          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-accent">
             Side A · 2–6 players · No app needed
           </div>
-          <h1 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 130, lineHeight: 0.88,
-            margin: '14px 0 0',
-            letterSpacing: '-0.02em',
-            color: 'var(--on-bg)',
-          }}>
+          <h1 className="font-display mt-3.5 mb-0 tracking-[-0.02em] text-on-bg" style={{ fontSize: 130, lineHeight: 0.88 }}>
             Name<br />
-            <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>that</em><br />
+            <em className="italic text-accent">that</em><br />
             tune.
           </h1>
-          <p style={{ marginTop: 28, fontSize: 17, lineHeight: 1.55, color: 'var(--muted)', maxWidth: 440 }}>
+          <p className="mt-7 text-[17px] leading-[1.55] text-muted max-w-[440px]">
             A music timeline party. Drag mystery hits onto your chronicle.
             First to ten correctly placed cards wins the night.
           </p>
         </div>
 
         {/* Stats */}
-        <div style={{
-          position: 'relative',
-          display: 'flex', gap: 36,
-          fontFamily: 'var(--font-mono)', fontSize: 11,
-          letterSpacing: '0.1em', color: 'var(--muted)',
-        }}>
+        <div className="relative flex gap-9 font-mono text-[11px] tracking-[0.1em] text-muted">
           {[['200,000+', 'tracks'], ['8', 'decades'], ['∞', 'good times']].map(([n, l]) => (
             <div key={l}>
-              <span style={{ color: 'var(--accent)' }}>{n}</span> {l}
+              <span className="text-accent">{n}</span> {l}
             </div>
           ))}
         </div>
       </div>
 
       {/* ── RIGHT: Form ── */}
-      <div style={{
-        padding: '56px 64px 48px',
-        background: 'var(--bg-2)',
-        display: 'flex', flexDirection: 'column',
-        borderLeft: '1px solid var(--line)',
-      }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+      <div className="px-16 py-14 bg-bg-2 flex flex-col border-l border-line">
+        <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">
           Track 01 · Set up the room
         </div>
-        <h2 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 48, margin: '10px 0 28px', lineHeight: 1,
-          letterSpacing: '-0.02em', color: 'var(--on-bg)',
-        }}>
+        <h2 className="font-display text-[48px] mt-2.5 mb-7 leading-none tracking-[-0.02em] text-on-bg">
           Cue up<br />a session.
         </h2>
 
         {/* Create / Join tabs */}
-        <div style={{
-          display: 'flex', gap: 4, marginBottom: 24,
-          padding: 4, borderRadius: 999,
-          background: 'color-mix(in oklch, var(--on-bg) 6%, transparent)',
-          alignSelf: 'flex-start',
-        }}>
+        <div
+          className="flex gap-1 mb-6 p-1 rounded-full self-start"
+          style={{ background: 'color-mix(in oklch, var(--color-on-bg) 6%, transparent)' }}
+        >
           {(['create', 'join'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              style={{
-                padding: '8px 20px', borderRadius: 999, border: 'none',
-                background: tab === t ? 'var(--accent)' : 'transparent',
-                color: tab === t ? 'var(--accent-ink)' : 'var(--on-bg)',
-                fontFamily: 'var(--font-mono)', fontSize: 11,
-                letterSpacing: '0.15em', textTransform: 'uppercase',
-                fontWeight: 700, cursor: 'pointer',
-                transition: 'background 0.15s, color 0.15s',
-              }}
+              className={`px-5 py-2 rounded-full border-none font-mono text-[11px] tracking-[0.15em] uppercase font-bold cursor-pointer transition-colors duration-150 ${
+                tab === t ? 'bg-accent text-accent-ink' : 'bg-transparent text-on-bg'
+              }`}
             >
               {t === 'create' ? 'Create' : 'Join code'}
             </button>
           ))}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="flex flex-col gap-4">
+          {/* Avatar picker */}
+          {AVATARS.length > 0 && (
+            <div>
+              <label className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">
+                Your avatar
+              </label>
+              <div className="flex gap-2.5 mt-2 overflow-x-auto pb-1">
+                {AVATARS.map((src) => (
+                  <button
+                    key={src}
+                    type="button"
+                    onClick={() => setAvatar(src)}
+                    className={`w-16 h-16 rounded-full p-0 border-none bg-transparent cursor-pointer flex-shrink-0 overflow-hidden transition-shadow duration-150 ${
+                      avatar === src ? 'ring-2 ring-accent' : ''
+                    }`}
+                  >
+                    <img src={src} alt="" className="w-full h-full object-cover block" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Name */}
           <div>
-            <label style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+            <label className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">
               Your name
             </label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your name"
-              style={{
-                display: 'block', width: '100%', marginTop: 8,
-                height: 52, borderRadius: 14,
-                border: '1px solid var(--line)',
-                background: 'transparent', color: 'var(--on-bg)',
-                padding: '0 18px', fontSize: 16,
-                fontFamily: 'var(--font-body)',
-                outline: 'none', boxSizing: 'border-box',
-              }}
-              onFocus={(e) => e.target.style.borderColor = 'var(--accent)'}
-              onBlur={(e) => e.target.style.borderColor = 'var(--line)'}
+              className="block w-full mt-2 h-[52px] rounded-[14px] border border-line bg-transparent text-on-bg px-[18px] text-base font-body outline-none box-border focus:border-accent"
             />
           </div>
 
           {/* Join code input */}
           {tab === 'join' && (
             <div>
-              <label style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+              <label className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">
                 Room code
               </label>
               <input
@@ -315,18 +274,7 @@ const LobbyPage = () => {
                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                 placeholder="VINYL"
                 maxLength={6}
-                style={{
-                  display: 'block', width: '100%', marginTop: 8,
-                  height: 52, borderRadius: 14,
-                  border: '1px solid var(--line)',
-                  background: 'transparent', color: 'var(--accent)',
-                  padding: '0 18px', fontSize: 20,
-                  fontFamily: 'var(--font-mono)',
-                  letterSpacing: '0.25em', textTransform: 'uppercase',
-                  textAlign: 'center', outline: 'none', boxSizing: 'border-box',
-                }}
-                onFocus={(e) => e.target.style.borderColor = 'var(--accent)'}
-                onBlur={(e) => e.target.style.borderColor = 'var(--line)'}
+                className="block w-full mt-2 h-[52px] rounded-[14px] border border-line bg-transparent text-accent px-[18px] text-[20px] font-mono tracking-[0.25em] uppercase text-center outline-none box-border focus:border-accent"
               />
             </div>
           )}
@@ -334,23 +282,19 @@ const LobbyPage = () => {
           {/* Decade picker (create only) */}
           {tab === 'create' && (
             <div>
-              <label style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+              <label className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">
                 Decade
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 6, marginTop: 8 }}>
+              <div className="grid grid-cols-8 gap-1.5 mt-2">
                 {DECADES.map((d) => (
                   <button
                     key={d.value}
                     onClick={() => setDecade(d.value)}
-                    style={{
-                      height: 40, borderRadius: 10,
-                      background: decade === d.value ? 'var(--accent)' : 'transparent',
-                      color: decade === d.value ? 'var(--accent-ink)' : 'var(--on-bg)',
-                      border: decade === d.value ? 'none' : '1px solid var(--line)',
-                      fontFamily: 'var(--font-mono)', fontSize: 10,
-                      letterSpacing: '0.08em', fontWeight: 600, cursor: 'pointer',
-                      transition: 'background 0.12s, color 0.12s',
-                    }}
+                    className={`h-10 rounded-[10px] font-mono text-[10px] tracking-[0.08em] font-semibold cursor-pointer transition-colors duration-150 ${
+                      decade === d.value
+                        ? 'bg-accent text-accent-ink border-none'
+                        : 'bg-transparent text-on-bg border border-line'
+                    }`}
                   >{d.label}</button>
                 ))}
               </div>
@@ -359,20 +303,16 @@ const LobbyPage = () => {
 
           {/* Songs to win + Stealing row (create only) */}
           {tab === 'create' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="grid grid-cols-2 gap-3">
               {[
                 { label: 'Songs to win', val: '10', sub: '≈25 min' },
                 { label: 'Stealing', val: 'On', sub: '4s window' },
               ].map(({ label, val, sub }) => (
                 <div key={label}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--muted)' }}>{label}</div>
-                  <div style={{
-                    marginTop: 8, padding: '12px 16px',
-                    border: '1px solid var(--line)', borderRadius: 14,
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  }}>
-                    <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--accent)', lineHeight: 1 }}>{val}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}>{sub}</span>
+                  <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">{label}</div>
+                  <div className="mt-2 px-4 py-3 border border-line rounded-[14px] flex items-center justify-between">
+                    <span className="font-display text-[28px] text-accent leading-none">{val}</span>
+                    <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-muted">{sub}</span>
                   </div>
                 </div>
               ))}
@@ -380,22 +320,13 @@ const LobbyPage = () => {
           )}
         </div>
 
-        <div style={{ flex: 1 }} />
+        <div className="flex-1" />
 
         {/* CTA */}
         <button
           onClick={tab === 'create' ? handleCreate : handleJoin}
           disabled={tab === 'create' ? !name.trim() : !name.trim() || !roomCode.trim()}
-          style={{
-            marginTop: 28,
-            width: '100%', height: 60, borderRadius: 999,
-            background: 'var(--accent)', color: 'var(--accent-ink)',
-            border: 'none', cursor: 'pointer',
-            fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 17,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            opacity: (tab === 'create' ? !name.trim() : !name.trim() || !roomCode.trim()) ? 0.4 : 1,
-            transition: 'opacity 0.15s',
-          }}
+          className="mt-7 w-full h-[60px] rounded-full bg-accent text-accent-ink border-none cursor-pointer font-body font-semibold text-[17px] flex items-center justify-center gap-2.5 transition-opacity duration-150 disabled:opacity-40"
         >
           {tab === 'create' ? 'Cut the deck' : 'Join room'}
           <svg width="16" height="16" viewBox="0 0 14 14">

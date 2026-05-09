@@ -38,23 +38,25 @@ export const ResultToast = () => {
     }
 
     return (
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 50,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.55)', pointerEvents: 'none',
-      }}>
-        <div style={{ minWidth: 320, maxWidth: 420, borderRadius: 24, overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.4)' }}>
-          <div style={{ background: isGoodForMe ? 'var(--good)' : 'var(--bad)', padding: '20px 28px', textAlign: 'center' }}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>{isGoodForMe ? '🎉' : '😬'}</div>
-            <div style={{ fontWeight: 700, fontSize: 18, color: '#fff', lineHeight: 1.3 }}>{headline}</div>
-            {subline && <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 6 }}>{subline}</div>}
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+        style={{ background: 'rgba(0,0,0,0.55)' }}
+      >
+        <div
+          className="min-w-[320px] max-w-[420px] rounded-[24px] overflow-hidden"
+          style={{ boxShadow: '0 32px 80px rgba(0,0,0,0.4)' }}
+        >
+          <div className={`${isGoodForMe ? 'bg-good' : 'bg-bad'} px-7 py-5 text-center`}>
+            <div className="text-[32px] mb-2">{isGoodForMe ? '🎉' : '😬'}</div>
+            <div className="font-bold text-lg text-white leading-snug">{headline}</div>
+            {subline && <div className="text-sm mt-1.5" style={{ color: 'rgba(255,255,255,0.8)' }}>{subline}</div>}
           </div>
-          <div style={{ background: 'var(--surface)', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="bg-surface px-6 py-3.5 flex justify-between items-center">
             <div>
-              <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--on-surface)' }}>{stealResult.song.title}</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{stealResult.song.artist}</div>
+              <div className="font-semibold text-sm text-on-surface">{stealResult.song.title}</div>
+              <div className="font-mono text-[11px] text-muted mt-0.5">{stealResult.song.artist}</div>
             </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, color: 'var(--accent)', lineHeight: 1 }}>{stealResult.song.year}</div>
+            <div className="font-display text-[32px] text-accent leading-none">{stealResult.song.year}</div>
           </div>
         </div>
       </div>
@@ -63,12 +65,10 @@ export const ResultToast = () => {
 
   if (placementResult?.correct) {
     return (
-      <div style={{
-        position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
-        zIndex: 40, padding: '12px 24px', borderRadius: 999,
-        background: 'var(--good)', color: '#fff',
-        fontWeight: 700, fontSize: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-      }}>
+      <div
+        className="fixed top-6 left-1/2 z-40 px-6 py-3 rounded-full bg-good text-white font-bold text-base"
+        style={{ transform: 'translateX(-50%)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}
+      >
         {placementResult.message ?? '✓ Correct!'}
       </div>
     )
@@ -76,20 +76,19 @@ export const ResultToast = () => {
 
   if (placementResult && !placementResult.correct && placementResult.song) {
     return (
-      <div style={{
-        position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
-        zIndex: 40, minWidth: 280, borderRadius: 20, overflow: 'hidden',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
-      }}>
-        <div style={{ background: 'var(--bad)', padding: '10px 20px', textAlign: 'center', color: '#fff', fontWeight: 700 }}>
+      <div
+        className="fixed top-6 left-1/2 z-40 min-w-[280px] rounded-[20px] overflow-hidden"
+        style={{ transform: 'translateX(-50%)', boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}
+      >
+        <div className="bg-bad px-5 py-2.5 text-center text-white font-bold">
           ✗ Wrong placement
         </div>
-        <div style={{ background: 'var(--surface)', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="bg-surface px-5 py-3 flex justify-between items-center">
           <div>
-            <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--on-surface)' }}>{placementResult.song.title}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{placementResult.song.artist}</div>
+            <div className="font-semibold text-sm text-on-surface">{placementResult.song.title}</div>
+            <div className="font-mono text-[11px] text-muted mt-0.5">{placementResult.song.artist}</div>
           </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--accent)', lineHeight: 1 }}>{placementResult.song.year}</div>
+          <div className="font-display text-[28px] text-accent leading-none">{placementResult.song.year}</div>
         </div>
       </div>
     )
