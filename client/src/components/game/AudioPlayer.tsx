@@ -5,6 +5,7 @@ import socket from '../../socket'
 interface Props {
   song: Song
   isMyTurn: boolean
+  compact?: boolean
 }
 
 function WaveIcon() {
@@ -21,7 +22,7 @@ function WaveIcon() {
   )
 }
 
-const AudioPlayer = ({ song, isMyTurn }: Props) => {
+const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
   const audioRef = useRef<HTMLAudioElement>(null)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -61,6 +62,74 @@ const AudioPlayer = ({ song, isMyTurn }: Props) => {
   }
 
   const fmt = (s: number) => `0:${String(Math.floor(s)).padStart(2, '0')}`
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-3 bg-surface text-on-surface rounded-[16px] p-3 relative overflow-hidden">
+        {/* Small vinyl + play button */}
+        <div className="w-[52px] h-[52px] shrink-0 relative">
+          <div
+            className={`vinyl${playing ? ' vinyl-spin' : ''}`}
+            style={{ width: '100%', height: '100%' }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            {isMyTurn ? (
+              <button
+                onClick={toggle}
+                className="w-8 h-8 rounded-full bg-accent text-accent-ink cursor-pointer flex items-center justify-center"
+                style={{ border: '3px solid var(--color-surface)' }}
+              >
+                {playing
+                  ? <WaveIcon />
+                  : <svg width="10" height="12" viewBox="0 0 16 18"><path d="M2 1l13 8-13 8z" fill="currentColor" /></svg>
+                }
+              </button>
+            ) : (
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.1)' }}
+              >
+                {playing
+                  ? <WaveIcon />
+                  : <svg width="10" height="12" viewBox="0 0 16 18" style={{ opacity: 0.35 }}><path d="M2 1l13 8-13 8z" fill="currentColor" /></svg>
+                }
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Track info + progress */}
+        <div className="flex-1 min-w-0">
+          <div className="font-mono tracking-[0.15em] uppercase text-accent" style={{ fontSize: 9 }}>
+            {isMyTurn ? 'Drop it on your timeline' : 'Waiting…'} · {fmt(currentTime)} / 0:30
+          </div>
+          <div
+            className="mt-2 h-1 rounded-sm relative overflow-hidden"
+            style={{ background: 'rgba(255,255,255,0.12)' }}
+          >
+            <div
+              className="absolute inset-0 bg-accent"
+              style={{ width: `${progress}%`, transition: 'width 0.5s linear' }}
+            />
+          </div>
+          <div
+            className="mt-1.5 flex justify-between font-mono tracking-[0.1em] uppercase"
+            style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)' }}
+          >
+            <span>{fmt(currentTime)}</span>
+            <span>0:30</span>
+          </div>
+        </div>
+
+        <audio
+          ref={audioRef}
+          src={song.previewUrl}
+          onTimeUpdate={onTimeUpdate}
+          onEnded={() => { setPlaying(false); socket.emit('audio:pause') }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="bg-surface text-on-surface rounded-[28px] p-7 flex items-center gap-7 relative overflow-hidden h-[240px]">

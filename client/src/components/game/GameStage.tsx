@@ -7,9 +7,25 @@ import { MiniYearCard } from './Timeline'
 interface Props {
   onPlace: (position: number) => void
   onSkip: () => void
+  // Mobile layout props
+  showAudioPlayer?: boolean
+  showSkipButton?: boolean
+  vertical?: boolean
+  pendingPosition?: number | null
+  onPendingChange?: (pos: number | null) => void
+  showPlaceButton?: boolean
 }
 
-export const GameStage = ({ onPlace, onSkip }: Props) => {
+export const GameStage = ({
+  onPlace,
+  onSkip,
+  showAudioPlayer = true,
+  showSkipButton = true,
+  vertical = false,
+  pendingPosition,
+  onPendingChange,
+  showPlaceButton = true,
+}: Props) => {
   const { currentSong, currentPlayerId, playerId, players, remoteDragSlot, isWaitingForNextTurn } = useGameStore()
 
   const isMyTurn = currentPlayerId === playerId
@@ -19,8 +35,10 @@ export const GameStage = ({ onPlace, onSkip }: Props) => {
   const otherPlayers = players.filter((p) => p.id !== currentPlayerId)
 
   return (
-    <main className="px-8 py-6 overflow-y-auto flex flex-col gap-[18px]">
-      {currentSong && <AudioPlayer song={currentSong} isMyTurn={isMyTurn} />}
+    <main className={`flex flex-col gap-[18px] ${vertical ? 'px-0 py-0' : 'px-8 py-6 overflow-y-auto'}`}>
+      {showAudioPlayer && currentSong && (
+        <AudioPlayer song={currentSong} isMyTurn={isMyTurn} />
+      )}
 
       {currentSong && (
         <>
@@ -30,14 +48,14 @@ export const GameStage = ({ onPlace, onSkip }: Props) => {
                 {isMyTurn ? `Your timeline · ${myPlayer?.name}` : `${activePlayer?.name}'s timeline`}
               </SectionMark>
               {isMyTurn && activeTimeline.length > 0 && (
-                <h2 className="font-display text-2xl mt-1.5 tracking-[-0.02em] text-on-bg">
+                <h2 className={`font-display mt-1.5 tracking-[-0.02em] text-on-bg ${vertical ? 'text-xl' : 'text-2xl'}`}>
                   Place between{' '}
                   <em className="italic text-accent">
                     {activeTimeline[0]?.song.year ?? '?'}
                   </em>
                   {' '}and{' '}
                   <em className="italic text-accent">
-                    {activeTimeline[1]?.song.year ?? '?'}
+                    {activeTimeline[activeTimeline.length - 1]?.song.year ?? '?'}
                   </em>.
                 </h2>
               )}
@@ -47,9 +65,11 @@ export const GameStage = ({ onPlace, onSkip }: Props) => {
                 </p>
               )}
             </div>
-            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
-              drag · or click slot
-            </span>
+            {!vertical && (
+              <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
+                drag · or click slot
+              </span>
+            )}
           </div>
 
           <Timeline
@@ -59,9 +79,13 @@ export const GameStage = ({ onPlace, onSkip }: Props) => {
             isMyTurn={isMyTurn}
             isWaiting={isWaitingForNextTurn}
             spectatorDragSlot={isMyTurn ? null : remoteDragSlot}
+            vertical={vertical}
+            pendingPosition={pendingPosition}
+            onPendingChange={onPendingChange}
+            showPlaceButton={showPlaceButton}
           />
 
-          {isMyTurn && !isWaitingForNextTurn && (myPlayer?.tokens ?? 0) >= 1 && (
+          {showSkipButton && isMyTurn && !isWaitingForNextTurn && (myPlayer?.tokens ?? 0) >= 1 && (
             <button
               onClick={onSkip}
               className="self-center bg-transparent border border-line rounded-full px-5 py-2 font-mono text-[11px] tracking-[0.12em] uppercase text-muted cursor-pointer"

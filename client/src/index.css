@@ -81,6 +81,10 @@ html, body {
   50%       { height: 100%; }
 }
 
+/* ── Scrollbar utilities ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* ── Reusable helpers ── */
 .eyebrow {
   font-family: var(--font-mono);

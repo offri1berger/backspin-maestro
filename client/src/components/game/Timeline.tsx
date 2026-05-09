@@ -24,9 +24,13 @@ interface Props {
   spectatorDragSlot?: number | null
   broadcastDrag?: boolean
   autoConfirm?: boolean
+  vertical?: boolean
+  pendingPosition?: number | null
+  onPendingChange?: (pos: number | null) => void
+  showPlaceButton?: boolean
 }
 
-// Mini card for a placed song in the horizontal timeline
+// Mini card — horizontal desktop timeline
 const MiniYearCard = ({ entry }: { entry: TimelineEntry }) => (
   <div className="shrink-0 w-[82px] p-[8px_8px_10px] rounded-[10px] bg-surface text-on-surface">
     <div className="font-display text-[26px] leading-none text-accent tracking-[-0.02em]">
@@ -41,29 +45,69 @@ const MiniYearCard = ({ entry }: { entry: TimelineEntry }) => (
   </div>
 )
 
-// Read-only mini year card (exported for opponents view)
 export { MiniYearCard }
 
-// A horizontal droppable slot — thin line when inactive, expands when active
+// Full-width year card — vertical mobile timeline (matches design .year-card)
+const VerticalYearCard = ({ entry }: { entry: TimelineEntry }) => (
+  <div
+    style={{
+      background: 'var(--color-surface)',
+      color: 'var(--color-on-surface)',
+      borderRadius: 18,
+      padding: '14px 18px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 14,
+      overflow: 'hidden',
+      minHeight: 68,
+    }}
+  >
+    <div
+      style={{
+        fontFamily: 'var(--font-display)',
+        fontSize: 38,
+        lineHeight: 1,
+        letterSpacing: '-0.03em',
+        color: 'var(--color-accent)',
+        flexShrink: 0,
+        width: 86,
+      }}
+    >
+      {entry.song.year}
+    </div>
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {entry.song.title}
+      </div>
+      <div
+        style={{
+          fontSize: 12, color: 'var(--color-muted)',
+          fontFamily: 'var(--font-mono)', letterSpacing: '0.02em',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          marginTop: 2,
+        }}
+      >
+        {entry.song.artist}
+      </div>
+    </div>
+  </div>
+)
+
+// Horizontal drop slot — desktop
 const HSlot = ({ id, isActive }: { id: number; isActive: boolean }) => {
   const { isOver, setNodeRef } = useDroppable({ id })
-
   return (
     <div
       ref={setNodeRef}
       className="shrink-0 h-[90px] flex items-center justify-center"
-      style={{
-        width: isActive ? 96 : 28,
-        transition: 'width 0.18s ease',
-      }}
+      style={{ width: isActive ? 96 : 28, transition: 'width 0.18s ease' }}
     >
       {isActive ? (
         <MysteryCardFace />
       ) : (
         <div
           style={{
-            width: 1,
-            height: 64,
+            width: 1, height: 64,
             borderLeft: `1.5px dashed ${isOver ? 'var(--color-accent)' : 'var(--color-line)'}`,
             transition: 'border-color 0.15s',
           }}
@@ -71,6 +115,43 @@ const HSlot = ({ id, isActive }: { id: number; isActive: boolean }) => {
       )}
     </div>
   )
+}
+
+// Vertical drop slot — mobile. Height is ALWAYS 36px — no layout shift during drag.
+const VSlot = ({ id, label }: { id: number; label: string }) => {
+  const { isOver, setNodeRef } = useDroppable({ id })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className="w-full flex items-center justify-center"
+      style={{
+        height: 36,
+        borderRadius: 10,
+        border: `1.5px dashed ${isOver ? 'var(--color-accent)' : 'var(--color-line)'}`,
+        background: isOver ? 'color-mix(in oklch, var(--color-accent) 14%, transparent)' : 'transparent',
+        transition: 'border-color 0.15s, background 0.15s',
+        fontFamily: 'var(--font-mono)',
+        fontSize: 10,
+        letterSpacing: '0.15em',
+        textTransform: 'uppercase' as const,
+        color: isOver ? 'var(--color-accent)' : 'var(--color-muted-2)',
+      }}
+    >
+      {label}
+    </div>
+  )
+}
+
+// Build the placement hint shown on the mystery card face
+function buildHint(timeline: TimelineEntry[], pos: number): string {
+  const left = pos > 0 ? timeline[pos - 1]?.song.year : undefined
+  const right = timeline[pos]?.song.year
+  const fmt = (y: number) => `'${String(y).slice(2)}`
+  if (left && right) return `Place between ${fmt(left)} and ${fmt(right)}`
+  if (left) return `Place after ${fmt(left)}`
+  if (right) return `Place before ${fmt(right)}`
+  return 'Place anywhere'
 }
 
 const Timeline = ({
@@ -83,12 +164,23 @@ const Timeline = ({
   spectatorDragSlot = null,
   broadcastDrag = true,
   autoConfirm = false,
+  vertical = false,
+  pendingPosition: controlledPending,
+  onPendingChange,
+  showPlaceButton = true,
 }: Props) => {
   const isStealWindowOpen = useGameStore((s) => s.isStealWindowOpen)
   const [dragging, setDragging] = useState(false)
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null)
-  const [pendingPosition, setPendingPosition] = useState<number | null>(null)
+  const [pendingPositionInternal, setPendingPositionInternal] = useState<number | null>(null)
   const lastEmittedSlot = useRef<number | null | undefined>(undefined)
+
+  const isControlled = controlledPending !== undefined
+  const pendingPos = isControlled ? controlledPending : pendingPositionInternal
+  const setPending = (pos: number | null) => {
+    if (isControlled) onPendingChange?.(pos)
+    else setPendingPositionInternal(pos)
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -118,29 +210,22 @@ const Timeline = ({
     if (autoConfirm) {
       onPlace?.(Number(over.id))
     } else {
-      setPendingPosition(Number(over.id))
+      setPending(Number(over.id))
     }
   }
 
-  // only clear the pending card once the steal window is also gone
   useEffect(() => {
-    if (isWaiting && !isStealWindowOpen) setPendingPosition(null)
+    if (isWaiting && !isStealWindowOpen) setPending(null)
   }, [isWaiting, isStealWindowOpen])
 
   const handleConfirmPlace = () => {
-    if (pendingPosition === null || !onPlace) return
-    onPlace(pendingPosition)
-    // don't clear pendingPosition here — keep card visible through steal window
+    if (pendingPos === null || !onPlace) return
+    onPlace(pendingPos)
   }
 
-  // Read-only: compact horizontal row
   if (readOnly) {
     if (timeline.length === 0) {
-      return (
-        <p className="text-muted text-xs text-center py-5">
-          No songs placed yet
-        </p>
-      )
+      return <p className="text-muted text-xs text-center py-5">No songs placed yet</p>
     }
     return (
       <div className="flex gap-1.5 overflow-x-auto pb-1">
@@ -152,6 +237,83 @@ const Timeline = ({
   const slots = timeline.length + 1
   const hoverSlot = dragging ? dragOverSlot : null
 
+  // ── Vertical layout (mobile) ──────────────────────────────────────────────
+  if (vertical) {
+    const slotLabel = (i: number) =>
+      i === 0 ? '← earlier' : i === slots - 1 ? 'later →' : 'drop here'
+
+    return (
+      <DndContext
+        sensors={sensors}
+        onDragStart={() => setDragging(true)}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: slots }).map((_, i) => {
+            const isPendingSlot = pendingPos === i && currentSong != null
+            const showSpectator = !isMyTurn && spectatorDragSlot === i && currentSong != null
+            const hint = isPendingSlot ? buildHint(timeline, i) : undefined
+
+            return (
+              <Fragment key={i}>
+                {isMyTurn ? (
+                  isPendingSlot ? (
+                    // Card dropped here — show mystery card in place
+                    <SongCard draggable isWaiting={false} fullWidth hint={hint} />
+                  ) : (
+                    <VSlot id={i} label={slotLabel(i)} />
+                  )
+                ) : (
+                  // Spectator view — fixed height, color-only feedback, no layout shift
+                  <div
+                    style={{
+                      height: 36, borderRadius: 10,
+                      border: `1.5px dashed ${showSpectator ? 'var(--color-accent)' : 'var(--color-line)'}`,
+                      background: showSpectator ? 'color-mix(in oklch, var(--color-accent) 14%, transparent)' : 'transparent',
+                      transition: 'border-color 0.15s, background 0.15s',
+                    }}
+                  />
+                )}
+                {timeline[i] && <VerticalYearCard entry={timeline[i]} />}
+              </Fragment>
+            )
+          })}
+
+          {/* Draggable source card (before any slot is chosen) */}
+          {isMyTurn && currentSong && !isWaiting && pendingPos === null && (
+            <div className="pt-1">
+              <div
+                style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 10,
+                  letterSpacing: '0.15em', textTransform: 'uppercase',
+                  color: 'var(--color-muted)', textAlign: 'center', marginBottom: 8,
+                }}
+              >
+                drag to a slot to place
+              </div>
+              <SongCard draggable isWaiting={false} fullWidth />
+            </div>
+          )}
+
+          {/* Spectator waiting */}
+          {!isMyTurn && currentSong && spectatorDragSlot === null && !isWaiting && (
+            <MysteryCardFace fullWidth />
+          )}
+        </div>
+
+        <DragOverlay>
+          {dragging && (
+            <div style={{ transform: 'scale(1.08)', transformOrigin: 'center' }}>
+              <MysteryCardFace />
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
+    )
+  }
+
+  // ── Horizontal layout (desktop) ───────────────────────────────────────────
   return (
     <DndContext
       sensors={sensors}
@@ -160,18 +322,15 @@ const Timeline = ({
       onDragEnd={handleDragEnd}
     >
       <div className="flex flex-col gap-3">
-        {/* Horizontal timeline track */}
         <div
           className="relative p-[16px_12px] border border-line rounded-[20px]"
           style={{ background: 'color-mix(in oklch, var(--color-on-bg) 2%, transparent)' }}
         >
-          {/* Axis line */}
           <div className="absolute left-5 right-5 top-1/2 h-px bg-line" />
           <div className="flex items-center overflow-x-auto relative pb-0.5 gap-0">
             {Array.from({ length: slots }).map((_, i) => {
               const showHover = hoverSlot === i && currentSong != null
-              // pending slot: plain div with draggable card — NOT a droppable (avoids DnD removeChild crash)
-              const isPendingSlot = pendingPosition === i && currentSong != null
+              const isPendingSlot = pendingPos === i && currentSong != null
               const showSpectator = !isMyTurn && spectatorDragSlot === i && currentSong != null
               const isActive = showHover || showSpectator
 
@@ -179,23 +338,16 @@ const Timeline = ({
                 <Fragment key={i}>
                   {isMyTurn ? (
                     isPendingSlot ? (
-                      <div
-                        className="shrink-0 h-[90px] flex items-center justify-center"
-                        style={{ width: 96 }}
-                      >
+                      <div className="shrink-0 h-[90px] flex items-center justify-center" style={{ width: 96 }}>
                         <SongCard draggable isWaiting={false} />
                       </div>
                     ) : (
                       <HSlot id={i} isActive={isActive} />
                     )
                   ) : (
-                    // Non-interactive spectator slot
                     <div
                       className="shrink-0 h-[90px] flex items-center justify-center"
-                      style={{
-                        width: showSpectator ? 96 : 28,
-                        transition: 'width 0.18s ease',
-                      }}
+                      style={{ width: showSpectator ? 96 : 28, transition: 'width 0.18s ease' }}
                     >
                       {showSpectator ? (
                         <MysteryCardFace />
@@ -211,8 +363,7 @@ const Timeline = ({
           </div>
         </div>
 
-        {/* Mystery card source — shown at bottom only before a slot is chosen; after drop it lives in the slot */}
-        {isMyTurn && currentSong && !isWaiting && pendingPosition === null && (
+        {isMyTurn && currentSong && !isWaiting && pendingPos === null && (
           <div className="flex flex-col items-center gap-2">
             <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
               drag · or drop onto a slot
@@ -221,8 +372,7 @@ const Timeline = ({
           </div>
         )}
 
-        {/* Lock in button after drop */}
-        {isMyTurn && !isWaiting && pendingPosition !== null && (
+        {showPlaceButton && isMyTurn && !isWaiting && pendingPos !== null && (
           <button
             onClick={handleConfirmPlace}
             className="w-full h-11 rounded-full bg-accent text-accent-ink border-0 cursor-pointer font-body font-semibold text-sm flex items-center justify-center gap-2"
@@ -234,7 +384,6 @@ const Timeline = ({
           </button>
         )}
 
-        {/* Spectator mystery card */}
         {!isMyTurn && currentSong && spectatorDragSlot === null && !isWaiting && (
           <div className="self-center">
             <MysteryCardFace />
