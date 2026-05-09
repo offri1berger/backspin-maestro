@@ -1,9 +1,43 @@
-// Auto-discovers every image in src/assets/avatars/.
-// To add or remove an avatar, just add or remove the file from that folder.
-const modules = import.meta.glob('../assets/avatars/*.{png,jpg,jpeg,gif,webp,svg}', {
-  eager: true,
-  query: '?url',
-  import: 'default',
-})
+const R2 = import.meta.env.VITE_R2_BASE_URL
 
-export const AVATARS: string[] = Object.values(modules) as string[]
+export const AVATARS: string[] = [
+  `${R2}/amy%20winehouse.jpg`,
+  `${R2}/beyonce.jpg`,
+  `${R2}/bob%20marley.jpg`,
+  `${R2}/chester%20bennington.jpg`,
+  `${R2}/chris%20cornell.jpg`,
+  `${R2}/chris%20martin.jpg`,
+  `${R2}/drake.jpg`,
+  `${R2}/ed%20sheeran.jpg`,
+  `${R2}/eddie%20vedder.jpg`,
+  `${R2}/elton%20john.jpg`,
+  `${R2}/elvis%20presley.jpg`,
+  `${R2}/eminem.jpg`,
+  `${R2}/frank%20sinatra.jpg`,
+  `${R2}/freddie%20mercury.jpg`,
+  `${R2}/gene%20simmons.jpg`,
+  `${R2}/jimi%20hendrix.jpg`,
+  `${R2}/jimmy%20page.jpg`,
+  `${R2}/john%20lennon.jpg`,
+  `${R2}/justin%20bieber.jpg`,
+  `${R2}/kanye%20west.jpg`,
+  `${R2}/kurt%20cobain.jpg`,
+  `${R2}/lady%20gaga.jpg`,
+  `${R2}/madona.jpg`,
+  `${R2}/michael%20jackson.jpg`,
+  `${R2}/ozzy%20ozburm.jpg`,
+  `${R2}/paul%20mcCartney.jpg`,
+  `${R2}/phil%20collins.jpg`,
+  `${R2}/prince.jpg`,
+  `${R2}/slash.jpg`,
+  `${R2}/tame%20impala.jpg`,
+  `${R2}/taylor%20swift.jpg`,
+  `${R2}/tina%20turner.jpg`,
+  `${R2}/tom%20yorke.jpg`,
+  `${R2}/tupac.jpg`,
+
+  // TODO: upload these 3 to R2, then replace with R2 URLs
+  new URL('../assets/avatars/ledZepplinPng.png', import.meta.url).href,
+  new URL('../assets/avatars/ozzyOzburmPng.png', import.meta.url).href,
+  new URL('../assets/avatars/paulMcCartneyPng.png', import.meta.url).href,
+]
