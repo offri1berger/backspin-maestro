@@ -159,6 +159,10 @@ export const useSocket = () => {
       useGameStore.getState().transferHost(newHostId)
     })
 
+    socket.on('game:reset', (players) => {
+      useGameStore.getState().resetGame(players)
+    })
+
     return () => {
       socket.off('connect')
       socket.off('player:joined')
@@ -176,6 +180,7 @@ export const useSocket = () => {
       socket.off('player:disconnected')
       socket.off('player:reconnected')
       socket.off('host:transferred')
+      socket.off('game:reset')
       socket.disconnect()
     }
   }, [])

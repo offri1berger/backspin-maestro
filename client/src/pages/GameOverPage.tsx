@@ -1,12 +1,20 @@
 import { useGameStore } from '../store/gameStore'
 import { MiniYearCard } from '../components/game/Timeline'
 import { Logo } from '../components/ui/Logo'
+import socket from '../socket'
 
 const GameOverPage = () => {
   const { players, winnerId, playerId } = useGameStore()
   const ranked = [...players].sort((a, b) => b.timeline.length - a.timeline.length)
   const winner = ranked[0]
   const isWinner = winnerId === playerId
+  const isHost = players.find((p) => p.id === playerId)?.isHost ?? false
+
+  const handleRematch = () => {
+    socket.emit('room:reset', (error) => {
+      if (error) console.error('rematch error:', error)
+    })
+  }
 
   return (
     <div className="min-h-screen bg-bg grid grid-cols-[1.1fr_1fr]">
@@ -117,12 +125,18 @@ const GameOverPage = () => {
         <div className="flex-1" />
 
         <div className="flex gap-3 mt-8">
-          <button
-            onClick={() => window.location.reload()}
-            className="flex-[2] h-14 rounded-full bg-accent text-accent-ink border-none cursor-pointer font-body font-semibold text-base"
-          >
-            Rematch
-          </button>
+          {isHost ? (
+            <button
+              onClick={handleRematch}
+              className="flex-[2] h-14 rounded-full bg-accent text-accent-ink border-none cursor-pointer font-body font-semibold text-base"
+            >
+              Rematch
+            </button>
+          ) : (
+            <div className="flex-[2] h-14 rounded-full border border-line flex items-center justify-center font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
+              Waiting for host…
+            </div>
+          )}
           <button
             className="flex-1 h-14 rounded-full bg-transparent text-on-bg border border-line cursor-pointer font-body font-semibold text-base"
           >

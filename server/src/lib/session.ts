@@ -122,6 +122,13 @@ export const getTimelineCount = async (playerId: string): Promise<number> =>
 
 // ── Cleanup ──────────────────────────────────────────────────────────────────
 
+export const resetSessionPlayer = async (playerId: string) => {
+  const player = await getSessionPlayer(playerId)
+  if (!player) return
+  await redis.del(timelineKey(playerId))
+  await redis.set(playerKey(playerId), JSON.stringify({ ...player, tokens: 2, turnOrder: 0 }), 'EX', SESSION_TTL)
+}
+
 export const removeSessionPlayer = async (playerId: string) => {
   const player = await getSessionPlayer(playerId)
   if (!player) return

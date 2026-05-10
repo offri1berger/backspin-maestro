@@ -44,6 +44,7 @@ interface GameStore {
   setPlayerDisconnected: (id: string) => void
   setPlayerReconnected: (id: string) => void
   transferHost: (newHostId: string) => void
+  resetGame: (players: Player[]) => void
   addPlayer: (player: Player) => void
   removePlayer: (playerId: string) => void
   setGameStarted: (players: Player[], phase: GamePhase, currentPlayerId: string) => void
@@ -114,4 +115,24 @@ export const useGameStore = create<GameStore>((set) => ({
   transferHost: (newHostId) => set((s) => ({
     players: s.players.map((p) => ({ ...p, isHost: p.id === newHostId })),
   })),
+  resetGame: (players) => {
+    const { roomCode, playerId } = useGameStore.getState()
+    if (roomCode && playerId) persistSession(roomCode, playerId)
+    set({
+      players,
+      phase: null,
+      currentPlayerId: null,
+      currentSong: null,
+      roundNumber: 1,
+      winnerId: null,
+      pendingPosition: null,
+      placementResult: null,
+      isWaitingForNextTurn: false,
+      hasGuessed: false,
+      stealResult: null,
+      isStealWindowOpen: false,
+      stealInitiatorId: null,
+      disconnectedPlayerIds: [],
+    })
+  },
 }))

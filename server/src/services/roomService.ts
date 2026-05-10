@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { generateRoomCode } from '../lib/roomCode.js'
-import { createSessionRoom, createSessionPlayer, getSessionRoom, getPlayersByRoomCode, getSessionPlayer, updatePlayerSocketId, getTimeline } from '../lib/session.js'
-import { getGameState } from '../lib/gameCache.js'
+import { createSessionRoom, createSessionPlayer, getSessionRoom, getPlayersByRoomCode, getSessionPlayer, updatePlayerSocketId, getTimeline, resetSessionPlayer, updateRoomStatus } from '../lib/session.js'
+import { getGameState, deleteGameState, deleteUsedSongs } from '../lib/gameCache.js'
 import { db } from '../db/database.js'
 import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, CreateRoomResult, RejoinResult, Player, GameState } from '@hitster/shared'
 
@@ -142,4 +142,33 @@ export const rejoinRoomService = async (
     settings: { songsPerPlayer: room.songsPerPlayer, decadeFilter: room.decadeFilter },
     gameState,
   }
+}
+
+export const resetRoomService = async (
+  roomCode: string,
+  socketId: string,
+): Promise<{ players: Player[] } | { error: string }> => {
+  const room = await getSessionRoom(roomCode)
+  if (!room) return { error: 'room_not_found' }
+
+  const sessionPlayers = await getPlayersByRoomCode(roomCode)
+  const host = sessionPlayers.find((p) => p.socketId === socketId)
+  if (!host?.isHost) return { error: 'not_host' }
+
+  await updateRoomStatus(roomCode, 'lobby')
+  await deleteGameState(roomCode)
+  await deleteUsedSongs(roomCode)
+  await Promise.all(sessionPlayers.map((p) => resetSessionPlayer(p.id)))
+
+  const players: Player[] = sessionPlayers.map((p) => ({
+    id: p.id,
+    name: p.name,
+    avatar: p.avatar || undefined,
+    tokens: 2,
+    isHost: p.isHost,
+    turnOrder: 0,
+    timeline: [],
+  }))
+
+  return { players }
 }

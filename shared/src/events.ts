@@ -94,12 +94,14 @@ export interface ServerToClientEvents {
   'player:disconnected': (playerId: string) => void
   'player:reconnected': (playerId: string) => void
   'host:transferred': (newHostId: string) => void
+  'game:reset': (players: Player[]) => void
 }
 
 export interface ClientToServerEvents {
   'room:create': (payload: CreateRoomPayload, cb: (result: CreateRoomResult) => void) => void
   'room:join': (payload: JoinRoomPayload, cb: (result: JoinRoomResult) => void) => void
   'room:rejoin': (payload: RejoinPayload, cb: (result: RejoinResult) => void) => void
+  'room:reset': (cb: (error?: string) => void) => void
   'game:start': (cb: (error?: string) => void) => void
   'song:guess': (payload: GuessPayload) => void
   'song:skip': (cb: (error?: string) => void) => void

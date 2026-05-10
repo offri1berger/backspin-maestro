@@ -1,8 +1,9 @@
 import type { Socket, Server } from 'socket.io'
 import type { ServerToClientEvents, ClientToServerEvents } from '@hitster/shared'
-import { createRoomService, joinRoomService, rejoinRoomService } from '../services/roomService.js'
+import { createRoomService, joinRoomService, rejoinRoomService, resetRoomService } from '../services/roomService.js'
 import { startGameService } from '../services/gameService.js'
 import { cancelDisconnectTimer } from './disconnectHandler.js'
+import { roomLimiter } from '../lib/rateLimit.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
@@ -10,6 +11,7 @@ type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
 export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
   socket.on('room:create', async (payload, cb) => {
     try {
+      if (!roomLimiter.allow(socket.id)) { socket.emit('error', 'Too many requests'); return }
       if (!payload?.hostName?.trim()) { socket.emit('error', 'Invalid payload'); return }
       const result = await createRoomService(payload, socket.id)
       socket.join(result.roomCode)
@@ -22,6 +24,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
 
   socket.on('room:join', async (payload, cb) => {
     try {
+      if (!roomLimiter.allow(socket.id)) { cb({ success: false, error: 'room_not_found' }); return }
       if (!payload?.roomCode?.trim() || !payload?.playerName?.trim()) {
         cb({ success: false, error: 'room_not_found' }); return
       }
@@ -66,6 +69,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
 
   socket.on('game:start', async (cb) => {
     try {
+      if (!roomLimiter.allow(socket.id)) { cb('rate_limited'); return }
       const rooms = [...socket.rooms].filter((r) => r !== socket.id)
       const roomCode = rooms[0]
       if (!roomCode) { cb('not_in_room'); return }
@@ -79,6 +83,24 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
     } catch (err) {
       console.error('game:start error', err)
       socket.emit('error', 'Failed to start game')
+    }
+  })
+
+  socket.on('room:reset', async (cb) => {
+    try {
+      if (!roomLimiter.allow(socket.id)) { cb('rate_limited'); return }
+      const rooms = [...socket.rooms].filter((r) => r !== socket.id)
+      const roomCode = rooms[0]
+      if (!roomCode) { cb('not_in_room'); return }
+
+      const result = await resetRoomService(roomCode, socket.id)
+      if ('error' in result) { cb(result.error); return }
+
+      io.to(roomCode).emit('game:reset', result.players)
+      cb()
+    } catch (err) {
+      console.error('room:reset error', err)
+      cb('server_error')
     }
   })
 }

@@ -7,6 +7,7 @@ import type { ServerToClientEvents, ClientToServerEvents } from '@hitster/shared
 import { registerRoomHandlers } from './socket/roomHandlers.js'
 import { registerGameHandlers } from './socket/gameHandlers.js'
 import { handleDisconnect } from './socket/disconnectHandler.js'
+import { clearAllLimits } from './lib/rateLimit.js'
 import { db } from './db/database.js'
 import { redis } from './lib/redis.js'
 
@@ -41,6 +42,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', async () => {
     console.log('client disconnected:', socket.id)
+    clearAllLimits(socket.id)
     try { await handleDisconnect(io, socket) } catch (err) { console.error('disconnect error', err) }
   })
 })
