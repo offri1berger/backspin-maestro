@@ -1,9 +1,11 @@
+import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../store/gameStore'
 import { MiniYearCard } from '../components/game/Timeline'
 import { Logo } from '../components/ui/Logo'
 import socket from '../socket'
 
 const GameOverPage = () => {
+  const navigate = useNavigate()
   const { players, winnerId, playerId, settings } = useGameStore()
   const songsToWin = settings?.songsPerPlayer ?? 10
   const ranked = [...players].sort((a, b) => b.timeline.length - a.timeline.length)
@@ -138,6 +140,12 @@ const GameOverPage = () => {
               Waiting for host…
             </div>
           )}
+          <button
+            onClick={() => navigate('/')}
+            className="flex-1 h-14 rounded-full bg-transparent text-on-bg border border-line cursor-pointer font-body font-semibold text-base"
+          >
+            Back to game
+          </button>
           <button
             className="flex-1 h-14 rounded-full bg-transparent text-on-bg border border-line cursor-pointer font-body font-semibold text-base"
           >
