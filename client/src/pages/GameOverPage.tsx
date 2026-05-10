@@ -147,7 +147,8 @@ const GameOverPage = () => {
             Back to game
           </button>
           <button
-            className="flex-1 h-14 rounded-full bg-transparent text-on-bg border border-line cursor-pointer font-body font-semibold text-base"
+          disabled
+            className="flex-1 h-14 rounded-full bg-transparent text-on-bg border border-line font-body font-semibold text-base cursor-not-allowed"
           >
             Share
           </button>

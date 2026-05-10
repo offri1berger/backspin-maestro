@@ -52,7 +52,7 @@ export const PlayerRail = () => {
         })}
       </div>
 
-      <div className="mt-7">
+      {/* <div className="mt-7">
         <SectionMark>Shortcuts</SectionMark>
         <div className="mt-3 flex flex-col gap-2">
           {([['SPACE', 'Play / pause'], ['← →', 'Move card'], ['↵', 'Lock placement'], ['G', 'Guess input']] as const).map(([k, v]) => (
@@ -65,7 +65,7 @@ export const PlayerRail = () => {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
     </aside>
   )
 }

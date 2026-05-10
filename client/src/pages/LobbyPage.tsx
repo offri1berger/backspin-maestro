@@ -18,7 +18,7 @@ const LobbyPage = () => {
   const [songsPerPlayer, setSongsPerPlayer] = useState(10)
   const [avatar, setAvatar] = useState<string | undefined>(undefined)
 
-  const { setRoom, setPlayers, roomCode: storeRoomCode, phase } = useGameStore()
+  const { setRoom, setPlayers, roomCode: storeRoomCode, phase, leaveRoom } = useGameStore()
 
   useEffect(() => {
     if (!storeRoomCode) return
@@ -29,6 +29,7 @@ const LobbyPage = () => {
 
   const handleCreate = () => {
     if (!name.trim()) return
+    leaveRoom()
     socket.connect()
     socket.emit('room:create', {
       hostName: name,
@@ -43,6 +44,7 @@ const LobbyPage = () => {
 
   const handleJoin = () => {
     if (!name.trim() || !roomCode.trim()) return
+    leaveRoom()
     socket.connect()
     socket.emit('room:join', { roomCode: roomCode.toUpperCase(), playerName: name, avatar }, (result) => {
       if (!result.success) { alert(result.error); return }

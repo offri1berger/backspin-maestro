@@ -19,6 +19,10 @@ export const useSocket = () => {
           return
         }
         const store = useGameStore.getState()
+        // Bail out if the user has created/joined a different room while
+        // this rejoin was in flight — otherwise we'd clobber their new
+        // session with the stale one and route them into the old game.
+        if (store.roomCode && store.roomCode !== saved.roomCode) return
         if (result.roomStatus === 'playing' && result.gameState) {
           store.restoreSession({
             roomCode: saved.roomCode,
