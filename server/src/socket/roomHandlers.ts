@@ -1,10 +1,16 @@
 import type { Socket, Server } from 'socket.io'
 import type { ServerToClientEvents, ClientToServerEvents } from '@hitster/shared'
+import {
+  CreateRoomPayloadSchema,
+  JoinRoomPayloadSchema,
+  RejoinPayloadSchema,
+} from '@hitster/shared'
 import { createRoomService, joinRoomService, rejoinRoomService, resetRoomService } from '../services/roomService.js'
 import { startGameService } from '../services/gameService.js'
 import { cancelDisconnectTimer, finalizeDisconnect } from './disconnectHandler.js'
 import { getPlayerBySocketId } from '../lib/session.js'
 import { roomLimiter } from '../lib/rateLimit.js'
+import { parsePayload } from '../lib/validate.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
@@ -13,8 +19,9 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
   socket.on('room:create', async (payload, cb) => {
     try {
       if (!roomLimiter.allow(socket.id)) { socket.emit('error', 'Too many requests'); return }
-      if (!payload?.hostName?.trim()) { socket.emit('error', 'Invalid payload'); return }
-      const result = await createRoomService(payload, socket.id)
+      const data = parsePayload(CreateRoomPayloadSchema, payload)
+      if (!data) { socket.emit('error', 'Invalid payload'); return }
+      const result = await createRoomService(data, socket.id)
       socket.join(result.roomCode)
       cb(result)
     } catch (err) {
@@ -26,18 +33,17 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
   socket.on('room:join', async (payload, cb) => {
     try {
       if (!roomLimiter.allow(socket.id)) { cb({ success: false, error: 'room_not_found' }); return }
-      if (!payload?.roomCode?.trim() || !payload?.playerName?.trim()) {
-        cb({ success: false, error: 'room_not_found' }); return
-      }
-      const result = await joinRoomService(payload, socket.id)
+      const data = parsePayload(JoinRoomPayloadSchema, payload)
+      if (!data) { cb({ success: false, error: 'room_not_found' }); return }
+      const result = await joinRoomService(data, socket.id)
 
       if (!result.success) { cb(result); return }
 
-      socket.join(payload.roomCode)
-      socket.to(payload.roomCode).emit('player:joined', {
+      socket.join(data.roomCode)
+      socket.to(data.roomCode).emit('player:joined', {
         id: result.playerId!,
-        name: payload.playerName,
-        avatar: payload.avatar,
+        name: data.playerName,
+        avatar: data.avatar,
         tokens: 2,
         isHost: false,
         turnOrder: 0,
@@ -52,14 +58,14 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
 
   socket.on('room:rejoin', async (payload, cb) => {
     try {
-      if (!payload?.playerId || !payload?.roomCode) {
-        cb({ success: false, error: 'player_not_found' }); return
-      }
-      cancelDisconnectTimer(payload.playerId)
-      const result = await rejoinRoomService(payload.playerId, payload.roomCode, socket.id)
+      const data = parsePayload(RejoinPayloadSchema, payload)
+      if (!data) { cb({ success: false, error: 'player_not_found' }); return }
+      const { playerId, roomCode } = data
+      cancelDisconnectTimer(playerId)
+      const result = await rejoinRoomService(playerId, roomCode, socket.id)
       if (result.success) {
-        socket.join(payload.roomCode)
-        socket.to(payload.roomCode).emit('player:reconnected', payload.playerId)
+        socket.join(roomCode)
+        socket.to(roomCode).emit('player:reconnected', playerId)
       }
       cb(result)
     } catch (err) {

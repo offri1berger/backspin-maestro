@@ -65,8 +65,21 @@ const GamePage = () => {
     if (guess.artist.trim() && guess.title.trim()) {
       socket.emit('song:guess', { artist: guess.artist, title: guess.title })
     }
+    const snapshot = useGameStore.getState()
     socket.emit('card:place', { position }, (error) => {
-      if (error) { console.error('place error:', error); onError?.(); return }
+      if (error) {
+        console.error('place error:', error, {
+          clientPlayerId: snapshot.playerId,
+          clientCurrentPlayerId: snapshot.currentPlayerId,
+          isMyTurn: snapshot.currentPlayerId === snapshot.playerId,
+          phase: snapshot.phase,
+          isWaitingForNextTurn: snapshot.isWaitingForNextTurn,
+          isStealWindowOpen: snapshot.isStealWindowOpen,
+          position,
+        })
+        onError?.()
+        return
+      }
       setGuess({ artist: '', title: '' })
       setHasGuessed(true)
     })
@@ -85,7 +98,7 @@ const GamePage = () => {
   }
 
   const handleStealInitiate = () => {
-    socket.emit('steal:initiated', playerId ?? '')
+    socket.emit('steal:initiated')
     setIsAttemptingSteal(true)
   }
 

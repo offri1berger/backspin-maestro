@@ -1,5 +1,11 @@
 import type { Socket, Server } from 'socket.io'
 import type { ServerToClientEvents, ClientToServerEvents, PlacementResultPayload } from '@hitster/shared'
+import {
+  PlacePayloadSchema,
+  StealPayloadSchema,
+  GuessPayloadSchema,
+  DragMovePayloadSchema,
+} from '@hitster/shared'
 import { validatePlacement } from '../services/placementService.js'
 import { nextTurnService, checkWinCondition } from '../services/gameService.js'
 import { handleGuessService } from '../services/guessService.js'
@@ -12,6 +18,7 @@ import {
 import { db } from '../db/database.js'
 import { placeLimiter, stealLimiter, skipLimiter, guessLimiter } from '../lib/rateLimit.js'
 import { pendingResults, stealTimeouts, resolvedRooms, cleanupRoomState } from '../lib/roomTimeouts.js'
+import { parsePayload } from '../lib/validate.js'
 
 const buildGameOverPlayers = async (roomCode: string) => {
   const players = await getPlayersByRoomCode(roomCode)
@@ -47,7 +54,8 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
   socket.on('card:place', async (payload, cb) => {
     try {
       if (!placeLimiter.allow(socket.id)) { cb('rate_limited'); return }
-      if (typeof payload?.position !== 'number' || payload.position < 0) { cb('invalid_payload'); return }
+      const data = parsePayload(PlacePayloadSchema, payload)
+      if (!data) { cb('invalid_payload'); return }
       const rooms = [...socket.rooms].filter((r) => r !== socket.id)
       const roomCode = rooms[0]
       if (!roomCode) { cb('not_in_room'); return }
@@ -55,7 +63,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       const player = await getPlayerBySocketId(socket.id)
       if (!player) { cb('player_not_found'); return }
 
-      const result = await validatePlacement(roomCode, player.id, payload.position)
+      const result = await validatePlacement(roomCode, player.id, data.position)
       if ('error' in result) { cb(result.error); return }
 
       const placementPayload: PlacementResultPayload = {
@@ -104,8 +112,9 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
   socket.on('steal:attempt', async (payload, cb) => {
     try {
       if (!stealLimiter.allow(socket.id)) { cb('rate_limited'); return }
-      if (typeof payload?.targetPlayerId !== 'string' || typeof payload?.position !== 'number') { cb('invalid_payload'); return }
-      const { targetPlayerId, position } = payload
+      const data = parsePayload(StealPayloadSchema, payload)
+      if (!data) { cb('invalid_payload'); return }
+      const { targetPlayerId, position } = data
       const rooms = [...socket.rooms].filter((r) => r !== socket.id)
       const roomCode = rooms[0]
       if (!roomCode) { cb('not_in_room'); return }
@@ -189,18 +198,23 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
     }
   })
 
-  socket.on('steal:initiated', (stealerId: string) => {
-    const rooms = [...socket.rooms].filter((r) => r !== socket.id)
-    const roomCode = rooms[0]
+  socket.on('steal:initiated', async () => {
+    if (!stealLimiter.allow(socket.id)) return
+    const stealer = await getPlayerBySocketId(socket.id)
+    if (!stealer) return
+    const stealerId = stealer.id
+    const roomCode = stealer.roomCode
     if (!roomCode) return
-
-    const existing = stealTimeouts.get(roomCode)
-    if (existing) { clearTimeout(existing); stealTimeouts.delete(roomCode) }
 
     if (resolvedRooms.has(roomCode)) return
 
     const pending = pendingResults.get(roomCode)
     if (!pending) return
+    if (pending.playerId === stealerId) return
+    if (stealer.tokens < 1) return
+
+    const existing = stealTimeouts.get(roomCode)
+    if (existing) { clearTimeout(existing); stealTimeouts.delete(roomCode) }
 
     const t = setTimeout(async () => {
       if (resolvedRooms.has(roomCode)) return
@@ -271,12 +285,13 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
   socket.on('song:guess', async (payload) => {
     try {
       if (!guessLimiter.allow(socket.id)) return
-      if (typeof payload?.artist !== 'string' || typeof payload?.title !== 'string') return
+      const data = parsePayload(GuessPayloadSchema, payload)
+      if (!data) return
       const rooms = [...socket.rooms].filter((r) => r !== socket.id)
       const roomCode = rooms[0]
       if (!roomCode) return
 
-      const result = await handleGuessService(roomCode, socket.id, payload.artist, payload.title)
+      const result = await handleGuessService(roomCode, socket.id, data.artist, data.title)
       if ('error' in result) { console.error('guess error:', result.error); return }
 
       if (result.correct) {
@@ -299,9 +314,11 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
     if (roomCode) socket.to(roomCode).emit('audio:pause')
   })
 
-  socket.on('drag:move', ({ slot }) => {
+  socket.on('drag:move', (payload) => {
+    const data = parsePayload(DragMovePayloadSchema, payload)
+    if (!data) return
     const rooms = [...socket.rooms].filter((r) => r !== socket.id)
     const roomCode = rooms[0]
-    if (roomCode) socket.to(roomCode).emit('drag:update', slot)
+    if (roomCode) socket.to(roomCode).emit('drag:update', data.slot)
   })
 }

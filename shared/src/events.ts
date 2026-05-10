@@ -1,23 +1,29 @@
+import { z } from 'zod'
 import { GamePhase } from './enums'
 import type { RoomStatus } from './enums'
 import type { Player, Song, RoomSettings, GameState, TimelineEntry } from './types'
+import {
+  CreateRoomPayloadSchema,
+  JoinRoomPayloadSchema,
+  RejoinPayloadSchema,
+  PlacePayloadSchema,
+  GuessPayloadSchema,
+  StealPayloadSchema,
+  DragMovePayloadSchema,
+} from './schemas'
 
-export interface CreateRoomPayload {
-  hostName: string
-  avatar?: string
-  settings: RoomSettings
-}
+export type CreateRoomPayload = z.infer<typeof CreateRoomPayloadSchema>
+export type JoinRoomPayload = z.infer<typeof JoinRoomPayloadSchema>
+export type RejoinPayload = z.infer<typeof RejoinPayloadSchema>
+export type PlacePayload = z.infer<typeof PlacePayloadSchema>
+export type GuessPayload = z.infer<typeof GuessPayloadSchema>
+export type StealPayload = z.infer<typeof StealPayloadSchema>
+export type DragMovePayload = z.infer<typeof DragMovePayloadSchema>
 
 export interface CreateRoomResult {
   roomCode: string
   playerId: string
   timeline: TimelineEntry[]
-}
-
-export interface JoinRoomPayload {
-  roomCode: string
-  playerName: string
-  avatar?: string
 }
 
 export interface JoinRoomResult {
@@ -30,30 +36,11 @@ export interface JoinRoomResult {
   timeline?: TimelineEntry[]
 }
 
-export interface PlacePayload {
-  position: number
-}
-
-export interface GuessPayload {
-  artist: string
-  title: string
-}
-
-export interface StealPayload {
-  targetPlayerId: string
-  position: number
-}
-
 export interface PlacementResultPayload {
   playerId: string
   correct: boolean
   song: Song
   correctPosition: number
-}
-
-export interface RejoinPayload {
-  playerId: string
-  roomCode: string
 }
 
 export type RejoinResult =
@@ -110,8 +97,8 @@ export interface ClientToServerEvents {
   'song:skip': (cb: (error?: string) => void) => void
   'card:place': (payload: PlacePayload, cb: (error?: string) => void) => void
   'steal:attempt': (payload: StealPayload, cb: (error?: string) => void) => void
-  'steal:initiated': (stealerId: string) => void
+  'steal:initiated': () => void
   'audio:play': () => void
   'audio:pause': () => void
-  'drag:move': (payload: { slot: number | null }) => void
+  'drag:move': (payload: DragMovePayload) => void
 }
