@@ -24,6 +24,8 @@ interface Props {
 
 export function WaitingRoom({ roomCode, players, onStart }: Props) {
   const disconnectedPlayerIds = useGameStore((s) => s.disconnectedPlayerIds)
+  const playerId = useGameStore((s) => s.playerId)
+  const isHost = players.find((p) => p.id === playerId)?.isHost ?? false
   const ready = players.length >= 2
 
   return (
@@ -49,22 +51,29 @@ export function WaitingRoom({ roomCode, players, onStart }: Props) {
             {players.map((p) => <PlayerRow key={p.id} player={p} offline={disconnectedPlayerIds.includes(p.id)} />)}
           </div>
 
-          <button
-            onClick={onStart}
-            disabled={!ready}
-            className={`w-full h-[60px] rounded-full border-none flex items-center justify-center gap-2.5 font-body font-semibold text-[17px] transition-colors duration-150 ${
-              ready
-                ? 'bg-accent text-accent-ink cursor-pointer'
-                : 'bg-line text-muted cursor-not-allowed'
-            }`}
-          >
-            Cut the deck
-            <ArrowIcon />
-          </button>
-
-          {!ready && (
-            <p className="text-center mt-3 font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
-              waiting for more players…
+          {isHost ? (
+            <>
+              <button
+                onClick={onStart}
+                disabled={!ready}
+                className={`w-full h-[60px] rounded-full border-none flex items-center justify-center gap-2.5 font-body font-semibold text-[17px] transition-colors duration-150 ${
+                  ready
+                    ? 'bg-accent text-accent-ink cursor-pointer'
+                    : 'bg-line text-muted cursor-not-allowed'
+                }`}
+              >
+                Cut the deck
+                <ArrowIcon />
+              </button>
+              {!ready && (
+                <p className="text-center mt-3 font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
+                  waiting for more players…
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-center font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
+              {ready ? 'waiting for host to start…' : 'waiting for more players…'}
             </p>
           )}
         </div>

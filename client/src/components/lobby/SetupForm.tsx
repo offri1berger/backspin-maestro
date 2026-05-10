@@ -45,6 +45,8 @@ export interface SetupFormProps {
   onRoomCodeChange: (v: string) => void
   decade: Decade
   onDecadeChange: (d: Decade) => void
+  songsPerPlayer: number
+  onSongsPerPlayerChange: (n: number) => void
   avatar: string | undefined
   onAvatarChange: (v: string | undefined) => void
   onSubmit: () => void
@@ -55,6 +57,7 @@ export const SetupForm = ({
   name, onNameChange,
   roomCode, onRoomCodeChange,
   decade, onDecadeChange,
+  songsPerPlayer, onSongsPerPlayerChange,
   avatar, onAvatarChange,
   onSubmit,
 }: SetupFormProps) => {
@@ -130,20 +133,34 @@ export const SetupForm = ({
           <>
             <DecadePicker decade={decade} onChange={onDecadeChange} />
 
-            {/* Settings info — desktop only (informational, not needed on mobile) */}
+            {/* Settings — desktop only */}
             <div className="hidden lg:grid grid-cols-2 gap-3">
-              {[
-                { label: 'Songs to win', val: '10', sub: '≈25 min' },
-                { label: 'Stealing',     val: 'On', sub: '4s window' },
-              ].map(({ label, val, sub }) => (
-                <div key={label}>
-                  <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">{label}</p>
-                  <div className="mt-2 px-4 py-3 border border-line rounded-[14px] flex items-center justify-between">
-                    <span className="font-display text-[28px] text-accent leading-none">{val}</span>
-                    <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-muted">{sub}</span>
+              <div>
+                <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Songs to win</p>
+                <div className="mt-2 px-2 py-3 border border-line rounded-[14px] flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => onSongsPerPlayerChange(Math.max(3, songsPerPlayer - 1))}
+                    className="w-8 h-8 flex items-center justify-center font-mono text-[20px] text-muted hover:text-on-bg cursor-pointer bg-transparent border-none rounded-[8px] hover:bg-on-bg/5 transition-colors leading-none"
+                  >−</button>
+                  <div className="flex flex-col items-center">
+                    <span className="font-display text-[28px] text-accent leading-none">{songsPerPlayer}</span>
+                    <span className="font-mono text-[9px] tracking-[0.1em] uppercase text-muted mt-0.5">≈{Math.round(songsPerPlayer * 2.5)} min</span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => onSongsPerPlayerChange(Math.min(20, songsPerPlayer + 1))}
+                    className="w-8 h-8 flex items-center justify-center font-mono text-[20px] text-muted hover:text-on-bg cursor-pointer bg-transparent border-none rounded-[8px] hover:bg-on-bg/5 transition-colors leading-none"
+                  >+</button>
                 </div>
-              ))}
+              </div>
+              <div>
+                <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Stealing</p>
+                <div className="mt-2 px-4 py-3 border border-line rounded-[14px] flex items-center justify-between">
+                  <span className="font-display text-[28px] text-accent leading-none">On</span>
+                  <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-muted">4s window</span>
+                </div>
+              </div>
             </div>
           </>
         )}

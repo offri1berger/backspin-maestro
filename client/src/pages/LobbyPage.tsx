@@ -10,11 +10,12 @@ import { Logo } from '../components/ui/Logo'
 const NAV_LINKS = ['How to play', 'Songbook', 'Sign in']
 
 const LobbyPage = () => {
-  const [name, setName]         = useState('')
-  const [roomCode, setRoomCode] = useState('')
-  const [tab, setTab]           = useState<'create' | 'join'>('create')
-  const [decade, setDecade]     = useState<Decade>('all')
-  const [avatar, setAvatar]     = useState<string | undefined>(undefined)
+  const [name, setName]                   = useState('')
+  const [roomCode, setRoomCode]           = useState('')
+  const [tab, setTab]                     = useState<'create' | 'join'>('create')
+  const [decade, setDecade]               = useState<Decade>('all')
+  const [songsPerPlayer, setSongsPerPlayer] = useState(10)
+  const [avatar, setAvatar]               = useState<string | undefined>(undefined)
 
   const { setRoom, setPlayers, players, roomCode: currentRoomCode } = useGameStore()
 
@@ -24,7 +25,7 @@ const LobbyPage = () => {
     socket.emit('room:create', {
       hostName: name,
       avatar,
-      settings: { songsPerPlayer: 5, decadeFilter: decade },
+      settings: { songsPerPlayer, decadeFilter: decade },
     }, (result) => {
       setRoom(result.roomCode, result.playerId)
       setPlayers([{ id: result.playerId, name, avatar, tokens: 2, isHost: true, turnOrder: 0, timeline: [] }])
@@ -71,11 +72,12 @@ const LobbyPage = () => {
         <HeroPanel />
       </div>
       <SetupForm
-        tab={tab}           onTabChange={setTab}
-        name={name}         onNameChange={setName}
-        roomCode={roomCode} onRoomCodeChange={setRoomCode}
-        decade={decade}     onDecadeChange={setDecade}
-        avatar={avatar}     onAvatarChange={setAvatar}
+        tab={tab}                     onTabChange={setTab}
+        name={name}                   onNameChange={setName}
+        roomCode={roomCode}           onRoomCodeChange={setRoomCode}
+        decade={decade}               onDecadeChange={setDecade}
+        songsPerPlayer={songsPerPlayer} onSongsPerPlayerChange={setSongsPerPlayer}
+        avatar={avatar}               onAvatarChange={setAvatar}
         onSubmit={tab === 'create' ? handleCreate : handleJoin}
       />
     </div>
