@@ -2,7 +2,7 @@ import { db } from '../db/database.js'
 import { getGameState } from '../lib/gameCache.js'
 import { getPlayerBySocketId, updatePlayerTokens } from '../lib/session.js'
 
-const normalize = (str: string) =>
+export const normalize = (str: string) =>
   str.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '').trim()
 
 export const handleGuessService = async (

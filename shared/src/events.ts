@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { GamePhase } from './enums'
-import type { RoomStatus } from './enums'
-import type { Player, Song, RoomSettings, GameState, TimelineEntry } from './types'
+import { GamePhase } from './enums.js'
+import type { RoomStatus } from './enums.js'
+import type { Player, Song, RoomSettings, GameState, TimelineEntry } from './types.js'
 import {
   CreateRoomPayloadSchema,
   JoinRoomPayloadSchema,
@@ -10,7 +10,7 @@ import {
   GuessPayloadSchema,
   StealPayloadSchema,
   DragMovePayloadSchema,
-} from './schemas'
+} from './schemas.js'
 
 export type CreateRoomPayload = z.infer<typeof CreateRoomPayloadSchema>
 export type JoinRoomPayload = z.infer<typeof JoinRoomPayloadSchema>

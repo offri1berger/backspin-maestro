@@ -1,4 +1,4 @@
-import type { GamePhase, Decade } from './enums'
+import type { GamePhase, Decade } from './enums.js'
 
 export interface Song {
   id: string
