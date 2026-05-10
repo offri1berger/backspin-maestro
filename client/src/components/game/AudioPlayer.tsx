@@ -34,10 +34,14 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
   }, [song.id])
 
   useEffect(() => {
-    socket.on('audio:play', () => { audioRef.current?.play(); setPlaying(true) })
+    socket.on('audio:play', () => {
+      if (!audioRef.current || !song.previewUrl) return
+      audioRef.current.play().catch(() => setPlaying(false))
+      setPlaying(true)
+    })
     socket.on('audio:pause', () => { audioRef.current?.pause(); setPlaying(false) })
     return () => { socket.off('audio:play'); socket.off('audio:pause') }
-  }, [])
+  }, [song.previewUrl])
 
   const toggle = () => {
     if (!audioRef.current) return
@@ -46,7 +50,8 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
       setPlaying(false)
       socket.emit('audio:pause')
     } else {
-      audioRef.current.play()
+      if (!song.previewUrl) return
+      audioRef.current.play().catch(() => setPlaying(false))
       setPlaying(true)
       socket.emit('audio:play')
     }
