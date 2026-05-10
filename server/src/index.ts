@@ -1,6 +1,7 @@
 import express from 'express'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
+import { createAdapter } from '@socket.io/redis-adapter'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import type { ServerToClientEvents, ClientToServerEvents } from '@hitster/shared'
@@ -9,7 +10,7 @@ import { registerGameHandlers } from './socket/gameHandlers.js'
 import { handleDisconnect } from './socket/disconnectHandler.js'
 import { clearAllLimits } from './lib/rateLimit.js'
 import { db } from './db/database.js'
-import { redis } from './lib/redis.js'
+import { redis, pubClient, subClient } from './lib/redis.js'
 
 dotenv.config()
 
@@ -18,6 +19,7 @@ const httpServer = createServer(app)
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   cors: { origin: process.env.CLIENT_URL ?? 'http://localhost:5173' },
+  adapter: createAdapter(pubClient, subClient),
 })
 
 app.use(cors({ origin: process.env.CLIENT_URL ?? 'http://localhost:5173' }))
@@ -54,7 +56,7 @@ const shutdown = () => {
   server.close(async () => {
     await io.close()
     await db.destroy()
-    await redis.quit()
+    await Promise.all([redis.quit(), pubClient.quit(), subClient.quit()])
     process.exit(0)
   })
 }

@@ -32,7 +32,7 @@ export const finalizeDisconnect = async (io: IoServer, playerId: string, roomCod
   if (room.status === 'playing') {
     const gameState = await getGameState(roomCode)
     if (gameState?.currentPlayerId === playerId && (gameState.phase === 'song_phase' || gameState.phase === 'placement')) {
-      cancelRoomStealTimeout(roomCode)
+      await cancelRoomStealTimeout(roomCode)
       const next = await nextTurnService(roomCode)
       if (!('error' in next)) {
         io.to(roomCode).emit('phase:changed', 'song_phase', new Date().toISOString(), next.nextPlayerId)

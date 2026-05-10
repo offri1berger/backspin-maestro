@@ -17,7 +17,12 @@ import {
 } from '../lib/session.js'
 import { db } from '../db/database.js'
 import { placeLimiter, stealLimiter, skipLimiter, guessLimiter } from '../lib/rateLimit.js'
-import { pendingResults, stealTimeouts, resolvedRooms, cleanupRoomState } from '../lib/roomTimeouts.js'
+import {
+  openStealWindow, getPending, clearPending,
+  tryClaimResolution, isResolved,
+  setStealTimer, clearStealTimer,
+  cleanupRoomState,
+} from '../lib/roomTimeouts.js'
 import { parsePayload } from '../lib/validate.js'
 
 const buildGameOverPlayers = async (roomCode: string) => {
@@ -42,8 +47,8 @@ const CARD_REVEAL_MS = 3_000
 
 
 const advanceTurn = async (io: IoServer, roomCode: string) => {
-  stealTimeouts.delete(roomCode)
-  pendingResults.delete(roomCode)
+  clearStealTimer(roomCode)
+  await clearPending(roomCode)
   const next = await nextTurnService(roomCode)
   if ('error' in next) return
   io.to(roomCode).emit('phase:changed', 'song_phase', new Date().toISOString(), next.nextPlayerId)
@@ -73,16 +78,14 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
         correctPosition: result.correctPosition,
       }
 
-      pendingResults.set(roomCode, placementPayload)
-      resolvedRooms.delete(roomCode)
+      await openStealWindow(roomCode, placementPayload)
 
       const t = setTimeout(async () => {
-        if (resolvedRooms.has(roomCode)) return
-        resolvedRooms.add(roomCode)
-        stealTimeouts.delete(roomCode)
+        if (!(await tryClaimResolution(roomCode))) return
+        clearStealTimer(roomCode)
 
         io.to(roomCode).emit('placement:result', placementPayload)
-        pendingResults.delete(roomCode)
+        await clearPending(roomCode)
 
         if (result.correct) {
           const freshRoom = await getSessionRoom(roomCode)
@@ -91,7 +94,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
           if (won) {
             await updateRoomStatus(roomCode, 'finished')
             await deleteUsedSongs(roomCode)
-            cleanupRoomState(roomCode)
+            await cleanupRoomState(roomCode)
             io.to(roomCode).emit('game:over', player.id, await buildGameOverPlayers(roomCode))
             return
           }
@@ -99,7 +102,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
 
         setTimeout(() => advanceTurn(io, roomCode), CARD_REVEAL_MS)
       }, STEAL_WINDOW_MS)
-      stealTimeouts.set(roomCode, t)
+      setStealTimer(roomCode, t)
 
       io.to(roomCode).emit('steal:open', player.id)
       cb()
@@ -119,17 +122,14 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       const roomCode = rooms[0]
       if (!roomCode) { cb('not_in_room'); return }
 
-      if (resolvedRooms.has(roomCode)) { cb('steal_window_closed'); return }
-      resolvedRooms.add(roomCode)
-
-      const timeout = stealTimeouts.get(roomCode)
-      if (timeout) { clearTimeout(timeout); stealTimeouts.delete(roomCode) }
+      if (!(await tryClaimResolution(roomCode))) { cb('steal_window_closed'); return }
+      clearStealTimer(roomCode)
 
       const gameState = await getGameState(roomCode)
       if (!gameState) { cb('game_not_found'); return }
       if (!gameState.currentSongId) { cb('no_current_song'); return }
 
-      const pending = pendingResults.get(roomCode)
+      const pending = await getPending(roomCode)
       if (!pending) { cb('no_pending_result'); return }
 
       const stealer = await getPlayerBySocketId(socket.id)
@@ -165,7 +165,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       }
 
       await setGameState(roomCode, { ...gameState, phase: 'song_phase' })
-      pendingResults.delete(roomCode)
+      await clearPending(roomCode)
 
       io.to(roomCode).emit('steal:result', {
         success: true, stealerId: stealer.id, targetPlayerId,
@@ -185,7 +185,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
           if (won) {
             await updateRoomStatus(roomCode, 'finished')
             await deleteUsedSongs(roomCode)
-            cleanupRoomState(roomCode)
+            await cleanupRoomState(roomCode)
             io.to(roomCode).emit('game:over', stealer.id, await buildGameOverPlayers(roomCode))
             return
           }
@@ -206,23 +206,21 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
     const roomCode = stealer.roomCode
     if (!roomCode) return
 
-    if (resolvedRooms.has(roomCode)) return
+    if (await isResolved(roomCode)) return
 
-    const pending = pendingResults.get(roomCode)
+    const pending = await getPending(roomCode)
     if (!pending) return
     if (pending.playerId === stealerId) return
     if (stealer.tokens < 1) return
 
-    const existing = stealTimeouts.get(roomCode)
-    if (existing) { clearTimeout(existing); stealTimeouts.delete(roomCode) }
+    clearStealTimer(roomCode)
 
     const t = setTimeout(async () => {
-      if (resolvedRooms.has(roomCode)) return
-      resolvedRooms.add(roomCode)
-      stealTimeouts.delete(roomCode)
+      if (!(await tryClaimResolution(roomCode))) return
+      clearStealTimer(roomCode)
 
       io.to(roomCode).emit('placement:result', pending)
-      pendingResults.delete(roomCode)
+      await clearPending(roomCode)
 
       if (pending.correct) {
         const freshRoom = await getSessionRoom(roomCode)
@@ -231,7 +229,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
         if (won) {
           await updateRoomStatus(roomCode, 'finished')
           await deleteUsedSongs(roomCode)
-          cleanupRoomState(roomCode)
+          await cleanupRoomState(roomCode)
           io.to(roomCode).emit('game:over', pending.playerId, await buildGameOverPlayers(roomCode))
           return
         }
@@ -239,7 +237,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
 
       setTimeout(() => advanceTurn(io, roomCode), CARD_REVEAL_MS)
     }, STEAL_EXTENDED_MS)
-    stealTimeouts.set(roomCode, t)
+    setStealTimer(roomCode, t)
 
     io.to(roomCode).emit('steal:extended', stealerId)
   })
