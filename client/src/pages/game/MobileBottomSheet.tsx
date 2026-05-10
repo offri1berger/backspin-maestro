@@ -40,7 +40,7 @@ const MobileBottomSheet: React.FC<Props> = ({
       )}
 
       {currentSong && (
-        <AudioPlayer song={currentSong} isMyTurn={isMyTurn} compact />
+        <AudioPlayer key={currentSong.id} song={currentSong} isMyTurn={isMyTurn} />
       )}
 
       {canSteal && (

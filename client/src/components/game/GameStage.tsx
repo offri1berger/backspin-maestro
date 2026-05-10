@@ -37,7 +37,7 @@ export const GameStage = ({
   return (
     <main className={`flex flex-col gap-[18px] ${vertical ? 'px-0 py-0' : 'px-8 py-6 overflow-y-auto'}`}>
       {showAudioPlayer && currentSong && (
-        <AudioPlayer song={currentSong} isMyTurn={isMyTurn} />
+        <AudioPlayer key={currentSong.id} song={currentSong} isMyTurn={isMyTurn} />
       )}
 
       {currentSong && (
