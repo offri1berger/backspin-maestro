@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../store/gameStore'
 import socket from '../socket'
 import { PlayerRail } from '../components/game/PlayerRail'
@@ -12,10 +13,11 @@ import MobilePlayerBar from './game/MobilePlayerBar'
 import MobileBottomSheet from './game/MobileBottomSheet'
 
 const GamePage = () => {
+  const navigate = useNavigate()
   const {
     players, currentPlayerId, playerId, isWaitingForNextTurn,
     stealResult, isStealWindowOpen, stealInitiatorId,
-    setHasGuessed, setRemoteDragSlot, settings,
+    setHasGuessed, setRemoteDragSlot, settings, leaveRoom,
   } = useGameStore()
   const songsToWin = settings?.songsPerPlayer ?? 10
 
@@ -92,6 +94,13 @@ const GamePage = () => {
     ? (players.find((p) => p.id === stealInitiatorId)?.name ?? null)
     : null
 
+  const handleLeave = () => {
+    if (!window.confirm('Leave the game? You will be removed from the room.')) return
+    socket.emit('room:leave')
+    leaveRoom()
+    navigate('/')
+  }
+
   if (isAttemptingSteal) {
     return (
       <StealOverlay
@@ -115,7 +124,15 @@ const GamePage = () => {
             <span className="font-mono text-base tracking-[0.18em] text-accent font-semibold">{roomCode}</span>
             <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">{players.length} players</span>
           </div>
-          <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">First to {songsToWin} cards wins</span>
+          <div className="flex items-center gap-6">
+            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">First to {songsToWin} cards wins</span>
+            <button
+              onClick={handleLeave}
+              className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted hover:text-on-bg cursor-pointer border-0 bg-transparent p-0 transition-colors"
+            >
+              Leave
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 grid min-h-0 grid-cols-[260px_1fr_300px]">
@@ -148,6 +165,12 @@ const GamePage = () => {
           <div className="flex items-center gap-3">
             <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">{players.length}p · first to {songsToWin}</span>
             <span className="font-mono text-[11px] tracking-[0.18em] text-accent font-semibold">{roomCode}</span>
+            <button
+              onClick={handleLeave}
+              className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted hover:text-on-bg cursor-pointer border-0 bg-transparent p-0 transition-colors"
+            >
+              Leave
+            </button>
           </div>
         </div>
 

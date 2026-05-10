@@ -1,9 +1,25 @@
 import { randomUUID } from 'crypto'
 import { generateRoomCode } from '../lib/roomCode.js'
-import { createSessionRoom, createSessionPlayer, getSessionRoom, getPlayersByRoomCode, getSessionPlayer, updatePlayerSocketId, getTimeline, resetSessionPlayer, updateRoomStatus } from '../lib/session.js'
+import { createSessionRoom, createSessionPlayer, getSessionRoom, getPlayersByRoomCode, getSessionPlayer, updatePlayerSocketId, getTimeline, resetSessionPlayer, updateRoomStatus, addToTimeline } from '../lib/session.js'
 import { getGameState, deleteGameState, deleteUsedSongs } from '../lib/gameCache.js'
 import { db } from '../db/database.js'
-import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, CreateRoomResult, RejoinResult, Player, GameState } from '@hitster/shared'
+import { getRandomSong, markSongAsUsed } from './songService.js'
+import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, CreateRoomResult, RejoinResult, Player, GameState, Song } from '@hitster/shared'
+
+const assignStarterSong = async (roomCode: string, playerId: string) => {
+  const dbSong = await getRandomSong(roomCode)
+  if (!dbSong) return
+  const song: Song = {
+    id: dbSong.id,
+    title: dbSong.title,
+    artist: dbSong.artist,
+    year: dbSong.year,
+    previewUrl: dbSong.preview_url,
+    deezerTrackId: dbSong.deezer_id,
+  }
+  await markSongAsUsed(roomCode, song.id)
+  await addToTimeline(playerId, song)
+}
 
 export const createRoomService = async (
   payload: CreateRoomPayload,
@@ -30,7 +46,9 @@ export const createRoomService = async (
     turnOrder: 0,
   })
 
-  return { roomCode: code, playerId: hostId }
+  await assignStarterSong(code, hostId)
+
+  return { roomCode: code, playerId: hostId, timeline: await getTimeline(hostId) }
 }
 
 export const joinRoomService = async (
@@ -55,10 +73,13 @@ export const joinRoomService = async (
     turnOrder: 0,
   })
 
+  await assignStarterSong(payload.roomCode, player.id)
+
   return {
     success: true,
     roomCode: room.code,
     playerId: player.id,
+    timeline: await getTimeline(player.id),
     players: existingPlayers.map((p) => ({
       id: p.id,
       name: p.name,
@@ -159,16 +180,21 @@ export const resetRoomService = async (
   await deleteGameState(roomCode)
   await deleteUsedSongs(roomCode)
   await Promise.all(sessionPlayers.map((p) => resetSessionPlayer(p.id)))
+  for (const p of sessionPlayers) {
+    await assignStarterSong(roomCode, p.id)
+  }
 
-  const players: Player[] = sessionPlayers.map((p) => ({
-    id: p.id,
-    name: p.name,
-    avatar: p.avatar || undefined,
-    tokens: 2,
-    isHost: p.isHost,
-    turnOrder: 0,
-    timeline: [],
-  }))
+  const players: Player[] = await Promise.all(
+    sessionPlayers.map(async (p) => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar || undefined,
+      tokens: 2,
+      isHost: p.isHost,
+      turnOrder: 0,
+      timeline: await getTimeline(p.id),
+    }))
+  )
 
   return { players }
 }

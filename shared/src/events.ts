@@ -1,6 +1,6 @@
 import { GamePhase } from './enums'
 import type { RoomStatus } from './enums'
-import type { Player, Song, RoomSettings, GameState } from './types'
+import type { Player, Song, RoomSettings, GameState, TimelineEntry } from './types'
 
 export interface CreateRoomPayload {
   hostName: string
@@ -11,6 +11,7 @@ export interface CreateRoomPayload {
 export interface CreateRoomResult {
   roomCode: string
   playerId: string
+  timeline: TimelineEntry[]
 }
 
 export interface JoinRoomPayload {
@@ -26,6 +27,7 @@ export interface JoinRoomResult {
   playerId?: string
   players?: Player[]
   settings?: RoomSettings
+  timeline?: TimelineEntry[]
 }
 
 export interface PlacePayload {

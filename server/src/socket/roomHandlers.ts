@@ -41,7 +41,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
         tokens: 2,
         isHost: false,
         turnOrder: 0,
-        timeline: [],
+        timeline: result.timeline ?? [],
       })
       cb(result)
     } catch (err) {

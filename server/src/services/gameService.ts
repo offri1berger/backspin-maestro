@@ -1,4 +1,4 @@
-import { getSessionRoom, getPlayersByRoomCode, updatePlayerTurnOrder, updateRoomStatus, getTimelineCount } from '../lib/session.js'
+import { getSessionRoom, getPlayersByRoomCode, updatePlayerTurnOrder, updateRoomStatus, getTimelineCount, getTimeline } from '../lib/session.js'
 import { getFreshPreviewUrl, getRandomSong, markSongAsUsed } from './songService.js'
 import { getGameState, setGameState } from '../lib/gameCache.js'
 import type { Player, Song, GameState } from '@hitster/shared'
@@ -28,15 +28,17 @@ export const startGameService = async (
   const firstPlayer = shuffled[0]
   const phaseStartedAt = new Date().toISOString()
 
-  const players: Player[] = shuffled.map((p, i) => ({
-    id: p.id,
-    name: p.name,
-    avatar: p.avatar || undefined,
-    tokens: p.tokens,
-    isHost: p.isHost,
-    turnOrder: i,
-    timeline: [],
-  }))
+  const players: Player[] = await Promise.all(
+    shuffled.map(async (p, i) => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar || undefined,
+      tokens: p.tokens,
+      isHost: p.isHost,
+      turnOrder: i,
+      timeline: await getTimeline(p.id),
+    }))
+  )
 
   const dbSong = await getRandomSong(roomCode)
   const songForClient: Song | null = dbSong ? {

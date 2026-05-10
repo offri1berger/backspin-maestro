@@ -131,7 +131,7 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
   }
 
   return (
-    <div className="bg-surface text-on-surface rounded-[28px] p-7 flex items-center gap-7 relative overflow-hidden h-[240px]">
+    <div className="bg-surface text-on-surface rounded-[28px] p-7 flex items-center gap-7 relative overflow-hidden h-[160px]">
       {/* Spinning vinyl */}
       <div className="w-[140px] h-[140px] shrink-0 relative">
         <div
@@ -169,11 +169,11 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
 
       {/* Track meta */}
       <div className="flex-1 min-w-0">
-        <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-accent">
+        <div className="font-mono text-[8px] tracking-[0.2em] uppercase text-accent">
           Now playing · {fmt(currentTime)} / 0:30
         </div>
 
-        <h2 className="font-display text-[44px] mt-1.5 leading-[0.95] tracking-[-0.02em] text-on-surface" style={{ margin: '6px 0 0' }}>
+        <h2 className="font-display text-[34px] mt-1.5 leading-[0.95] tracking-[-0.02em] text-on-surface" style={{ margin: '6px 0 0' }}>
           Mystery hit
           <br />
           <em className="not-italic text-accent" style={{ opacity: 0.85, fontSize: 30 }}>

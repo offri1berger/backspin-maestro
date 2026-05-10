@@ -25,7 +25,7 @@ const LobbyPage = () => {
     if (phase === 'game_over') navigate('/over', { replace: true })
     else if (phase) navigate('/game', { replace: true })
     else navigate('/lobby', { replace: true })
-  }, [storeRoomCode, phase])
+  }, [storeRoomCode, phase, navigate])
 
   const handleCreate = () => {
     if (!name.trim()) return
@@ -36,7 +36,7 @@ const LobbyPage = () => {
       settings: { songsPerPlayer, decadeFilter: decade },
     }, (result) => {
       setRoom(result.roomCode, result.playerId)
-      setPlayers([{ id: result.playerId, name, avatar, tokens: 2, isHost: true, turnOrder: 0, timeline: [] }])
+      setPlayers([{ id: result.playerId, name, avatar, tokens: 2, isHost: true, turnOrder: 0, timeline: result.timeline }])
       navigate('/lobby')
     })
   }
@@ -49,7 +49,7 @@ const LobbyPage = () => {
       setRoom(result.roomCode!, result.playerId!)
       setPlayers([
         ...(result.players ?? []),
-        { id: result.playerId!, name, avatar, tokens: 0, isHost: false, turnOrder: 0, timeline: [] },
+        { id: result.playerId!, name, avatar, tokens: 2, isHost: false, turnOrder: 0, timeline: result.timeline ?? [] },
       ])
       navigate('/lobby')
     })
