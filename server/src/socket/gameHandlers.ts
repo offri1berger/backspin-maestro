@@ -58,7 +58,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       await openStealWindow(roomCode, placementPayload)
       await scheduleStealFire({ roomCode, payload: placementPayload }, STEAL_WINDOW_MS)
 
-      io.to(roomCode).emit('steal:open', player.id)
+      io.to(roomCode).emit('steal:open', player.id, data.position)
       cb()
     } catch (err) {
       console.error('card:place error', err)

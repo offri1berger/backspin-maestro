@@ -78,7 +78,7 @@ export interface ServerToClientEvents {
   'audio:pause': () => void
   'drag:update': (slot: number | null) => void
   'tokens:updated': (playerId: string, newTotal: number) => void
-  'steal:open': (targetPlayerId: string) => void
+  'steal:open': (targetPlayerId: string, originalPosition: number) => void
   'steal:extended': (stealerId: string) => void
   'player:disconnected': (playerId: string) => void
   'player:reconnected': (playerId: string) => void
