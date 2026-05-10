@@ -12,7 +12,7 @@ export interface CachedGameState {
 const GAME_TTL_SECONDS = 7_200 // 2 hours — fallback expiry if cleanup never fires
 
 const gameKey = (roomCode: string) => `game:${roomCode}`
-const usedSongsKey = (roomId: string) => `used_songs:${roomId}`
+const usedSongsKey = (roomCode: string) => `used_songs:${roomCode}`
 
 export const setGameState = async (roomCode: string, state: CachedGameState) =>
   redis.set(gameKey(roomCode), JSON.stringify(state), 'EX', GAME_TTL_SECONDS)
@@ -25,14 +25,14 @@ export const getGameState = async (roomCode: string): Promise<CachedGameState | 
 export const deleteGameState = async (roomCode: string) =>
   redis.del(gameKey(roomCode))
 
-export const addUsedSong = async (roomId: string, songId: string) => {
-  const key = usedSongsKey(roomId)
+export const addUsedSong = async (roomCode: string, songId: string) => {
+  const key = usedSongsKey(roomCode)
   await redis.sadd(key, songId)
   await redis.expire(key, GAME_TTL_SECONDS)
 }
 
-export const getUsedSongIds = async (roomId: string): Promise<string[]> =>
-  redis.smembers(usedSongsKey(roomId))
+export const getUsedSongIds = async (roomCode: string): Promise<string[]> =>
+  redis.smembers(usedSongsKey(roomCode))
 
-export const deleteUsedSongs = async (roomId: string) =>
-  redis.del(usedSongsKey(roomId))
+export const deleteUsedSongs = async (roomCode: string) =>
+  redis.del(usedSongsKey(roomCode))

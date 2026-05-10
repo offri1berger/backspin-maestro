@@ -1,54 +1,56 @@
+import { randomUUID } from 'crypto'
 import { generateRoomCode } from '../lib/roomCode.js'
-import { createRoom, getRoomByCode, updateRoomHost } from '../db/queries/rooms.js'
-import { createPlayer, getPlayersByRoomId } from '../db/queries/players.js'
-import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, CreateRoomResult, Decade } from '@hitster/shared'
+import { createSessionRoom, createSessionPlayer, getSessionRoom, getPlayersByRoomCode } from '../lib/session.js'
+import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, CreateRoomResult } from '@hitster/shared'
 
 export const createRoomService = async (
   payload: CreateRoomPayload,
   socketId: string
 ): Promise<CreateRoomResult> => {
-  const code = generateRoomCode()
+  const code = await generateRoomCode()
+  const hostId = randomUUID()
 
-  const room = await createRoom({
-    code,
+  await createSessionRoom(code, {
     status: 'lobby',
-    songs_per_player: payload.settings.songsPerPlayer,
-    decade_filter: payload.settings.decadeFilter,
+    hostId,
+    songsPerPlayer: payload.settings.songsPerPlayer,
+    decadeFilter: payload.settings.decadeFilter,
   })
 
-  const player = await createPlayer({
-    room_id: room.id,
+  await createSessionPlayer({
+    id: hostId,
+    roomCode: code,
     name: payload.hostName,
-    avatar: payload.avatar ?? null,
-    socket_id: socketId,
-    is_host: true,
+    avatar: payload.avatar ?? '',
+    socketId,
     tokens: 2,
+    isHost: true,
+    turnOrder: 0,
   })
 
-  await updateRoomHost(room.id, player.id)
-
-  return { roomCode: code, playerId: player.id }
+  return { roomCode: code, playerId: hostId }
 }
 
 export const joinRoomService = async (
   payload: JoinRoomPayload,
   socketId: string
 ): Promise<JoinRoomResult> => {
-  const room = await getRoomByCode(payload.roomCode)
+  const room = await getSessionRoom(payload.roomCode)
 
   if (!room) return { success: false, error: 'room_not_found' }
   if (room.status !== 'lobby') return { success: false, error: 'game_already_started' }
 
-  const existingPlayers = await getPlayersByRoomId(room.id)
+  const existingPlayers = await getPlayersByRoomCode(payload.roomCode)
   if (existingPlayers.length >= 6) return { success: false, error: 'room_full' }
 
-  const player = await createPlayer({
-    room_id: room.id,
+  const player = await createSessionPlayer({
+    roomCode: payload.roomCode,
     name: payload.playerName,
-    avatar: payload.avatar ?? null,
-    socket_id: socketId,
-    is_host: false,
+    avatar: payload.avatar ?? '',
+    socketId,
     tokens: 2,
+    isHost: false,
+    turnOrder: 0,
   })
 
   return {
@@ -58,15 +60,15 @@ export const joinRoomService = async (
     players: existingPlayers.map((p) => ({
       id: p.id,
       name: p.name,
-      avatar: p.avatar ?? undefined,
+      avatar: p.avatar || undefined,
       tokens: p.tokens,
-      isHost: p.is_host,
-      turnOrder: p.turn_order ?? 0,
+      isHost: p.isHost,
+      turnOrder: p.turnOrder,
       timeline: [],
     })),
     settings: {
-      songsPerPlayer: room.songs_per_player,
-      decadeFilter: room.decade_filter as Decade,
+      songsPerPlayer: room.songsPerPlayer,
+      decadeFilter: room.decadeFilter,
     },
   }
 }

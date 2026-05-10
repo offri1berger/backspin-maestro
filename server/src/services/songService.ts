@@ -2,8 +2,8 @@ import { db } from '../db/database.js'
 import { sql } from 'kysely'
 import { addUsedSong, getUsedSongIds } from '../lib/gameCache.js'
 
-export const getRandomSong = async (roomId: string) => {
-  const usedIds = await getUsedSongIds(roomId)
+export const getRandomSong = async (roomCode: string) => {
+  const usedIds = await getUsedSongIds(roomCode)
 
   let query = db.selectFrom('songs').selectAll().orderBy(sql`RANDOM()`).limit(1)
   if (usedIds.length > 0) {
@@ -13,8 +13,8 @@ export const getRandomSong = async (roomId: string) => {
   return (await query.executeTakeFirst()) ?? null
 }
 
-export const markSongAsUsed = async (roomId: string, songId: string) => {
-  await addUsedSong(roomId, songId)
+export const markSongAsUsed = async (roomCode: string, songId: string) => {
+  await addUsedSong(roomCode, songId)
 }
 
 export const getFreshPreviewUrl = async (deezerId: string): Promise<string | null> => {

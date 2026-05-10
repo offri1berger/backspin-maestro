@@ -1,32 +1,29 @@
-import { getPlayersByRoomId, updateTurnOrder } from '../db/queries/players.js'
-import { updateRoomStatus, getRoomByCode } from '../db/queries/rooms.js'
+import { getSessionRoom, getPlayersByRoomCode, updatePlayerTurnOrder, updateRoomStatus, getTimelineCount } from '../lib/session.js'
 import { getFreshPreviewUrl, getRandomSong, markSongAsUsed } from './songService.js'
 import { getGameState, setGameState } from '../lib/gameCache.js'
 import type { Player, Song, GameState } from '@hitster/shared'
-import { db } from '../db/database.js'
 
 export const startGameService = async (
   roomCode: string,
   hostSocketId: string
 ): Promise<{ players: Player[], song: Song | null, gameState: GameState } | { error: string }> => {
-  const room = await getRoomByCode(roomCode)
+  const room = await getSessionRoom(roomCode)
   if (!room) return { error: 'room_not_found' }
   if (room.status !== 'lobby') return { error: 'game_already_started' }
 
-  const dbPlayers = await getPlayersByRoomId(room.id)
+  const sessionPlayers = await getPlayersByRoomCode(roomCode)
+  const host = sessionPlayers.find((p) => p.socketId === hostSocketId)
+  if (!host?.isHost) return { error: 'not_host' }
+  if (sessionPlayers.length < 2) return { error: 'not_enough_players' }
 
-  const host = dbPlayers.find((p) => p.socket_id === hostSocketId)
-  if (!host?.is_host) return { error: 'not_host' }
-  if (dbPlayers.length < 2) return { error: 'not_enough_players' }
-
-  const shuffled = [...dbPlayers]
+  const shuffled = [...sessionPlayers]
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
 
-  await Promise.all(shuffled.map((p, i) => updateTurnOrder(p.id, i)))
-  await updateRoomStatus(room.id, 'playing')
+  await Promise.all(shuffled.map((p, i) => updatePlayerTurnOrder(p.id, i)))
+  await updateRoomStatus(roomCode, 'playing')
 
   const firstPlayer = shuffled[0]
   const phaseStartedAt = new Date().toISOString()
@@ -34,14 +31,14 @@ export const startGameService = async (
   const players: Player[] = shuffled.map((p, i) => ({
     id: p.id,
     name: p.name,
-    avatar: p.avatar ?? undefined,
+    avatar: p.avatar || undefined,
     tokens: p.tokens,
-    isHost: p.is_host,
+    isHost: p.isHost,
     turnOrder: i,
     timeline: [],
   }))
 
-  const dbSong = await getRandomSong(room.id)
+  const dbSong = await getRandomSong(roomCode)
   const songForClient: Song | null = dbSong ? {
     id: dbSong.id,
     title: dbSong.title,
@@ -51,7 +48,7 @@ export const startGameService = async (
     deezerTrackId: dbSong.deezer_id,
   } : null
 
-  if (dbSong) await markSongAsUsed(room.id, dbSong.id)
+  if (dbSong) await markSongAsUsed(roomCode, dbSong.id)
 
   await setGameState(roomCode, {
     phase: 'song_phase',
@@ -78,19 +75,16 @@ export const nextTurnService = async (
   const gameState = await getGameState(roomCode)
   if (!gameState) return { error: 'game_not_found' }
 
-  const room = await getRoomByCode(roomCode)
-  if (!room) return { error: 'room_not_found' }
-
-  const players = await getPlayersByRoomId(room.id)
-  const sorted = players.sort((a, b) => (a.turn_order ?? 0) - (b.turn_order ?? 0))
+  const players = await getPlayersByRoomCode(roomCode)
+  const sorted = players.sort((a, b) => a.turnOrder - b.turnOrder)
 
   const currentIndex = sorted.findIndex((p) => p.id === gameState.currentPlayerId)
   const nextPlayer = sorted[(currentIndex + 1) % sorted.length]
 
-  const song = await getRandomSong(room.id)
+  const song = await getRandomSong(roomCode)
   if (!song) return { error: 'no_songs_left' }
 
-  await markSongAsUsed(room.id, song.id)
+  await markSongAsUsed(roomCode, song.id)
   const freshPreviewUrl = await getFreshPreviewUrl(song.deezer_id)
 
   await setGameState(roomCode, {
@@ -116,14 +110,8 @@ export const nextTurnService = async (
 
 export const checkWinCondition = async (
   playerId: string,
-  roomId: string,
   songsPerPlayer: number
 ): Promise<boolean> => {
-  const count = await db
-    .selectFrom('timeline_entries')
-    .select(db.fn.count('id').as('count'))
-    .where('player_id', '=', playerId)
-    .executeTakeFirstOrThrow()
-
-  return Number(count.count) >= songsPerPlayer
+  const count = await getTimelineCount(playerId)
+  return count >= songsPerPlayer
 }
