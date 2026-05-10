@@ -34,6 +34,9 @@ jobs:
       - name: Lint client
         run: pnpm --filter @hitster/client exec eslint src
 
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high
+
   docker:
     runs-on: ubuntu-latest
     needs: check
