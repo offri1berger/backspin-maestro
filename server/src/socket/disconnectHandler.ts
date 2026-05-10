@@ -6,7 +6,7 @@ import {
 } from '../lib/session.js'
 import { getGameState } from '../lib/gameCache.js'
 import { nextTurnService } from '../services/gameService.js'
-import { cancelRoomStealTimeout } from '../lib/roomTimeouts.js'
+import { cancelRoomTimers } from '../lib/jobs.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
@@ -32,7 +32,7 @@ export const finalizeDisconnect = async (io: IoServer, playerId: string, roomCod
   if (room.status === 'playing') {
     const gameState = await getGameState(roomCode)
     if (gameState?.currentPlayerId === playerId && (gameState.phase === 'song_phase' || gameState.phase === 'placement')) {
-      await cancelRoomStealTimeout(roomCode)
+      await cancelRoomTimers(roomCode)
       const next = await nextTurnService(roomCode)
       if (!('error' in next)) {
         io.to(roomCode).emit('phase:changed', 'song_phase', new Date().toISOString(), next.nextPlayerId)

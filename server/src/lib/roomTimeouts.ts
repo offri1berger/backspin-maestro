@@ -66,31 +66,8 @@ export const clearResolved = async (roomCode: string): Promise<void> => {
   await redis.del(resolvedKey(roomCode))
 }
 
-// Timer handles are not serializable, so they stay local to this process.
-// Cross-instance correctness comes from tryClaimResolution — late firings bail.
-const localStealTimers = new Map<string, ReturnType<typeof setTimeout>>()
-
-export const setStealTimer = (
-  roomCode: string,
-  timer: ReturnType<typeof setTimeout>,
-): void => {
-  const existing = localStealTimers.get(roomCode)
-  if (existing) clearTimeout(existing)
-  localStealTimers.set(roomCode, timer)
-}
-
-export const clearStealTimer = (roomCode: string): void => {
-  const t = localStealTimers.get(roomCode)
-  if (t) clearTimeout(t)
-  localStealTimers.delete(roomCode)
-}
-
+// Timers live in BullMQ (see ./jobs.ts). This module only owns the Redis-backed
+// pending payload and the atomic resolution lock.
 export const cleanupRoomState = async (roomCode: string): Promise<void> => {
-  clearStealTimer(roomCode)
   await Promise.all([clearPending(roomCode), clearResolved(roomCode)])
-}
-
-export const cancelRoomStealTimeout = async (roomCode: string): Promise<void> => {
-  clearStealTimer(roomCode)
-  await tryClaimResolution(roomCode)
 }

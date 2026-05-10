@@ -11,6 +11,7 @@ import { handleDisconnect } from './socket/disconnectHandler.js'
 import { clearAllLimits } from './lib/rateLimit.js'
 import { db } from './db/database.js'
 import { redis, pubClient, subClient } from './lib/redis.js'
+import { startRoomWorker, closeRoomQueue } from './lib/jobs.js'
 
 dotenv.config()
 
@@ -36,6 +37,8 @@ app.get('/health', async (_req, res) => {
   }
 })
 
+startRoomWorker(io)
+
 io.on('connection', (socket) => {
   console.log('client connected:', socket.id)
 
@@ -55,6 +58,7 @@ const server = httpServer.listen(PORT, () => console.log(`server running on port
 const shutdown = () => {
   server.close(async () => {
     await io.close()
+    await closeRoomQueue()
     await db.destroy()
     await Promise.all([redis.quit(), pubClient.quit(), subClient.quit()])
     process.exit(0)

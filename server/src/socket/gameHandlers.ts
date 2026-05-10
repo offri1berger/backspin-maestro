@@ -7,53 +7,30 @@ import {
   DragMovePayloadSchema,
 } from '@hitster/shared'
 import { validatePlacement } from '../services/placementService.js'
-import { nextTurnService, checkWinCondition } from '../services/gameService.js'
 import { handleGuessService } from '../services/guessService.js'
 import { getRandomSong, markSongAsUsed, getFreshPreviewUrl } from '../services/songService.js'
-import { getGameState, setGameState, deleteUsedSongs } from '../lib/gameCache.js'
+import { getGameState, setGameState } from '../lib/gameCache.js'
 import {
-  getPlayerBySocketId, getSessionPlayer, getSessionRoom, getPlayersByRoomCode,
-  getTimeline, addToTimeline, updatePlayerTokens, updateRoomStatus,
+  getPlayerBySocketId, getSessionPlayer,
+  getTimeline, addToTimeline, updatePlayerTokens,
 } from '../lib/session.js'
 import { db } from '../db/database.js'
 import { placeLimiter, stealLimiter, skipLimiter, guessLimiter } from '../lib/rateLimit.js'
 import {
   openStealWindow, getPending, clearPending,
   tryClaimResolution, isResolved,
-  setStealTimer, clearStealTimer,
-  cleanupRoomState,
 } from '../lib/roomTimeouts.js'
+import {
+  scheduleStealFire, cancelStealFire, scheduleCardReveal,
+  CARD_REVEAL_MS,
+} from '../lib/jobs.js'
 import { parsePayload } from '../lib/validate.js'
-
-const buildGameOverPlayers = async (roomCode: string) => {
-  const players = await getPlayersByRoomCode(roomCode)
-  return Promise.all(players.map(async (p) => ({
-    id: p.id,
-    name: p.name,
-    avatar: p.avatar || undefined,
-    tokens: p.tokens,
-    isHost: p.isHost,
-    turnOrder: p.turnOrder,
-    timeline: await getTimeline(p.id),
-  })))
-}
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
 
 const STEAL_WINDOW_MS = 5_000
 const STEAL_EXTENDED_MS = 10_000
-const CARD_REVEAL_MS = 3_000
-
-
-const advanceTurn = async (io: IoServer, roomCode: string) => {
-  clearStealTimer(roomCode)
-  await clearPending(roomCode)
-  const next = await nextTurnService(roomCode)
-  if ('error' in next) return
-  io.to(roomCode).emit('phase:changed', 'song_phase', new Date().toISOString(), next.nextPlayerId)
-  io.to(roomCode).emit('song:new', next.song)
-}
 
 export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
   socket.on('card:place', async (payload, cb) => {
@@ -79,30 +56,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       }
 
       await openStealWindow(roomCode, placementPayload)
-
-      const t = setTimeout(async () => {
-        if (!(await tryClaimResolution(roomCode))) return
-        clearStealTimer(roomCode)
-
-        io.to(roomCode).emit('placement:result', placementPayload)
-        await clearPending(roomCode)
-
-        if (result.correct) {
-          const freshRoom = await getSessionRoom(roomCode)
-          if (!freshRoom) return
-          const won = await checkWinCondition(player.id, freshRoom.songsPerPlayer)
-          if (won) {
-            await updateRoomStatus(roomCode, 'finished')
-            await deleteUsedSongs(roomCode)
-            await cleanupRoomState(roomCode)
-            io.to(roomCode).emit('game:over', player.id, await buildGameOverPlayers(roomCode))
-            return
-          }
-        }
-
-        setTimeout(() => advanceTurn(io, roomCode), CARD_REVEAL_MS)
-      }, STEAL_WINDOW_MS)
-      setStealTimer(roomCode, t)
+      await scheduleStealFire({ roomCode, payload: placementPayload }, STEAL_WINDOW_MS)
 
       io.to(roomCode).emit('steal:open', player.id)
       cb()
@@ -123,7 +77,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       if (!roomCode) { cb('not_in_room'); return }
 
       if (!(await tryClaimResolution(roomCode))) { cb('steal_window_closed'); return }
-      clearStealTimer(roomCode)
+      await cancelStealFire(roomCode)
 
       const gameState = await getGameState(roomCode)
       if (!gameState) { cb('game_not_found'); return }
@@ -177,20 +131,9 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
 
       cb()
 
-      setTimeout(async () => {
-        if (stealCorrect) {
-          const freshRoom = await getSessionRoom(roomCode)
-          if (!freshRoom) return
-          const won = await checkWinCondition(stealer.id, freshRoom.songsPerPlayer)
-          if (won) {
-            await updateRoomStatus(roomCode, 'finished')
-            await deleteUsedSongs(roomCode)
-            await cleanupRoomState(roomCode)
-            io.to(roomCode).emit('game:over', stealer.id, await buildGameOverPlayers(roomCode))
-            return
-          }
-        }
-        await advanceTurn(io, roomCode)
+      await scheduleCardReveal({
+        roomCode,
+        candidateWinnerId: stealCorrect ? stealer.id : undefined,
       }, CARD_REVEAL_MS)
     } catch (err) {
       console.error('steal:attempt error', err)
@@ -213,31 +156,8 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
     if (pending.playerId === stealerId) return
     if (stealer.tokens < 1) return
 
-    clearStealTimer(roomCode)
-
-    const t = setTimeout(async () => {
-      if (!(await tryClaimResolution(roomCode))) return
-      clearStealTimer(roomCode)
-
-      io.to(roomCode).emit('placement:result', pending)
-      await clearPending(roomCode)
-
-      if (pending.correct) {
-        const freshRoom = await getSessionRoom(roomCode)
-        if (!freshRoom) return
-        const won = await checkWinCondition(pending.playerId, freshRoom.songsPerPlayer)
-        if (won) {
-          await updateRoomStatus(roomCode, 'finished')
-          await deleteUsedSongs(roomCode)
-          await cleanupRoomState(roomCode)
-          io.to(roomCode).emit('game:over', pending.playerId, await buildGameOverPlayers(roomCode))
-          return
-        }
-      }
-
-      setTimeout(() => advanceTurn(io, roomCode), CARD_REVEAL_MS)
-    }, STEAL_EXTENDED_MS)
-    setStealTimer(roomCode, t)
+    // Replace the in-flight steal-fire job with the extended-delay version.
+    await scheduleStealFire({ roomCode, payload: pending }, STEAL_EXTENDED_MS)
 
     io.to(roomCode).emit('steal:extended', stealerId)
   })

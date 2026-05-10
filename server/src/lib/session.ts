@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto'
 import { redis } from './redis.js'
+import { safeJsonParse } from './safeJson.js'
 import type { Song, TimelineEntry, Decade } from '@hitster/shared'
 
 const SESSION_TTL = 86_400 // 24 hours
@@ -39,7 +40,10 @@ export const createSessionRoom = async (code: string, data: Omit<SessionRoom, 'c
 
 export const getSessionRoom = async (code: string): Promise<SessionRoom | null> => {
   const raw = await redis.get(roomKey(code))
-  return raw ? JSON.parse(raw) : null
+  if (!raw) return null
+  const parsed = safeJsonParse<SessionRoom>(raw, `room:${code}`)
+  if (!parsed) await redis.del(roomKey(code))
+  return parsed
 }
 
 export const updateRoomStatus = async (code: string, status: SessionRoom['status']) => {
@@ -65,7 +69,10 @@ export const createSessionPlayer = async (
 
 export const getSessionPlayer = async (id: string): Promise<SessionPlayer | null> => {
   const raw = await redis.get(playerKey(id))
-  return raw ? JSON.parse(raw) : null
+  if (!raw) return null
+  const parsed = safeJsonParse<SessionPlayer>(raw, `player:${id}`)
+  if (!parsed) await redis.del(playerKey(id))
+  return parsed
 }
 
 export const getPlayerBySocketId = async (socketId: string): Promise<SessionPlayer | null> => {
@@ -114,7 +121,10 @@ export const addToTimeline = async (playerId: string, song: Song) => {
 
 export const getTimeline = async (playerId: string): Promise<TimelineEntry[]> => {
   const members = await redis.zrange(timelineKey(playerId), 0, -1)
-  return members.map((m, i) => ({ song: JSON.parse(m), position: i }))
+  return members
+    .map((m) => safeJsonParse<Song>(m, `timeline:${playerId}`))
+    .filter((song): song is Song => song !== null)
+    .map((song, i) => ({ song, position: i }))
 }
 
 export const getTimelineCount = async (playerId: string): Promise<number> =>

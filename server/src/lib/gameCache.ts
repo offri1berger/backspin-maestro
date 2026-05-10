@@ -1,4 +1,5 @@
 import { redis } from './redis.js'
+import { safeJsonParse } from './safeJson.js'
 import type { GamePhase } from '@hitster/shared'
 
 export interface CachedGameState {
@@ -19,7 +20,10 @@ export const setGameState = async (roomCode: string, state: CachedGameState) =>
 
 export const getGameState = async (roomCode: string): Promise<CachedGameState | null> => {
   const data = await redis.get(gameKey(roomCode))
-  return data ? JSON.parse(data) : null
+  if (!data) return null
+  const parsed = safeJsonParse<CachedGameState>(data, `gameState:${roomCode}`)
+  if (!parsed) await redis.del(gameKey(roomCode))
+  return parsed
 }
 
 export const deleteGameState = async (roomCode: string) =>
