@@ -28,10 +28,8 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
   const [progress, setProgress] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
 
+  // Reset playback state via the audio element's own loadstart event (not synchronously in effect)
   useEffect(() => {
-    setPlaying(false)
-    setProgress(0)
-    setCurrentTime(0)
     if (audioRef.current) audioRef.current.load()
   }, [song.id])
 
@@ -124,6 +122,7 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
         <audio
           ref={audioRef}
           src={song.previewUrl}
+          onLoadStart={() => { setPlaying(false); setProgress(0); setCurrentTime(0) }}
           onTimeUpdate={onTimeUpdate}
           onEnded={() => { setPlaying(false); socket.emit('audio:pause') }}
         />
