@@ -1,9 +1,22 @@
 import { db } from '../db/database.js'
 import { getGameState } from '../lib/gameCache.js'
 import { getPlayerBySocketId, updatePlayerTokens } from '../lib/session.js'
+import { distance } from 'fastest-levenshtein'
 
 export const normalize = (str: string) =>
-  str.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '').trim()
+  str.toLowerCase()
+    .normalize('NFD')                          
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\u0590-\u05ff\s]/g, '') 
+    .trim()
+
+    const isFuzzyMatch = (input: string, target: string): boolean => {
+      const a = normalize(input)
+      const b = normalize(target)
+      if (b.includes(a) || a.includes(b)) return true
+      const maxDistance = b.length <= 4 ? 1 : b.length <= 8 ? 2 : 3;
+      return distance(a, b) <= maxDistance
+}
 
 export const handleGuessService = async (
   roomCode: string,
@@ -26,8 +39,8 @@ export const handleGuessService = async (
     .where('id', '=', gameState.currentSongId)
     .executeTakeFirstOrThrow()
 
-  const artistMatch = normalize(song.artist).includes(normalize(artist))
-  const titleMatch = normalize(song.title).includes(normalize(title))
+  const artistMatch = isFuzzyMatch(artist, song.artist)
+  const titleMatch = isFuzzyMatch(title, song.title)
   const correct = artistMatch && titleMatch
 
   if (!correct) return { correct: false, tokens: player.tokens, playerId: player.id }
