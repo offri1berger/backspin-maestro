@@ -30,9 +30,9 @@ const ImagePicker = ({ options, value, onChange, fallback = '?', label = 'image'
   return (
     <>
       {/* Preview bubble + trigger */}
-      <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+      <div className="flex flex-col items-center gap-2 flex-shrink-0">
         <div
-          className="w-14 h-14 rounded-full overflow-hidden flex items-center justify-center font-display text-[28px]"
+          className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center font-display text-[36px]"
           style={{ background: 'var(--color-line, #e0d8ce)', color: 'var(--color-on-bg)' }}
         >
           {value
@@ -44,7 +44,7 @@ const ImagePicker = ({ options, value, onChange, fallback = '?', label = 'image'
           <button
             type="button"
             onClick={open}
-            className="font-mono text-[9px] tracking-[0.15em] uppercase text-accent cursor-pointer bg-transparent border-none p-0 hover:opacity-70 transition-opacity"
+            className="font-mono text-[10px] tracking-[0.15em] uppercase text-accent cursor-pointer bg-transparent border-none p-0 hover:opacity-70 transition-opacity"
           >
             {value ? 'change' : 'pick'}
           </button>
@@ -59,8 +59,8 @@ const ImagePicker = ({ options, value, onChange, fallback = '?', label = 'image'
           onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false) }}
         >
           <div
-            className="bg-bg-2 border border-line rounded-2xl w-full max-w-sm flex flex-col"
-            style={{ maxHeight: '80vh' }}
+            className="bg-bg-2 border border-line rounded-2xl w-full max-w-lg flex flex-col max-h-[85vh]"
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-line flex-shrink-0">
@@ -79,7 +79,7 @@ const ImagePicker = ({ options, value, onChange, fallback = '?', label = 'image'
             </div>
 
             {/* Grid */}
-            <div className="overflow-y-auto p-6 grid grid-cols-4 gap-3">
+<div className="flex-1 min-h-0 overflow-y-auto p-6 grid grid-cols-3 content-start" style={{ gap: '24px', gridAutoRows: '120px' }}>
               {options.map((src) => (
                 <button
                   key={src}

@@ -90,7 +90,7 @@ export const SetupForm = ({
 
       <div className="flex flex-col gap-3 lg:gap-4">
         {/* Avatar + name */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           <ImagePicker
             options={AVATARS}
             value={avatar}
