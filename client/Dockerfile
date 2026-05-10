@@ -22,7 +22,7 @@ RUN pnpm --filter @hitster/shared build
 RUN pnpm --filter @hitster/client build
 
 # ── runtime ───────────────────────────────────────────────────────────────────
-FROM nginx:stable-alpine AS runtime
+FROM nginxinc/nginx-unprivileged:stable-alpine AS runtime
 COPY --from=build /app/client/dist /usr/share/nginx/html
 COPY client/nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+EXPOSE 8080

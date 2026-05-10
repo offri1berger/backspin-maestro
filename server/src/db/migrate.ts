@@ -12,7 +12,7 @@ const migrator = new Migrator({
   provider: new FileMigrationProvider({
     fs,
     path,
-    migrationFolder: path.resolve(process.cwd(), 'src/db/migrations'),
+    migrationFolder: path.resolve(__dirname, 'migrations'),
   }),
 })
 

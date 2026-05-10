@@ -27,6 +27,13 @@ COPY server/package.json ./server/
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 COPY --from=build /app/shared/dist ./shared/dist
 COPY --from=build /app/server/dist ./server/dist
+COPY --chmod=755 server/entrypoint.sh ./entrypoint.sh
+
+RUN addgroup -S app && adduser -S app -G app
+USER app
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget -qO- http://localhost:3001/health || exit 1
 
 EXPOSE 3001
-CMD ["node", "server/dist/index.js"]
+ENTRYPOINT ["./entrypoint.sh"]

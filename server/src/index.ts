@@ -54,7 +54,7 @@ const shutdown = () => {
   server.close(async () => {
     await io.close()
     await db.destroy()
-    redis.disconnect()
+    await redis.quit()
     process.exit(0)
   })
 }
