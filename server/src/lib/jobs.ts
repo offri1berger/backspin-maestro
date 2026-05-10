@@ -57,8 +57,9 @@ const getQueue = (): Queue => {
   return queue
 }
 
-const stealFireJobId = (roomCode: string) => `steal-fire:${roomCode}`
-const cardRevealJobId = (roomCode: string) => `card-reveal:${roomCode}`
+// BullMQ disallows `:` in custom job IDs.
+const stealFireJobId = (roomCode: string) => `steal-fire_${roomCode}`
+const cardRevealJobId = (roomCode: string) => `card-reveal_${roomCode}`
 
 const replaceDelayed = async (
   q: Queue,

@@ -87,7 +87,7 @@ const ImagePicker = ({ options, value, onChange, fallback = '?', label = 'image'
                   onClick={() => setPending(src)}
                   className="aspect-square rounded-full p-0 border-none bg-transparent cursor-pointer overflow-hidden"
                   style={{
-                    outline: pending === src ? '3px solid var(--color-accent)' : '3px solid transparent',
+                    outline: pending === src ? '2px solid var(--color-accent)' : '2px solid transparent',
                     outlineOffset: 2,
                   }}
                 >
