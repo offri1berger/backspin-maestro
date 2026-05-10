@@ -151,11 +151,10 @@ const Timeline = ({
                   ) : (
                     <VSlot id={i} label={slotLabel(i)} />
                   )
+                ) : showSpectator ? (
+                  <MysteryCardFace fullWidth />
                 ) : (
-                  <div
-                    className={`h-9 rounded-[10px] border border-dashed transition-[border-color,background] duration-150 ${showSpectator ? 'border-accent' : 'border-line'}`}
-                    style={showSpectator ? { background: 'color-mix(in oklch, var(--color-accent) 14%, transparent)' } : undefined}
-                  />
+                  <div className="h-9 rounded-[10px] border border-dashed border-line" />
                 )}
                 {timeline[i] && <VerticalYearCard entry={timeline[i]} />}
               </Fragment>
