@@ -15,7 +15,9 @@ COPY shared/ ./shared/
 COPY client/ ./client/
 COPY tsconfig.json ./
 ARG VITE_R2_BASE_URL
+ARG VITE_SERVER_URL
 ENV VITE_R2_BASE_URL=$VITE_R2_BASE_URL
+ENV VITE_SERVER_URL=$VITE_SERVER_URL
 RUN pnpm --filter @hitster/shared build
 RUN pnpm --filter @hitster/client build
 

@@ -91,7 +91,10 @@ export const useGameStore = create<GameStore>((set) => ({
   setPlayers: (players) => set({ players }),
   addPlayer: (player) => set((state) => ({ players: [...state.players, player] })),
   removePlayer: (playerId) =>
-    set((state) => ({ players: state.players.filter((p) => p.id !== playerId) })),
+    set((state) => ({
+      players: state.players.filter((p) => p.id !== playerId),
+      disconnectedPlayerIds: state.disconnectedPlayerIds.filter((id) => id !== playerId),
+    })),
   setGameStarted: (players, phase, currentPlayerId) =>
     set({ players, phase, currentPlayerId }),
   setCurrentSong: (song) => set({ currentSong: song }),

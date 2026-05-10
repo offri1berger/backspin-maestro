@@ -35,9 +35,5 @@ export const AVATARS: string[] = [
   `${R2}/tina%20turner.jpg`,
   `${R2}/tom%20yorke.jpg`,
   `${R2}/tupac.jpg`,
-
-  // TODO: upload these 3 to R2, then replace with R2 URLs
-  new URL('../assets/avatars/ledZepplinPng.png', import.meta.url).href,
-  new URL('../assets/avatars/ozzyOzburmPng.png', import.meta.url).href,
-  new URL('../assets/avatars/paulMcCartneyPng.png', import.meta.url).href,
+  `${R2}/angus%20young.jpg`,
 ]
