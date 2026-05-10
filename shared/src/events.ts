@@ -1,4 +1,5 @@
 import { GamePhase } from './enums'
+import type { RoomStatus } from './enums'
 import type { Player, Song, RoomSettings, GameState } from './types'
 
 export interface CreateRoomPayload {
@@ -48,6 +49,21 @@ export interface PlacementResultPayload {
   correctPosition: number
 }
 
+export interface RejoinPayload {
+  playerId: string
+  roomCode: string
+}
+
+export type RejoinResult =
+  | { success: false; error: 'room_not_found' | 'player_not_found' }
+  | {
+      success: true
+      roomStatus: RoomStatus
+      players: Player[]
+      settings: RoomSettings
+      gameState: GameState | null
+    }
+
 export interface StealResultPayload {
   success: boolean
   stealerId: string
@@ -80,6 +96,7 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
   'room:create': (payload: CreateRoomPayload, cb: (result: CreateRoomResult) => void) => void
   'room:join': (payload: JoinRoomPayload, cb: (result: JoinRoomResult) => void) => void
+  'room:rejoin': (payload: RejoinPayload, cb: (result: RejoinResult) => void) => void
   'game:start': (cb: (error?: string) => void) => void
   'song:guess': (payload: GuessPayload) => void
   'song:skip': (cb: (error?: string) => void) => void

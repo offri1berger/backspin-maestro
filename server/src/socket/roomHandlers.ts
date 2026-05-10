@@ -1,6 +1,6 @@
 import type { Socket, Server } from 'socket.io'
 import type { ServerToClientEvents, ClientToServerEvents } from '@hitster/shared'
-import { createRoomService, joinRoomService } from '../services/roomService.js'
+import { createRoomService, joinRoomService, rejoinRoomService } from '../services/roomService.js'
 import { startGameService } from '../services/gameService.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
@@ -76,6 +76,17 @@ socket.on('game:start', async (cb) => {
     socket.emit('error', 'Failed to start game')
   }
 })
+  socket.on('room:rejoin', async (payload, cb) => {
+    try {
+      const result = await rejoinRoomService(payload.playerId, payload.roomCode, socket.id)
+      if (result.success) socket.join(payload.roomCode)
+      cb(result)
+    } catch (err) {
+      console.error('room:rejoin error', err)
+      cb({ success: false, error: 'room_not_found' })
+    }
+  })
+
 socket.on('audio:play', () => {
   const rooms = [...socket.rooms].filter((r) => r !== socket.id)
   const roomCode = rooms[0]

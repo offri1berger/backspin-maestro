@@ -19,7 +19,10 @@ export const markSongAsUsed = async (roomCode: string, songId: string) => {
 
 export const getFreshPreviewUrl = async (deezerId: string): Promise<string | null> => {
   try {
-    const res = await fetch(`https://api.deezer.com/track/${deezerId}`)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 4_000)
+    const res = await fetch(`https://api.deezer.com/track/${deezerId}`, { signal: controller.signal })
+    clearTimeout(timeout)
     if (!res.ok) return null
     const data = await res.json() as any
     return data.preview ?? null

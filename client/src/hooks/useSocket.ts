@@ -1,11 +1,42 @@
 import { useEffect } from 'react'
 import socket from '../socket'
-import { useGameStore } from '../store/gameStore'
+import { useGameStore, loadSession, clearSession } from '../store/gameStore'
 
 export const useSocket = () => {
   const { addPlayer, removePlayer, setGameStarted, setCurrentSong, setPhase } = useGameStore()
 
   useEffect(() => {
+    socket.on('connect', () => {
+      const saved = loadSession()
+      if (!saved) return
+      socket.emit('room:rejoin', saved, (result) => {
+        if (!result.success || result.roomStatus === 'finished') {
+          clearSession()
+          return
+        }
+        const store = useGameStore.getState()
+        if (result.roomStatus === 'playing' && result.gameState) {
+          store.restoreSession({
+            roomCode: saved.roomCode,
+            playerId: saved.playerId,
+            players: result.players,
+            settings: result.settings,
+            phase: result.gameState.phase,
+            currentPlayerId: result.gameState.currentPlayerId,
+            currentSong: result.gameState.currentSong,
+            roundNumber: result.gameState.roundNumber,
+          })
+        } else {
+          store.restoreSession({
+            roomCode: saved.roomCode,
+            playerId: saved.playerId,
+            players: result.players,
+            settings: result.settings,
+          })
+        }
+      })
+    })
+
     socket.connect()
 
     socket.on('player:joined', (player) => {
@@ -117,6 +148,7 @@ export const useSocket = () => {
     })
 
     return () => {
+      socket.off('connect')
       socket.off('player:joined')
       socket.off('player:left')
       socket.off('game:starting')

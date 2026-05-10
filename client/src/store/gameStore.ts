@@ -1,6 +1,22 @@
 import { create } from 'zustand'
 import type { GamePhase, Player, Song, RoomSettings, StealResultPayload } from '@hitster/shared'
 
+const SESSION_KEY = 'hitster_session'
+
+export const persistSession = (roomCode: string, playerId: string) =>
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ roomCode, playerId }))
+
+export const clearSession = () => localStorage.removeItem(SESSION_KEY)
+
+export const loadSession = (): { roomCode: string; playerId: string } | null => {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
 interface GameStore {
   roomCode: string | null
   playerId: string | null
@@ -21,6 +37,8 @@ interface GameStore {
   stealInitiatorId: string | null
 
   setRoom: (roomCode: string, playerId: string) => void
+  setSettings: (settings: RoomSettings) => void
+  restoreSession: (data: { roomCode: string; playerId: string; players: Player[]; settings: RoomSettings; phase?: GamePhase; currentPlayerId?: string; currentSong?: Song | null; roundNumber?: number }) => void
   setPlayers: (players: Player[]) => void
   addPlayer: (player: Player) => void
   removePlayer: (playerId: string) => void
@@ -58,7 +76,13 @@ export const useGameStore = create<GameStore>((set) => ({
   isStealWindowOpen: false,
   stealInitiatorId: null,
 
-  setRoom: (roomCode, playerId) => set({ roomCode, playerId }),
+  setRoom: (roomCode, playerId) => {
+    persistSession(roomCode, playerId)
+    set({ roomCode, playerId })
+  },
+  setSettings: (settings) => set({ settings }),
+  restoreSession: ({ roomCode, playerId, players, settings, phase, currentPlayerId, currentSong, roundNumber }) =>
+    set({ roomCode, playerId, players, settings, phase: phase ?? null, currentPlayerId: currentPlayerId ?? null, currentSong: currentSong ?? null, roundNumber: roundNumber ?? 1 }),
   setPlayers: (players) => set({ players }),
   addPlayer: (player) => set((state) => ({ players: [...state.players, player] })),
   removePlayer: (playerId) =>
@@ -72,7 +96,7 @@ export const useGameStore = create<GameStore>((set) => ({
   setPlacementResult: (result) => set({ placementResult: result }),
   setIsWaitingForNextTurn: (val) => set({ isWaitingForNextTurn: val }),
   setHasGuessed: (val) => set({ hasGuessed: val }),
-  setGameOver: (winnerId) => set({ winnerId, phase: 'game_over' }),
+  setGameOver: (winnerId) => { clearSession(); set({ winnerId, phase: 'game_over' }) },
   setRemoteDragSlot: (slot) => set({ remoteDragSlot: slot }),
   setStealResult: (result) => set({ stealResult: result }),
   setIsStealWindowOpen: (val) => set({ isStealWindowOpen: val }),
