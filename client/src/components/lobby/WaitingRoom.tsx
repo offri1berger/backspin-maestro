@@ -20,9 +20,10 @@ interface Props {
   roomCode: string
   players: Player[]
   onStart: () => void
+  onLeave: () => void
 }
 
-export function WaitingRoom({ roomCode, players, onStart }: Props) {
+export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
   const disconnectedPlayerIds = useGameStore((s) => s.disconnectedPlayerIds)
   const playerId = useGameStore((s) => s.playerId)
   const isHost = players.find((p) => p.id === playerId)?.isHost ?? false
@@ -31,7 +32,19 @@ export function WaitingRoom({ roomCode, players, onStart }: Props) {
   return (
     <div className="min-h-screen bg-bg flex flex-col">
       <div className="px-5 lg:px-10 py-5 border-b border-line flex items-center justify-between">
-        <Logo />
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onLeave}
+            className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.15em] uppercase text-muted hover:text-on-bg transition-colors cursor-pointer bg-transparent border-none p-0"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Leave
+          </button>
+          <div className="w-px h-4 bg-line" />
+          <Logo />
+        </div>
         <div className="flex items-center gap-4">
           <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Room</span>
           <span className="font-mono text-[20px] tracking-[0.18em] text-accent font-semibold">{roomCode}</span>

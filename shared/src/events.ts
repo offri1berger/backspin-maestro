@@ -101,6 +101,7 @@ export interface ClientToServerEvents {
   'room:create': (payload: CreateRoomPayload, cb: (result: CreateRoomResult) => void) => void
   'room:join': (payload: JoinRoomPayload, cb: (result: JoinRoomResult) => void) => void
   'room:rejoin': (payload: RejoinPayload, cb: (result: RejoinResult) => void) => void
+  'room:leave': () => void
   'room:reset': (cb: (error?: string) => void) => void
   'game:start': (cb: (error?: string) => void) => void
   'song:guess': (payload: GuessPayload) => void

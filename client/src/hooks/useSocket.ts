@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import socket from '../socket'
 import { useGameStore, loadSession, clearSession } from '../store/gameStore'
 
 export const useSocket = () => {
+  const navigate = useNavigate()
   const { addPlayer, removePlayer, setGameStarted, setCurrentSong, setPhase } = useGameStore()
 
   useEffect(() => {
@@ -26,6 +28,7 @@ export const useSocket = () => {
             currentSong: result.gameState.currentSong,
             roundNumber: result.gameState.roundNumber,
           })
+          navigate('/game')
         } else {
           store.restoreSession({
             roomCode: saved.roomCode,
@@ -33,6 +36,7 @@ export const useSocket = () => {
             players: result.players,
             settings: result.settings,
           })
+          navigate('/lobby')
         }
       })
     })
@@ -49,6 +53,7 @@ export const useSocket = () => {
 
     socket.on('game:starting', (state, players) => {
       setGameStarted(players, state.phase, state.currentPlayerId)
+      navigate('/game')
     })
 
     socket.on('song:new', (song) => {
@@ -145,6 +150,7 @@ export const useSocket = () => {
       const store = useGameStore.getState()
       store.setPlayers(players)
       store.setGameOver(winnerId)
+      navigate('/over')
     })
 
     socket.on('player:disconnected', (playerId) => {
@@ -161,6 +167,7 @@ export const useSocket = () => {
 
     socket.on('game:reset', (players) => {
       useGameStore.getState().resetGame(players)
+      navigate('/lobby')
     })
 
     return () => {

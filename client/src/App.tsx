@@ -1,16 +1,22 @@
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useSocket } from './hooks/useSocket'
-import { useGameStore } from './store/gameStore'
 import LobbyPage from './pages/LobbyPage'
+import WaitingRoomPage from './pages/WaitingRoomPage'
 import GamePage from './pages/GamePage'
 import GameOverPage from './pages/GameOverPage'
 
 const App = () => {
   useSocket()
-  const phase = useGameStore((s) => s.phase)
 
-  if (phase === 'game_over') return <GameOverPage />
-  if (phase) return <GamePage />
-  return <LobbyPage />
+  return (
+    <Routes>
+      <Route path="/" element={<LobbyPage />} />
+      <Route path="/lobby" element={<WaitingRoomPage />} />
+      <Route path="/game" element={<GamePage />} />
+      <Route path="/over" element={<GameOverPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
 }
 
 export default App

@@ -2,7 +2,8 @@ import type { Socket, Server } from 'socket.io'
 import type { ServerToClientEvents, ClientToServerEvents } from '@hitster/shared'
 import { createRoomService, joinRoomService, rejoinRoomService, resetRoomService } from '../services/roomService.js'
 import { startGameService } from '../services/gameService.js'
-import { cancelDisconnectTimer } from './disconnectHandler.js'
+import { cancelDisconnectTimer, finalizeDisconnect } from './disconnectHandler.js'
+import { getPlayerBySocketId } from '../lib/session.js'
 import { roomLimiter } from '../lib/rateLimit.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
@@ -84,6 +85,14 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
       console.error('game:start error', err)
       socket.emit('error', 'Failed to start game')
     }
+  })
+
+  socket.on('room:leave', async () => {
+    const player = await getPlayerBySocketId(socket.id)
+    if (!player) return
+    cancelDisconnectTimer(player.id)
+    await finalizeDisconnect(io, player.id, player.roomCode)
+    socket.leave(player.roomCode)
   })
 
   socket.on('room:reset', async (cb) => {

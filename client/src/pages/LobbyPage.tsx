@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { Decade } from '@hitster/shared'
 import socket from '../socket'
 import { useGameStore } from '../store/gameStore'
-import { WaitingRoom } from '../components/lobby/WaitingRoom'
 import { HeroPanel } from '../components/lobby/HeroPanel'
 import { SetupForm } from '../components/lobby/SetupForm'
 import { Logo } from '../components/ui/Logo'
@@ -10,14 +10,22 @@ import { Logo } from '../components/ui/Logo'
 const NAV_LINKS = ['How to play', 'Songbook', 'Sign in']
 
 const LobbyPage = () => {
-  const [name, setName]                   = useState('')
-  const [roomCode, setRoomCode]           = useState('')
-  const [tab, setTab]                     = useState<'create' | 'join'>('create')
-  const [decade, setDecade]               = useState<Decade>('all')
+  const navigate = useNavigate()
+  const [name, setName] = useState('')
+  const [roomCode, setRoomCode] = useState('')
+  const [tab, setTab] = useState<'create' | 'join'>('create')
+  const [decade, setDecade] = useState<Decade>('all')
   const [songsPerPlayer, setSongsPerPlayer] = useState(10)
-  const [avatar, setAvatar]               = useState<string | undefined>(undefined)
+  const [avatar, setAvatar] = useState<string | undefined>(undefined)
 
-  const { setRoom, setPlayers, players, roomCode: currentRoomCode } = useGameStore()
+  const { setRoom, setPlayers, roomCode: storeRoomCode, phase } = useGameStore()
+
+  useEffect(() => {
+    if (!storeRoomCode) return
+    if (phase === 'game_over') navigate('/over', { replace: true })
+    else if (phase) navigate('/game', { replace: true })
+    else navigate('/lobby', { replace: true })
+  }, [storeRoomCode, phase])
 
   const handleCreate = () => {
     if (!name.trim()) return
@@ -29,6 +37,7 @@ const LobbyPage = () => {
     }, (result) => {
       setRoom(result.roomCode, result.playerId)
       setPlayers([{ id: result.playerId, name, avatar, tokens: 2, isHost: true, turnOrder: 0, timeline: [] }])
+      navigate('/lobby')
     })
   }
 
@@ -42,15 +51,8 @@ const LobbyPage = () => {
         ...(result.players ?? []),
         { id: result.playerId!, name, avatar, tokens: 0, isHost: false, turnOrder: 0, timeline: [] },
       ])
+      navigate('/lobby')
     })
-  }
-
-  const handleStart = () => {
-    socket.emit('game:start', (error) => { if (error) alert(error) })
-  }
-
-  if (currentRoomCode) {
-    return <WaitingRoom roomCode={currentRoomCode} players={players} onStart={handleStart} />
   }
 
   return (
@@ -85,4 +87,3 @@ const LobbyPage = () => {
 }
 
 export default LobbyPage
-

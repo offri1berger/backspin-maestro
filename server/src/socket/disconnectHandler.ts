@@ -19,7 +19,7 @@ export const cancelDisconnectTimer = (playerId: string) => {
   if (t) { clearTimeout(t); disconnectTimers.delete(playerId) }
 }
 
-const finalizeDisconnect = async (io: IoServer, playerId: string, roomCode: string) => {
+export const finalizeDisconnect = async (io: IoServer, playerId: string, roomCode: string) => {
   const room = await getSessionRoom(roomCode)
   if (!room || room.status === 'finished') return
 

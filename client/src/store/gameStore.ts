@@ -60,6 +60,7 @@ interface GameStore {
   setStealResult: (result: StealResultPayload | null) => void
   setIsStealWindowOpen: (val: boolean) => void
   setStealInitiatorId: (id: string | null) => void
+  leaveRoom: () => void
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -129,6 +130,29 @@ export const useGameStore = create<GameStore>((set) => ({
       placementResult: null,
       isWaitingForNextTurn: false,
       hasGuessed: false,
+      stealResult: null,
+      isStealWindowOpen: false,
+      stealInitiatorId: null,
+      disconnectedPlayerIds: [],
+    })
+  },
+  leaveRoom: () => {
+    clearSession()
+    set({
+      roomCode: null,
+      playerId: null,
+      settings: null,
+      players: [],
+      phase: null,
+      currentPlayerId: null,
+      currentSong: null,
+      roundNumber: 1,
+      winnerId: null,
+      pendingPosition: null,
+      placementResult: null,
+      isWaitingForNextTurn: false,
+      hasGuessed: false,
+      remoteDragSlot: null,
       stealResult: null,
       isStealWindowOpen: false,
       stealInitiatorId: null,
