@@ -11,6 +11,7 @@ import {
 import type { Song, TimelineEntry } from '@hitster/shared'
 import SongCard, { MysteryCardFace } from './SongCard'
 import socket from '../../socket'
+import { useGameStore } from '../../store/gameStore'
 import MiniYearCard from './timeline/MiniYearCard'
 import VerticalYearCard from './timeline/VerticalYearCard'
 import HSlot from './timeline/HSlot'
@@ -62,6 +63,12 @@ const Timeline = ({
     else setPendingPositionInternal(pos)
   }
 
+  const placementResult = useGameStore((s) => s.placementResult)
+  // Once the round result is revealed, the song is in `timeline` (or rejected).
+  // Mask the pending slot visually to avoid double-rendering it alongside the
+  // newly-placed timeline entry on the same render tick.
+  const visualPendingPos = placementResult ? null : pendingPos
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
@@ -95,13 +102,10 @@ const Timeline = ({
   }
 
   useEffect(() => {
-    if (!isWaiting) return
-    const t = setTimeout(() => {
-      if (isControlled) onPendingChange?.(null)
-      else setPendingPositionInternal(null)
-    }, 0)
-    return () => clearTimeout(t)
-  }, [isWaiting, isControlled, onPendingChange])
+    if (!placementResult) return
+    if (isControlled) onPendingChange?.(null)
+    else setPendingPositionInternal(null)
+  }, [placementResult, isControlled, onPendingChange])
 
   const handleConfirmPlace = () => {
     if (pendingPos === null || !onPlace) return
@@ -135,7 +139,7 @@ const Timeline = ({
       >
         <div className="flex flex-col gap-2">
           {Array.from({ length: slots }).map((_, i) => {
-            const isPendingSlot = pendingPos === i && currentSong != null
+            const isPendingSlot = visualPendingPos === i && currentSong != null
             const showSpectator = !isMyTurn && spectatorDragSlot === i && currentSong != null
             const hint = isPendingSlot ? buildHint(timeline, i) : undefined
 
@@ -200,7 +204,7 @@ const Timeline = ({
           <div className="flex items-center overflow-x-auto relative pb-0.5 gap-0">
             {Array.from({ length: slots }).map((_, i) => {
               const showHover = hoverSlot === i && currentSong != null
-              const isPendingSlot = pendingPos === i && currentSong != null
+              const isPendingSlot = visualPendingPos === i && currentSong != null
               const showSpectator = !isMyTurn && spectatorDragSlot === i && currentSong != null
               const isActive = showHover || showSpectator
 
