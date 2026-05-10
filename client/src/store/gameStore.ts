@@ -36,10 +36,14 @@ interface GameStore {
   isStealWindowOpen: boolean
   stealInitiatorId: string | null
 
+  disconnectedPlayerIds: string[]
   setRoom: (roomCode: string, playerId: string) => void
   setSettings: (settings: RoomSettings) => void
   restoreSession: (data: { roomCode: string; playerId: string; players: Player[]; settings: RoomSettings; phase?: GamePhase; currentPlayerId?: string; currentSong?: Song | null; roundNumber?: number }) => void
   setPlayers: (players: Player[]) => void
+  setPlayerDisconnected: (id: string) => void
+  setPlayerReconnected: (id: string) => void
+  transferHost: (newHostId: string) => void
   addPlayer: (player: Player) => void
   removePlayer: (playerId: string) => void
   setGameStarted: (players: Player[], phase: GamePhase, currentPlayerId: string) => void
@@ -75,6 +79,7 @@ export const useGameStore = create<GameStore>((set) => ({
   stealResult: null,
   isStealWindowOpen: false,
   stealInitiatorId: null,
+  disconnectedPlayerIds: [],
 
   setRoom: (roomCode, playerId) => {
     persistSession(roomCode, playerId)
@@ -101,4 +106,9 @@ export const useGameStore = create<GameStore>((set) => ({
   setStealResult: (result) => set({ stealResult: result }),
   setIsStealWindowOpen: (val) => set({ isStealWindowOpen: val }),
   setStealInitiatorId: (id) => set({ stealInitiatorId: id }),
+  setPlayerDisconnected: (id) => set((s) => ({ disconnectedPlayerIds: s.disconnectedPlayerIds.includes(id) ? s.disconnectedPlayerIds : [...s.disconnectedPlayerIds, id] })),
+  setPlayerReconnected: (id) => set((s) => ({ disconnectedPlayerIds: s.disconnectedPlayerIds.filter((x) => x !== id) })),
+  transferHost: (newHostId) => set((s) => ({
+    players: s.players.map((p) => ({ ...p, isHost: p.id === newHostId })),
+  })),
 }))

@@ -55,6 +55,7 @@ const advanceTurn = async (io: IoServer, roomCode: string) => {
 export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
   socket.on('card:place', async (payload, cb) => {
     try {
+      if (typeof payload?.position !== 'number' || payload.position < 0) { cb('invalid_payload'); return }
       const rooms = [...socket.rooms].filter((r) => r !== socket.id)
       const roomCode = rooms[0]
       if (!roomCode) { cb('not_in_room'); return }
@@ -110,6 +111,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
 
   socket.on('steal:attempt', async (payload, cb) => {
     try {
+      if (typeof payload?.targetPlayerId !== 'string' || typeof payload?.position !== 'number') { cb('invalid_payload'); return }
       const { targetPlayerId, position } = payload
       const rooms = [...socket.rooms].filter((r) => r !== socket.id)
       const roomCode = rooms[0]
@@ -274,6 +276,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
 
   socket.on('song:guess', async (payload) => {
     try {
+      if (typeof payload?.artist !== 'string' || typeof payload?.title !== 'string') return
       const rooms = [...socket.rooms].filter((r) => r !== socket.id)
       const roomCode = rooms[0]
       if (!roomCode) return

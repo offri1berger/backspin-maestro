@@ -122,6 +122,26 @@ export const getTimelineCount = async (playerId: string): Promise<number> =>
 
 // ── Cleanup ──────────────────────────────────────────────────────────────────
 
+export const removeSessionPlayer = async (playerId: string) => {
+  const player = await getSessionPlayer(playerId)
+  if (!player) return
+  if (player.socketId) await redis.del(socketPlayerKey(player.socketId))
+  await redis.srem(roomPlayersKey(player.roomCode), playerId)
+  await redis.del(playerKey(playerId))
+  await redis.del(timelineKey(playerId))
+}
+
+export const transferHost = async (roomCode: string, oldHostId: string, newHostId: string) => {
+  const room = await getSessionRoom(roomCode)
+  if (room) {
+    await redis.set(roomKey(roomCode), JSON.stringify({ ...room, hostId: newHostId }), 'EX', SESSION_TTL)
+  }
+  const oldHost = await getSessionPlayer(oldHostId)
+  if (oldHost) await redis.set(playerKey(oldHostId), JSON.stringify({ ...oldHost, isHost: false }), 'EX', SESSION_TTL)
+  const newHost = await getSessionPlayer(newHostId)
+  if (newHost) await redis.set(playerKey(newHostId), JSON.stringify({ ...newHost, isHost: true }), 'EX', SESSION_TTL)
+}
+
 export const deleteSessionRoom = async (roomCode: string) => {
   const ids = await redis.smembers(roomPlayersKey(roomCode))
   await Promise.all(ids.map(async (id) => {

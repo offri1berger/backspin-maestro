@@ -91,6 +91,9 @@ export interface ServerToClientEvents {
   'tokens:updated': (playerId: string, newTotal: number) => void
   'steal:open': (targetPlayerId: string) => void
   'steal:extended': (stealerId: string) => void
+  'player:disconnected': (playerId: string) => void
+  'player:reconnected': (playerId: string) => void
+  'host:transferred': (newHostId: string) => void
 }
 
 export interface ClientToServerEvents {

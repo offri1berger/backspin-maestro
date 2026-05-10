@@ -76,7 +76,7 @@ pnpm dev
 
 This starts all three packages concurrently:
 - Client: http://localhost:5173
-- Server: http://localhost:3000
+- Server: http://localhost:3001
 
 ## Scripts
 
@@ -108,7 +108,7 @@ This starts all three packages concurrently:
 | `DATABASE_URL` | PostgreSQL connection string |
 | `REDIS_URL` | Redis connection string |
 | `CLIENT_URL` | Allowed CORS origin (default: `http://localhost:5173`) |
-| `PORT` | Server port (default: `3000`) |
+| `PORT` | Server port (default: `3001`) |
 
 ### Client (`client/.env`)
 

@@ -1,18 +1,17 @@
 import type { Player } from '@hitster/shared'
+import { useGameStore } from '../../store/gameStore'
 import { ArrowIcon, Logo } from '../ui/Logo'
 
-
-function PlayerRow({ player }: { player: Player }) {
+function PlayerRow({ player, offline }: { player: Player; offline: boolean }) {
   return (
-    <div className="flex items-center gap-3.5 px-[18px] py-3.5 rounded-2xl border border-line">
+    <div className={`flex items-center gap-3.5 px-[18px] py-3.5 rounded-2xl border border-line transition-opacity ${offline ? 'opacity-40' : ''}`}>
       {player.avatar
         ? <img src={player.avatar} alt={player.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
         : <div className="w-9 h-9 rounded-full bg-line flex items-center justify-center font-display text-[20px] text-on-bg shrink-0">{player.name.charAt(0).toUpperCase()}</div>
       }
       <span className="flex-1 text-base font-semibold text-on-bg">{player.name}</span>
-      {player.isHost && (
-        <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">host</span>
-      )}
+      {offline && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">offline</span>}
+      {!offline && player.isHost && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">host</span>}
     </div>
   )
 }
@@ -24,6 +23,7 @@ interface Props {
 }
 
 export function WaitingRoom({ roomCode, players, onStart }: Props) {
+  const disconnectedPlayerIds = useGameStore((s) => s.disconnectedPlayerIds)
   const ready = players.length >= 2
 
   return (
@@ -46,7 +46,7 @@ export function WaitingRoom({ roomCode, players, onStart }: Props) {
           </div>
 
           <div className="flex flex-col gap-2 mb-8">
-            {players.map((p) => <PlayerRow key={p.id} player={p} />)}
+            {players.map((p) => <PlayerRow key={p.id} player={p} offline={disconnectedPlayerIds.includes(p.id)} />)}
           </div>
 
           <button

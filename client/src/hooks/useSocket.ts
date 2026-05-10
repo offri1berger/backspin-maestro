@@ -147,6 +147,18 @@ export const useSocket = () => {
       store.setGameOver(winnerId)
     })
 
+    socket.on('player:disconnected', (playerId) => {
+      useGameStore.getState().setPlayerDisconnected(playerId)
+    })
+
+    socket.on('player:reconnected', (playerId) => {
+      useGameStore.getState().setPlayerReconnected(playerId)
+    })
+
+    socket.on('host:transferred', (newHostId) => {
+      useGameStore.getState().transferHost(newHostId)
+    })
+
     return () => {
       socket.off('connect')
       socket.off('player:joined')
@@ -161,6 +173,9 @@ export const useSocket = () => {
       socket.off('steal:result')
       socket.off('tokens:updated')
       socket.off('game:over')
+      socket.off('player:disconnected')
+      socket.off('player:reconnected')
+      socket.off('host:transferred')
       socket.disconnect()
     }
   }, [])

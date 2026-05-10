@@ -2,7 +2,7 @@ import { useGameStore } from '../../store/gameStore'
 import { SectionMark, PLAYER_COLORS } from './common'
 
 export const PlayerRail = () => {
-  const { players, currentPlayerId, playerId } = useGameStore()
+  const { players, currentPlayerId, playerId, disconnectedPlayerIds } = useGameStore()
 
   return (
     <aside className="p-5 border-r border-line overflow-y-auto bg-bg">
@@ -12,10 +12,13 @@ export const PlayerRail = () => {
         {players.map((p, i) => {
           const active = p.id === currentPlayerId
           const isMe = p.id === playerId
+          const offline = disconnectedPlayerIds.includes(p.id)
           return (
             <div
               key={p.id}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-[14px] ${
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-[14px] transition-opacity ${
+                offline ? 'opacity-40' : ''
+              } ${
                 active
                   ? 'bg-accent text-accent-ink border-0'
                   : 'bg-transparent text-on-bg border border-line'
