@@ -8,6 +8,8 @@ export const useSocket = () => {
   const { addPlayer, removePlayer, setGameStarted, setCurrentSong, setPhase } = useGameStore()
 
   useEffect(() => {
+    let placementResultTimer: ReturnType<typeof setTimeout> | null = null
+
     socket.on('connect', () => {
       const saved = loadSession()
       if (!saved) return
@@ -64,12 +66,14 @@ export const useSocket = () => {
       store.setStealResult(null)
       store.setIsStealWindowOpen(false)
       store.setStealInitiatorId(null)
+      store.setStealTargetId(null)
     })
 
-    socket.on('steal:open', () => {
+    socket.on('steal:open', (targetPlayerId) => {
       const store = useGameStore.getState()
       store.setIsWaitingForNextTurn(true)
       store.setIsStealWindowOpen(true)
+      store.setStealTargetId(targetPlayerId)
     })
 
     socket.on('steal:extended', (stealerId) => {
@@ -86,16 +90,15 @@ export const useSocket = () => {
 
       if (result.correct) {
         const currentSong = store.currentSong
-        if (!currentSong) return
-
-        const updatedPlayers = store.players.map((p) => {
-          if (p.id !== result.playerId) return p
-          const newEntry = { song: currentSong, position: result.correctPosition }
-          const newTimeline = [...p.timeline, newEntry].sort((a, b) => a.song.year - b.song.year)
-          return { ...p, timeline: newTimeline }
-        })
-
-        store.setPlayers(updatedPlayers)
+        if (currentSong) {
+          const updatedPlayers = store.players.map((p) => {
+            if (p.id !== result.playerId) return p
+            const newEntry = { song: currentSong, position: result.correctPosition }
+            const newTimeline = [...p.timeline, newEntry].sort((a, b) => a.song.year - b.song.year)
+            return { ...p, timeline: newTimeline }
+          })
+          store.setPlayers(updatedPlayers)
+        }
       }
 
       store.setRemoteDragSlot(null)
@@ -106,7 +109,8 @@ export const useSocket = () => {
         song: result.correct ? undefined : result.song,
       })
       store.setIsWaitingForNextTurn(true)
-      setTimeout(() => store.setPlacementResult(null), result.correct ? 2000 : 3000)
+      if (placementResultTimer) clearTimeout(placementResultTimer)
+      placementResultTimer = setTimeout(() => store.setPlacementResult(null), result.correct ? 2000 : 3000)
     })
 
     socket.on('token:earned', (playerId, newTotal) => {
@@ -116,8 +120,9 @@ export const useSocket = () => {
       )
       store.setPlayers(updatedPlayers)
       if (playerId === store.playerId) {
+        if (placementResultTimer) clearTimeout(placementResultTimer)
         store.setPlacementResult({ correct: true, message: '🪙 Token earned!' })
-        setTimeout(() => store.setPlacementResult(null), 2000)
+        placementResultTimer = setTimeout(() => store.setPlacementResult(null), 2000)
       }
     })
 
@@ -127,8 +132,9 @@ export const useSocket = () => {
       if (result.correct) {
         const updatedPlayers = store.players.map((p) => {
           if (p.id !== result.stealerId) return p
-          const newEntry = { song: result.song, position: p.timeline.length }
-          const newTimeline = [...p.timeline, newEntry].sort((a, b) => a.song.year - b.song.year)
+          const newTimeline = [...p.timeline, { song: result.song, position: 0 }]
+            .sort((a, b) => a.song.year - b.song.year)
+            .map((entry, idx) => ({ ...entry, position: idx }))
           return { ...p, timeline: newTimeline }
         })
         store.setPlayers(updatedPlayers)
@@ -171,6 +177,7 @@ export const useSocket = () => {
     })
 
     return () => {
+      if (placementResultTimer) clearTimeout(placementResultTimer)
       socket.off('connect')
       socket.off('player:joined')
       socket.off('player:left')

@@ -1,5 +1,6 @@
 import { useGameStore } from '../../store/gameStore'
-import { SectionMark, PLAYER_COLORS } from './common'
+import { SectionMark } from './common'
+import { PLAYER_COLORS } from './constants'
 
 export const PlayerRail = () => {
   const { players, currentPlayerId, playerId, disconnectedPlayerIds } = useGameStore()

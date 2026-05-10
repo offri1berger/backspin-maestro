@@ -15,8 +15,9 @@ const GamePage = () => {
   const {
     players, currentPlayerId, playerId, isWaitingForNextTurn,
     stealResult, isStealWindowOpen, stealInitiatorId,
-    setHasGuessed, setRemoteDragSlot,
+    setHasGuessed, setRemoteDragSlot, settings,
   } = useGameStore()
+  const songsToWin = settings?.songsPerPlayer ?? 10
 
   const isMyTurn = currentPlayerId === playerId
   const myPlayer = players.find((p) => p.id === playerId)
@@ -25,29 +26,37 @@ const GamePage = () => {
   const [guess, setGuess] = useState({ artist: '', title: '' })
   const [isAttemptingSteal, setIsAttemptingSteal] = useState(false)
   const [countdown, setCountdown] = useState(0)
-  const [stealWindowSeconds, setStealWindowSeconds] = useState(5)
 
-  const [mobilePending, setMobilePending] = useState<number | null>(null)
+  // Derived: steal window is longer when someone explicitly initiates
+  const stealWindowSeconds = stealInitiatorId ? 10 : 5
+
+  const [mobilePending, _setMobilePending] = useState<number | null>(null)
   const [mobileConfirmed, setMobileConfirmed] = useState(false)
+  const setMobilePending = (val: number | null) => {
+    _setMobilePending(val)
+    if (val === null) setMobileConfirmed(false)
+  }
 
+  // Reset isAttemptingSteal when steal window closes via a store subscription
+  // (setState is called inside the callback, not synchronously in the effect body)
   useEffect(() => {
-    if (mobilePending === null) setMobileConfirmed(false)
-  }, [mobilePending])
+    return useGameStore.subscribe((state, prev) => {
+      if (prev.isStealWindowOpen && !state.isStealWindowOpen) setIsAttemptingSteal(false)
+    })
+  }, [])
 
   useEffect(() => {
     socket.on('drag:update', (slot) => setRemoteDragSlot(slot))
     return () => { socket.off('drag:update') }
   }, [setRemoteDragSlot])
 
-  useEffect(() => { if (stealInitiatorId) setStealWindowSeconds(10) }, [stealInitiatorId])
   useEffect(() => { setRemoteDragSlot(null) }, [currentPlayerId, setRemoteDragSlot])
-  useEffect(() => { if (!isStealWindowOpen) setIsAttemptingSteal(false) }, [isStealWindowOpen])
 
   useEffect(() => {
-    if (!isStealWindowOpen) { setCountdown(0); setStealWindowSeconds(5); return }
-    setCountdown(stealWindowSeconds)
+    if (!isStealWindowOpen) return
+    const t = setTimeout(() => setCountdown(stealWindowSeconds), 0)
     const iv = setInterval(() => setCountdown((c) => (c <= 1 ? (clearInterval(iv), 0) : c - 1)), 1000)
-    return () => clearInterval(iv)
+    return () => { clearTimeout(t); clearInterval(iv); setCountdown(0) }
   }, [isStealWindowOpen, stealWindowSeconds])
 
   const handlePlace = (position: number, onError?: () => void) => {
@@ -106,7 +115,7 @@ const GamePage = () => {
             <span className="font-mono text-base tracking-[0.18em] text-accent font-semibold">{roomCode}</span>
             <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">{players.length} players</span>
           </div>
-          <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">First to 10 cards wins</span>
+          <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">First to {songsToWin} cards wins</span>
         </div>
 
         <div className="flex-1 grid min-h-0 grid-cols-[260px_1fr_300px]">
@@ -137,7 +146,7 @@ const GamePage = () => {
         <div className="px-4 py-2.5 border-b border-line flex items-center justify-between bg-bg shrink-0">
           <Logo />
           <div className="flex items-center gap-3">
-            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">{players.length}p · first to 10</span>
+            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">{players.length}p · first to {songsToWin}</span>
             <span className="font-mono text-[11px] tracking-[0.18em] text-accent font-semibold">{roomCode}</span>
           </div>
         </div>

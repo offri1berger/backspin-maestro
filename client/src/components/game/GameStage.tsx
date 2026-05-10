@@ -1,5 +1,6 @@
 import { useGameStore } from '../../store/gameStore'
-import { SectionMark, PLAYER_COLORS } from './common'
+import { SectionMark } from './common'
+import { PLAYER_COLORS } from './constants'
 import AudioPlayer from './AudioPlayer'
 import Timeline from './Timeline'
 import { MiniYearCard } from './Timeline'

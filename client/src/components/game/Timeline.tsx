@@ -95,8 +95,13 @@ const Timeline = ({
   }
 
   useEffect(() => {
-    setPending(null)
-  }, [isWaiting])
+    if (!isWaiting) return
+    const t = setTimeout(() => {
+      if (isControlled) onPendingChange?.(null)
+      else setPendingPositionInternal(null)
+    }, 0)
+    return () => clearTimeout(t)
+  }, [isWaiting, isControlled, onPendingChange])
 
   const handleConfirmPlace = () => {
     if (pendingPos === null || !onPlace) return

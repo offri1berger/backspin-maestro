@@ -6,6 +6,7 @@ import {
 } from '../lib/session.js'
 import { getGameState } from '../lib/gameCache.js'
 import { nextTurnService } from '../services/gameService.js'
+import { cancelRoomStealTimeout } from '../lib/roomTimeouts.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
@@ -30,7 +31,8 @@ export const finalizeDisconnect = async (io: IoServer, playerId: string, roomCod
   // If it's their turn and the steal window hasn't opened yet, skip to next player
   if (room.status === 'playing') {
     const gameState = await getGameState(roomCode)
-    if (gameState?.currentPlayerId === playerId && gameState.phase === 'song_phase') {
+    if (gameState?.currentPlayerId === playerId && (gameState.phase === 'song_phase' || gameState.phase === 'placement')) {
+      cancelRoomStealTimeout(roomCode)
       const next = await nextTurnService(roomCode)
       if (!('error' in next)) {
         io.to(roomCode).emit('phase:changed', 'song_phase', new Date().toISOString(), next.nextPlayerId)

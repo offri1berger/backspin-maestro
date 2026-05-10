@@ -30,6 +30,8 @@ export const validatePlacement = async (
 
   const timeline = await getTimeline(playerId)
 
+  if (position > timeline.length) return { error: 'invalid_position' }
+
   const prevEntry = timeline[position - 1]
   const nextEntry = timeline[position]
   const prevOk = !prevEntry || prevEntry.song.year <= song.year

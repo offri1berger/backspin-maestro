@@ -11,6 +11,7 @@ import {
 } from '../lib/session.js'
 import { db } from '../db/database.js'
 import { placeLimiter, stealLimiter, skipLimiter, guessLimiter } from '../lib/rateLimit.js'
+import { pendingResults, stealTimeouts, resolvedRooms, cleanupRoomState } from '../lib/roomTimeouts.js'
 
 const buildGameOverPlayers = async (roomCode: string) => {
   const players = await getPlayersByRoomCode(roomCode)
@@ -32,17 +33,6 @@ const STEAL_WINDOW_MS = 5_000
 const STEAL_EXTENDED_MS = 10_000
 const CARD_REVEAL_MS = 3_000
 
-const pendingResults = new Map<string, PlacementResultPayload>()
-const stealTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
-const resolvedRooms = new Set<string>()
-
-const cleanupRoomState = (roomCode: string) => {
-  const t = stealTimeouts.get(roomCode)
-  if (t) clearTimeout(t)
-  stealTimeouts.delete(roomCode)
-  pendingResults.delete(roomCode)
-  resolvedRooms.delete(roomCode)
-}
 
 const advanceTurn = async (io: IoServer, roomCode: string) => {
   stealTimeouts.delete(roomCode)
@@ -263,7 +253,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
 
       await markSongAsUsed(roomCode, song.id)
       const freshPreviewUrl = await getFreshPreviewUrl(song.deezer_id)
-      await setGameState(roomCode, { ...gameState, currentSongId: song.id })
+      await setGameState(roomCode, { ...gameState, currentSongId: song.id, phase: 'song_phase', phaseStartedAt: new Date().toISOString() })
 
       io.to(roomCode).emit('song:new', {
         id: song.id, title: song.title, artist: song.artist,

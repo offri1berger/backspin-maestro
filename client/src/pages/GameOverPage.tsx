@@ -4,7 +4,8 @@ import { Logo } from '../components/ui/Logo'
 import socket from '../socket'
 
 const GameOverPage = () => {
-  const { players, winnerId, playerId } = useGameStore()
+  const { players, winnerId, playerId, settings } = useGameStore()
+  const songsToWin = settings?.songsPerPlayer ?? 10
   const ranked = [...players].sort((a, b) => b.timeline.length - a.timeline.length)
   const winner = ranked[0]
   const isWinner = winnerId === playerId
@@ -100,7 +101,7 @@ const GameOverPage = () => {
 
                 {/* Mini progress bar */}
                 <div className="flex gap-[3px] shrink-0">
-                  {Array.from({ length: 10 }).map((_, j) => (
+                  {Array.from({ length: songsToWin }).map((_, j) => (
                     <div
                       key={j}
                       className={`w-[7px] h-[22px] rounded-[2px] ${j < p.timeline.length ? 'bg-accent' : 'bg-line'}`}

@@ -35,6 +35,7 @@ interface GameStore {
   stealResult: StealResultPayload | null
   isStealWindowOpen: boolean
   stealInitiatorId: string | null
+  stealTargetId: string | null
 
   disconnectedPlayerIds: string[]
   setRoom: (roomCode: string, playerId: string) => void
@@ -60,6 +61,7 @@ interface GameStore {
   setStealResult: (result: StealResultPayload | null) => void
   setIsStealWindowOpen: (val: boolean) => void
   setStealInitiatorId: (id: string | null) => void
+  setStealTargetId: (id: string | null) => void
   leaveRoom: () => void
 }
 
@@ -81,6 +83,7 @@ export const useGameStore = create<GameStore>((set) => ({
   stealResult: null,
   isStealWindowOpen: false,
   stealInitiatorId: null,
+  stealTargetId: null,
   disconnectedPlayerIds: [],
 
   setRoom: (roomCode, playerId) => {
@@ -111,6 +114,7 @@ export const useGameStore = create<GameStore>((set) => ({
   setStealResult: (result) => set({ stealResult: result }),
   setIsStealWindowOpen: (val) => set({ isStealWindowOpen: val }),
   setStealInitiatorId: (id) => set({ stealInitiatorId: id }),
+  setStealTargetId: (id) => set({ stealTargetId: id }),
   setPlayerDisconnected: (id) => set((s) => ({ disconnectedPlayerIds: s.disconnectedPlayerIds.includes(id) ? s.disconnectedPlayerIds : [...s.disconnectedPlayerIds, id] })),
   setPlayerReconnected: (id) => set((s) => ({ disconnectedPlayerIds: s.disconnectedPlayerIds.filter((x) => x !== id) })),
   transferHost: (newHostId) => set((s) => ({
@@ -133,6 +137,7 @@ export const useGameStore = create<GameStore>((set) => ({
       stealResult: null,
       isStealWindowOpen: false,
       stealInitiatorId: null,
+      stealTargetId: null,
       disconnectedPlayerIds: [],
     })
   },
@@ -156,6 +161,7 @@ export const useGameStore = create<GameStore>((set) => ({
       stealResult: null,
       isStealWindowOpen: false,
       stealInitiatorId: null,
+      stealTargetId: null,
       disconnectedPlayerIds: [],
     })
   },
