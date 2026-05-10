@@ -114,19 +114,16 @@ const GamePage = () => {
     navigate('/')
   }
 
-  if (isAttemptingSteal) {
-    return (
-      <StealOverlay
-        countdown={countdown}
-        onStealAttempt={handleStealAttempt}
-        onClose={() => setIsAttemptingSteal(false)}
-      />
-    )
-  }
-
   return (
     <div className="min-h-screen bg-bg flex flex-col">
       <ResultToast />
+      {isAttemptingSteal && (
+        <StealOverlay
+          countdown={countdown}
+          onStealAttempt={handleStealAttempt}
+          onClose={() => setIsAttemptingSteal(false)}
+        />
+      )}
 
       {/* ── DESKTOP layout (lg+) ─────────────────────────────────────────── */}
       <div className="hidden lg:flex flex-col flex-1 min-h-0">

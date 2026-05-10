@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import Timeline from './Timeline'
 
@@ -8,9 +9,12 @@ interface Props {
 }
 
 export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
-  const { currentSong, currentPlayerId, players } = useGameStore()
+  const { currentSong, currentPlayerId, players, stealOriginalPosition } = useGameStore()
   const activePlayer = players.find((p) => p.id === currentPlayerId)
   const activeTimeline = activePlayer?.timeline ?? []
+
+  const [pendingPosition, setPendingPosition] = useState<number | null>(stealOriginalPosition)
+  useEffect(() => { setPendingPosition(stealOriginalPosition) }, [stealOriginalPosition])
 
   if (!currentSong) return null
 
@@ -103,7 +107,8 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
             isMyTurn
             isWaiting={false}
             broadcastDrag={false}
-            autoConfirm
+            pendingPosition={pendingPosition}
+            onPendingChange={setPendingPosition}
           />
         </div>
 

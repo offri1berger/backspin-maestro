@@ -67,13 +67,15 @@ export const useSocket = () => {
       store.setIsStealWindowOpen(false)
       store.setStealInitiatorId(null)
       store.setStealTargetId(null)
+      store.setStealOriginalPosition(null)
     })
 
-    socket.on('steal:open', (targetPlayerId) => {
+    socket.on('steal:open', (targetPlayerId, originalPosition) => {
       const store = useGameStore.getState()
       store.setIsWaitingForNextTurn(true)
       store.setIsStealWindowOpen(true)
       store.setStealTargetId(targetPlayerId)
+      store.setStealOriginalPosition(originalPosition)
     })
 
     socket.on('steal:extended', (stealerId) => {
