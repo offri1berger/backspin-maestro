@@ -103,8 +103,11 @@ const Timeline = ({
 
   useEffect(() => {
     if (!placementResult) return
-    if (isControlled) onPendingChange?.(null)
-    else setPendingPositionInternal(null)
+    const t = setTimeout(() => {
+      if (isControlled) onPendingChange?.(null)
+      else setPendingPositionInternal(null)
+    }, 0)
+    return () => clearTimeout(t)
   }, [placementResult, isControlled, onPendingChange])
 
   const handleConfirmPlace = () => {

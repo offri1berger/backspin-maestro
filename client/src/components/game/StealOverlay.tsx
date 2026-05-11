@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import Timeline from './Timeline'
 
@@ -13,8 +13,9 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
   const activePlayer = players.find((p) => p.id === currentPlayerId)
   const activeTimeline = activePlayer?.timeline ?? []
 
+  // Initial value is enough — StealOverlay unmounts when the steal window
+  // closes, so it remounts fresh for each new steal cycle.
   const [pendingPosition, setPendingPosition] = useState<number | null>(stealOriginalPosition)
-  useEffect(() => { setPendingPosition(stealOriginalPosition) }, [stealOriginalPosition])
 
   if (!currentSong) return null
 
