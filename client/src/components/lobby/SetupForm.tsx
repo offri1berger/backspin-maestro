@@ -133,8 +133,8 @@ export const SetupForm = ({
           <>
             <DecadePicker decade={decade} onChange={onDecadeChange} />
 
-            {/* Settings — desktop only */}
-            <div className="hidden lg:block">
+            {/* Settings */}
+            <div>
               <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Songs to win</p>
               <div className="mt-2 px-2 py-3 border border-line rounded-[14px] flex items-center justify-between">
                 <button
