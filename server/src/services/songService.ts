@@ -1,11 +1,17 @@
 import { db } from '../db/database.js'
 import { addUsedSong, getUsedSongIds } from '../lib/gameCache.js'
+import { getSessionRoom } from '../lib/session.js'
 
 export const getRandomSong = async (roomCode: string) => {
-  const usedIds = await getUsedSongIds(roomCode)
+  const [usedIds, room] = await Promise.all([
+    getUsedSongIds(roomCode),
+    getSessionRoom(roomCode),
+  ])
+  const decadeFilter = room?.decadeFilter ?? 'all'
 
   let countQuery = db.selectFrom('songs').select((eb) => eb.fn.countAll<number>().as('count'))
   if (usedIds.length > 0) countQuery = countQuery.where('id', 'not in', usedIds)
+  if (decadeFilter !== 'all') countQuery = countQuery.where('decade', '=', decadeFilter)
 
   const { count } = await countQuery.executeTakeFirstOrThrow()
   const total = Number(count)
@@ -13,6 +19,7 @@ export const getRandomSong = async (roomCode: string) => {
 
   let songQuery = db.selectFrom('songs').selectAll().limit(1).offset(Math.floor(Math.random() * total))
   if (usedIds.length > 0) songQuery = songQuery.where('id', 'not in', usedIds)
+  if (decadeFilter !== 'all') songQuery = songQuery.where('decade', '=', decadeFilter)
 
   return (await songQuery.executeTakeFirst()) ?? null
 }

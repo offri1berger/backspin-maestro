@@ -180,11 +180,11 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       if (player.id !== gameState.currentPlayerId) { cb('not_your_turn'); return }
       if (player.tokens < 1) { cb('insufficient_tokens'); return }
 
-      await updatePlayerTokens(player.id, player.tokens - 1)
-      io.to(roomCode).emit('tokens:updated', player.id, player.tokens - 1)
-
       const song = await getRandomSong(roomCode)
       if (!song) { cb('no_songs_left'); return }
+
+      await updatePlayerTokens(player.id, player.tokens - 1)
+      io.to(roomCode).emit('tokens:updated', player.id, player.tokens - 1)
 
       await markSongAsUsed(roomCode, song.id)
       const freshPreviewUrl = await getFreshPreviewUrl(song.deezer_id)
