@@ -91,6 +91,9 @@ const SongCard = ({ draggable, isWaiting, fullWidth = false, hint }: Props) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: 'current-song',
     disabled: !draggable || isWaiting,
+    attributes: {
+      roleDescription: 'Mystery song card. Press space or enter to pick up, arrow keys to move between slots, space or enter to drop, escape to cancel.',
+    },
   })
 
   return (

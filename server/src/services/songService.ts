@@ -28,7 +28,7 @@ export const getFreshPreviewUrl = async (deezerId: string): Promise<string | nul
     const res = await fetch(`https://api.deezer.com/track/${deezerId}`, { signal: controller.signal })
     clearTimeout(timeout)
     if (!res.ok) return null
-    const data = await res.json() as any
+    const data = (await res.json()) as { preview?: string | null }
     return data.preview ?? null
   } catch {
     return null

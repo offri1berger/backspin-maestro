@@ -29,7 +29,13 @@ const seed = async () => {
       const res = await fetch(
         `https://api.deezer.com/search?q=${encodeURIComponent(song.q)}&limit=1`
       )
-      const data = await res.json() as any
+      interface DeezerTrack {
+        id: number
+        title_short: string
+        artist: { name: string }
+        preview: string
+      }
+      const data = (await res.json()) as { data?: DeezerTrack[] }
 
       if (!data.data || data.data.length === 0 || !data.data[0].preview) {
         console.log(`✗ no preview: ${song.q}`)

@@ -4,13 +4,16 @@ import { MysteryCardFace } from '../SongCard'
 interface HSlotProps {
   id: number
   isActive: boolean
+  label?: string
 }
 
-const HSlot = ({ id, isActive }: HSlotProps) => {
+const HSlot = ({ id, isActive, label }: HSlotProps) => {
   const { isOver, setNodeRef } = useDroppable({ id })
   return (
     <div
       ref={setNodeRef}
+      role="region"
+      aria-label={label ?? `Timeline slot ${id + 1}`}
       className="shrink-0 h-[90px] flex items-center justify-center transition-[width] duration-[180ms] ease-in-out"
       style={{ width: isActive ? 96 : 28 }}
     >

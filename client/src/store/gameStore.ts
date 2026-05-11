@@ -4,13 +4,13 @@ import type { GamePhase, Player, Song, RoomSettings, StealResultPayload } from '
 const SESSION_KEY = 'hitster_session'
 
 export const persistSession = (roomCode: string, playerId: string) =>
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ roomCode, playerId }))
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ roomCode, playerId }))
 
-export const clearSession = () => localStorage.removeItem(SESSION_KEY)
+export const clearSession = () => sessionStorage.removeItem(SESSION_KEY)
 
 export const loadSession = (): { roomCode: string; playerId: string } | null => {
   try {
-    const raw = localStorage.getItem(SESSION_KEY)
+    const raw = sessionStorage.getItem(SESSION_KEY)
     return raw ? JSON.parse(raw) : null
   } catch {
     return null

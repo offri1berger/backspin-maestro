@@ -1,10 +1,12 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import {
   DndContext,
   DragOverlay,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
+  type Announcements,
   type DragEndEvent,
   type DragOverEvent,
 } from '@dnd-kit/core'
@@ -70,8 +72,34 @@ const Timeline = ({
   const visualPendingPos = placementResult ? null : pendingPos
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor),
   )
+
+  const slotCount = timeline.length + 1
+  const slotDescription = (i: number): string => {
+    if (timeline.length === 0) return 'empty timeline'
+    if (i === 0) return `before ${timeline[0].song.year}`
+    if (i === timeline.length) return `after ${timeline[timeline.length - 1].song.year}`
+    return `between ${timeline[i - 1].song.year} and ${timeline[i].song.year}`
+  }
+
+  const announcements: Announcements = useMemo(() => ({
+    onDragStart: () => 'Picked up the mystery song card. Use arrow keys to choose a slot, then press space or enter to place.',
+    onDragOver: ({ over }) => {
+      if (!over) return 'Not over a slot.'
+      const i = Number(over.id)
+      return `Slot ${i + 1} of ${slotCount} — ${slotDescription(i)}.`
+    },
+    onDragEnd: ({ over }) => {
+      if (!over) return 'Placement cancelled.'
+      const i = Number(over.id)
+      return `Selected slot ${i + 1} — ${slotDescription(i)}. Press the lock-in button to confirm.`
+    },
+    onDragCancel: () => 'Placement cancelled.',
+  // slotDescription closes over `timeline` so we depend on that array, plus slotCount.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [slotCount, timeline])
 
   const emitDragSlot = (slot: number | null) => {
     if (!broadcastDrag) return
@@ -126,7 +154,7 @@ const Timeline = ({
     )
   }
 
-  const slots = timeline.length + 1
+  const slots = slotCount
   const hoverSlot = dragging ? dragOverSlot : null
 
   if (vertical) {
@@ -136,6 +164,7 @@ const Timeline = ({
     return (
       <DndContext
         sensors={sensors}
+        accessibility={{ announcements }}
         onDragStart={() => setDragging(true)}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -152,7 +181,7 @@ const Timeline = ({
                   isPendingSlot ? (
                     <SongCard draggable isWaiting={false} fullWidth hint={hint} />
                   ) : (
-                    <VSlot id={i} label={slotLabel(i)} />
+                    <VSlot id={i} label={slotLabel(i)} ariaLabel={`Slot ${i + 1} of ${slots} — ${slotDescription(i)}`} />
                   )
                 ) : showSpectator ? (
                   <MysteryCardFace fullWidth />
@@ -193,6 +222,7 @@ const Timeline = ({
   return (
     <DndContext
       sensors={sensors}
+      accessibility={{ announcements }}
       onDragStart={() => setDragging(true)}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
@@ -218,7 +248,7 @@ const Timeline = ({
                         <SongCard draggable isWaiting={false} />
                       </div>
                     ) : (
-                      <HSlot id={i} isActive={isActive} />
+                      <HSlot id={i} isActive={isActive} label={`Slot ${i + 1} of ${slots} — ${slotDescription(i)}`} />
                     )
                   ) : (
                     <div

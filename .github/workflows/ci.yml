@@ -34,6 +34,15 @@ jobs:
       - name: Lint client
         run: pnpm --filter @hitster/client exec eslint src
 
+      - name: Lint server
+        run: pnpm --filter @hitster/server exec eslint src
+
+      - name: Test server
+        run: pnpm --filter @hitster/server test
+
+      - name: Test client
+        run: pnpm --filter @hitster/client test
+
       - name: Audit dependencies
         run: pnpm audit --audit-level=high
 

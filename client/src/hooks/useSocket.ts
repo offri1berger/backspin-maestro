@@ -1,13 +1,17 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import socket from '../socket'
 import { useGameStore, loadSession, clearSession } from '../store/gameStore'
 
 export const useSocket = () => {
   const navigate = useNavigate()
-  const { addPlayer, removePlayer, setGameStarted, setCurrentSong, setPhase } = useGameStore()
+  // navigate is stable in react-router v7, but the lint rule doesn't know that.
+  // Funnel it through a ref so the effect can stay register-once.
+  const navigateRef = useRef(navigate)
+  useEffect(() => { navigateRef.current = navigate }, [navigate])
 
   useEffect(() => {
+    const navigate = (to: string) => navigateRef.current(to)
     let placementResultTimer: ReturnType<typeof setTimeout> | null = null
 
     socket.on('connect', () => {
@@ -75,21 +79,21 @@ export const useSocket = () => {
     socket.connect()
 
     socket.on('player:joined', (player) => {
-      addPlayer(player)
+      useGameStore.getState().addPlayer(player)
     })
 
     socket.on('player:left', (playerId) => {
-      removePlayer(playerId)
+      useGameStore.getState().removePlayer(playerId)
     })
 
     socket.on('game:starting', (state, players) => {
-      setGameStarted(players, state.phase, state.currentPlayerId)
+      useGameStore.getState().setGameStarted(players, state.phase, state.currentPlayerId)
       navigate('/game')
     })
 
     socket.on('song:new', (song) => {
       const store = useGameStore.getState()
-      setCurrentSong(song)
+      store.setCurrentSong(song)
       store.setIsWaitingForNextTurn(false)
       store.setHasGuessed(false)
       store.setStealResult(null)
@@ -112,8 +116,9 @@ export const useSocket = () => {
     })
 
     socket.on('phase:changed', (phase, _phaseStartedAt, currentPlayerId) => {
-      setPhase(phase)
-      if (currentPlayerId) useGameStore.getState().setCurrentPlayerId(currentPlayerId)
+      const store = useGameStore.getState()
+      store.setPhase(phase)
+      if (currentPlayerId) store.setCurrentPlayerId(currentPlayerId)
     })
 
     socket.on('placement:result', (result) => {
