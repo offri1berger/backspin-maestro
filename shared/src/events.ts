@@ -10,6 +10,7 @@ import {
   GuessPayloadSchema,
   StealPayloadSchema,
   DragMovePayloadSchema,
+  KickPayloadSchema,
 } from './schemas.js'
 
 export type CreateRoomPayload = z.infer<typeof CreateRoomPayloadSchema>
@@ -19,16 +20,15 @@ export type PlacePayload = z.infer<typeof PlacePayloadSchema>
 export type GuessPayload = z.infer<typeof GuessPayloadSchema>
 export type StealPayload = z.infer<typeof StealPayloadSchema>
 export type DragMovePayload = z.infer<typeof DragMovePayloadSchema>
+export type KickPayload = z.infer<typeof KickPayloadSchema>
 
-export interface CreateRoomResult {
-  roomCode: string
-  playerId: string
-  timeline: TimelineEntry[]
-}
+export type CreateRoomResult =
+  | { success: true; roomCode: string; playerId: string; timeline: TimelineEntry[] }
+  | { success: false; error: 'invalid_payload' | 'rate_limited' | 'server_error' }
 
 export interface JoinRoomResult {
   success: boolean
-  error?: 'room_not_found' | 'room_full' | 'game_already_started'
+  error?: 'room_not_found' | 'room_full' | 'game_already_started' | 'invalid_payload' | 'rate_limited' | 'server_error'
   roomCode?: string
   playerId?: string
   players?: Player[]
@@ -84,6 +84,7 @@ export interface ServerToClientEvents {
   'player:reconnected': (playerId: string) => void
   'host:transferred': (newHostId: string) => void
   'game:reset': (players: Player[]) => void
+  'player:kicked': (playerId: string) => void
 }
 
 export interface ClientToServerEvents {
@@ -101,4 +102,5 @@ export interface ClientToServerEvents {
   'audio:play': () => void
   'audio:pause': () => void
   'drag:move': (payload: DragMovePayload) => void
+  'conductor:kick': (payload: KickPayload, cb: (error?: string) => void) => void
 }

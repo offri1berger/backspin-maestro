@@ -36,6 +36,7 @@ const LobbyPage = () => {
       avatar,
       settings: { songsPerPlayer, decadeFilter: decade },
     }, (result) => {
+      if ('error' in result) { alert(result.error); return }
       setRoom(result.roomCode, result.playerId)
       setPlayers([{ id: result.playerId, name, avatar, tokens: 2, isHost: true, turnOrder: 0, timeline: result.timeline }])
       navigate('/lobby')

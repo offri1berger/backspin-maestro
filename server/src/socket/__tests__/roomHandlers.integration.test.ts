@@ -113,12 +113,15 @@ const connect = async () => {
 }
 
 const createRoom = (client: ClientSocket, hostName = 'Alice') =>
-  new Promise<CreateRoomResult>((resolve) =>
+  new Promise<Extract<CreateRoomResult, { success: true }>>((resolve, reject) =>
     client.emit('room:create', {
       hostName,
       settings: { songsPerPlayer: 10, decadeFilter: 'all' },
       // @ts-expect-error - emit type is structural, ack signature handled at runtime
-    }, (result: CreateRoomResult) => resolve(result)),
+    }, (result: CreateRoomResult) => {
+      if (!result.success) reject(new Error(`room:create failed: ${result.error}`))
+      else resolve(result)
+    }),
   )
 
 const joinRoom = (client: ClientSocket, roomCode: string, playerName = 'Bob') =>
@@ -161,17 +164,18 @@ describe('socket: room:create', () => {
     client.close()
   })
 
-  it('emits an error event for invalid payloads', async () => {
+  it('responds with success:false / invalid_payload for invalid payloads', async () => {
     const client = await connect()
-    const errPromise = waitFor<string>(client, 'error', 500)
-    // Empty hostName -> schema rejects
-    client.emit('room:create', {
-      hostName: '',
-      settings: { songsPerPlayer: 10, decadeFilter: 'all' },
-    // @ts-expect-error - testing invalid payload at runtime
-    }, () => {})
-    const err = await errPromise
-    expect(err).toBe('Invalid payload')
+    const result = await new Promise<CreateRoomResult>((resolve) =>
+      // Empty hostName -> schema rejects
+      client.emit('room:create', {
+        hostName: '',
+        settings: { songsPerPlayer: 10, decadeFilter: 'all' },
+      // @ts-expect-error - testing invalid payload at runtime
+      }, (r: CreateRoomResult) => resolve(r)),
+    )
+    expect(result.success).toBe(false)
+    if (!result.success) expect(result.error).toBe('invalid_payload')
     client.close()
   })
 })

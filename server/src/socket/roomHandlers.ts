@@ -4,13 +4,17 @@ import {
   CreateRoomPayloadSchema,
   JoinRoomPayloadSchema,
   RejoinPayloadSchema,
+  KickPayloadSchema,
 } from '@hitster/shared'
 import { createRoomService, joinRoomService, rejoinRoomService, resetRoomService } from '../services/roomService.js'
 import { startGameService } from '../services/gameService.js'
 import { cancelDisconnectTimer, finalizeDisconnect } from './disconnectHandler.js'
-import { getPlayerBySocketId } from '../lib/session.js'
+import {
+  getPlayerBySocketId, getSessionPlayer, getSessionRoom, removeSessionPlayer,
+} from '../lib/session.js'
 import { roomLimiter } from '../lib/rateLimit.js'
 import { parsePayload } from '../lib/validate.js'
+import { requireConductor } from '../lib/authz.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
@@ -18,23 +22,23 @@ type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
 export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
   socket.on('room:create', async (payload, cb) => {
     try {
-      if (!roomLimiter.allow(socket.id)) { socket.emit('error', 'Too many requests'); return }
+      if (!roomLimiter.allow(socket.id)) { cb({ success: false, error: 'rate_limited' }); return }
       const data = parsePayload(CreateRoomPayloadSchema, payload)
-      if (!data) { socket.emit('error', 'Invalid payload'); return }
+      if (!data) { cb({ success: false, error: 'invalid_payload' }); return }
       const result = await createRoomService(data, socket.id)
       socket.join(result.roomCode)
-      cb(result)
+      cb({ success: true, ...result })
     } catch (err) {
       console.error('room:create error', err)
-      socket.emit('error', 'Failed to create room')
+      cb({ success: false, error: 'server_error' })
     }
   })
 
   socket.on('room:join', async (payload, cb) => {
     try {
-      if (!roomLimiter.allow(socket.id)) { cb({ success: false, error: 'room_not_found' }); return }
+      if (!roomLimiter.allow(socket.id)) { cb({ success: false, error: 'rate_limited' }); return }
       const data = parsePayload(JoinRoomPayloadSchema, payload)
-      if (!data) { cb({ success: false, error: 'room_not_found' }); return }
+      if (!data) { cb({ success: false, error: 'invalid_payload' }); return }
       const result = await joinRoomService(data, socket.id)
 
       if (!result.success) { cb(result); return }
@@ -52,7 +56,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
       cb(result)
     } catch (err) {
       console.error('room:join error', err)
-      socket.emit('error', 'Failed to join room')
+      cb({ success: false, error: 'server_error' })
     }
   })
 
@@ -89,7 +93,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
       cb()
     } catch (err) {
       console.error('game:start error', err)
-      socket.emit('error', 'Failed to start game')
+      cb('server_error')
     }
   })
 
@@ -99,6 +103,41 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
     cancelDisconnectTimer(player.id)
     await finalizeDisconnect(io, player.id, player.roomCode)
     socket.leave(player.roomCode)
+  })
+
+  socket.on('conductor:kick', async (payload, cb) => {
+    try {
+      if (!roomLimiter.allow(socket.id)) { cb('rate_limited'); return }
+      const data = parsePayload(KickPayloadSchema, payload)
+      if (!data) { cb('invalid_payload'); return }
+
+      const auth = await requireConductor(socket.id)
+      if (!auth.ok) { cb(auth.error); return }
+      if (data.playerId === auth.player.id) { cb('cannot_kick_self'); return }
+
+      const room = await getSessionRoom(auth.roomCode)
+      if (!room) { cb('room_not_found'); return }
+      // Kicks are a lobby-only social signal. Once the game's started the
+      // Conductor has no special powers (see Conductor spec).
+      if (room.status !== 'lobby') { cb('not_in_lobby'); return }
+
+      const target = await getSessionPlayer(data.playerId)
+      if (!target || target.roomCode !== auth.roomCode) { cb('target_not_found'); return }
+
+      // Emit BEFORE removing — the kicked socket needs the event to navigate
+      // out cleanly, and they're still in the room broadcast group right now.
+      io.to(auth.roomCode).emit('player:kicked', target.id)
+
+      const targetSocket = io.sockets.sockets.get(target.socketId)
+      if (targetSocket) targetSocket.leave(auth.roomCode)
+      cancelDisconnectTimer(target.id)
+      await removeSessionPlayer(target.id)
+
+      cb()
+    } catch (err) {
+      console.error('conductor:kick error', err)
+      cb('server_error')
+    }
   })
 
   socket.on('room:reset', async (cb) => {

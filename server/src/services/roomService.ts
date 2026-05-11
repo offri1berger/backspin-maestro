@@ -4,7 +4,9 @@ import { createSessionRoom, createSessionPlayer, getSessionRoom, getPlayersByRoo
 import { getGameState, deleteGameState, deleteUsedSongs } from '../lib/gameCache.js'
 import { db } from '../db/database.js'
 import { getRandomSong, markSongAsUsed } from './songService.js'
-import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, CreateRoomResult, RejoinResult, Player, GameState, Song } from '@hitster/shared'
+import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, RejoinResult, Player, GameState, Song, TimelineEntry } from '@hitster/shared'
+
+type CreateRoomSuccess = { roomCode: string; playerId: string; timeline: TimelineEntry[] }
 
 const assignStarterSong = async (roomCode: string, playerId: string) => {
   const dbSong = await getRandomSong(roomCode)
@@ -24,7 +26,7 @@ const assignStarterSong = async (roomCode: string, playerId: string) => {
 export const createRoomService = async (
   payload: CreateRoomPayload,
   socketId: string
-): Promise<CreateRoomResult> => {
+): Promise<CreateRoomSuccess> => {
   const code = await generateRoomCode()
   const hostId = randomUUID()
 
