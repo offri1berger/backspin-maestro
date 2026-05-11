@@ -1,0 +1,100 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+Everything runs through pnpm workspaces from the repo root.
+
+| Task | Command |
+|---|---|
+| Start all packages in dev/watch mode | `pnpm dev` |
+| Run server only | `pnpm --filter @hitster/server dev` |
+| Run client only | `pnpm --filter @hitster/client dev` |
+| Type-check + build server | `pnpm --filter @hitster/server build` |
+| Type-check + build client | `pnpm --filter @hitster/client build` |
+| Lint client | `pnpm --filter @hitster/client exec eslint src` |
+| Run server tests | `pnpm --filter @hitster/server test` |
+| Watch server tests | `pnpm --filter @hitster/server test:watch` |
+| Run a single test file | `pnpm --filter @hitster/server test -- src/services/__tests__/gameService.test.ts` |
+| Run tests matching a name | `pnpm --filter @hitster/server test -- -t "validatePlacement"` |
+| Apply DB migrations | `pnpm --filter @hitster/server migrate` |
+| Roll back last migration | `pnpm --filter @hitster/server migrate:down` |
+| Seed songs | `pnpm --filter @hitster/server seed` |
+| Refresh song metadata | `pnpm --filter @hitster/server update-songs` |
+
+Infrastructure (Postgres + Redis) is brought up with `docker compose up -d`. Both env files must exist before `pnpm dev` (`server/.env`, `client/.env`).
+
+The client has no tests. Only the server has a Jest suite (ESM mode via `NODE_OPTIONS=--experimental-vm-modules`, config in `server/jest.config.js`). There is no top-level `lint` or `test` script — invoke per package.
+
+## Code style
+
+**Always use arrow functions, never `function` declarations.** This applies to top-level functions, exported helpers, React components, and callbacks. The codebase is consistent on this — match it.
+
+## Architecture
+
+### Workspace shape
+
+Three packages, all TypeScript:
+
+- `shared/` — `@hitster/shared`. Types, enums, Socket.IO event signatures, and **Zod schemas** for every client→server payload. Both client and server import from here. Built to `dist/` and consumed via `workspace:*`.
+- `server/` — Express + Socket.IO. Imports from `@hitster/shared`. ESM (`"type": "module"` is implicit via tsx watch; emitted JS uses `.js` import specifiers — see `moduleNameMapper` in `jest.config.js`).
+- `client/` — React 19 SPA. Vite + Tailwind v4 + Zustand + React Router 7 + dnd-kit.
+
+### Data + state layers (server)
+
+The server has **three distinct stores** with different lifetimes — getting this wrong causes the bugs that are hardest to track down:
+
+1. **Postgres** (`server/src/db/`, Kysely) — durable. Songs catalog only. Migrations under `db/migrations/`, schema type in `db/types.ts`.
+2. **Redis sessions** (`server/src/lib/session.ts`) — 24h TTL. Source of truth for *who* is in the game: rooms, players, the socket→player mapping, and per-player timelines (stored as Redis sorted sets keyed by `timeline:<playerId>`, scored by song year).
+3. **Redis game cache** (`server/src/lib/gameCache.ts`) — 2h TTL. Source of truth for *what's happening right now*: `currentPlayerId`, `currentSongId`, `phase`, `phaseStartedAt`. Deleted on game reset.
+
+If `gameState` returns null but the room still exists, the room is in lobby/finished status (or was reset).
+
+### Socket→player mapping (the rejoin trap)
+
+Each socket connection maps to exactly one `playerId` via Redis key `socket:<socketId>`. **`updatePlayerSocketId` deletes the old mapping before writing the new one** (`server/src/lib/session.ts`). This means: if two browser tabs share `localStorage.hitster_session` (same playerId), whichever tab rejoins *last* owns the mapping; the other tab's socket becomes orphaned and every action returns `player_not_found`. For local multi-player testing, use different browsers/profiles or incognito.
+
+The client persists `{ roomCode, playerId }` in `localStorage.hitster_session` and the `connect` handler in `client/src/hooks/useSocket.ts` always emits `room:rejoin` on (re)connection. The rejoin callback guards against stale state by checking `store.roomCode !== saved.roomCode` before applying — needed because a stale rejoin response can otherwise clobber a freshly-created room (race between `room:create` and an in-flight `room:rejoin`).
+
+### Turn timing: BullMQ, not setTimeout
+
+Steal windows and card reveals are scheduled via **BullMQ delayed jobs**, not in-process `setTimeout`. See `server/src/lib/jobs.ts`:
+
+- `scheduleStealFire(...)` after placement opens the steal window.
+- A steal attempt cancels the fire and triggers immediate resolution.
+- `scheduleCardReveal(...)` runs after the steal window resolves; it advances the turn.
+- `tryClaimResolution(roomCode)` is a Redis `SET ... NX` lock that ensures exactly one path (timer expiry OR steal attempt) resolves a placement. Any worker that picks up a job after another already claimed resolution must bail.
+
+This design exists so multiple server instances behind the **Socket.IO Redis adapter** (`@socket.io/redis-adapter`, configured in `server/src/index.ts`) can coordinate — only one instance fires each job, but events still fan out via pub/sub to all clients regardless of which instance they're connected to. The BullMQ worker uses a **separate** ioredis connection with `maxRetriesPerRequest: null` (required for blocking ops).
+
+### Socket layer (server)
+
+`server/src/index.ts` wires:
+- `registerRoomHandlers(io, socket)` — create/join/rejoin/leave/reset, plus `game:start`.
+- `registerGameHandlers(io, socket)` — `card:place`, `steal:attempt`, `steal:initiated`, `song:skip`, `song:guess`, `audio:play/pause`, `drag:move`.
+- `handleDisconnect(io, socket)` — 30-second reconnect grace window before the player is finalised as left. If the active player disconnects mid-turn, `nextTurnService` advances the turn.
+
+Every client→server payload is parsed with `parsePayload(SomeSchema, payload)` (Zod) — see `server/src/lib/validate.ts`. Per-socket rate limiting via `server/src/lib/rateLimit.ts`.
+
+### Client state + routing
+
+A single Zustand store (`client/src/store/gameStore.ts`) holds room + game state. There is **no React Context** — components subscribe directly via `useGameStore`.
+
+Routing (`client/src/App.tsx`):
+- `/` → `LobbyPage` (create/join form). Has an auto-navigate `useEffect` that pushes the user to `/lobby`, `/game`, or `/over` based on `roomCode` + `phase`.
+- `/lobby` → `WaitingRoomPage`.
+- `/game` → `GamePage`.
+- `/over` → `GameOverPage`.
+
+The `useSocket()` hook (mounted once in `App.tsx`) is the **only** place that registers server→client event handlers. All `navigate(...)` calls triggered by server events live there. When adding a new server event, wire it in `useSocket.ts`, not in a page component.
+
+### Shared event contract
+
+`shared/src/events.ts` declares `ClientToServerEvents` and `ServerToClientEvents`. Both client and server import these so Socket.IO types are end-to-end safe. `shared/src/schemas.ts` holds the Zod schemas; payload TypeScript types in `events.ts` are derived via `z.infer<...>`. Add a new event by: (1) defining the Zod schema in `schemas.ts`, (2) adding the typed signature to one of the event interfaces in `events.ts`, (3) registering the handler in the appropriate `server/src/socket/*Handlers.ts`, (4) wiring the client listener in `useSocket.ts`.
+
+### Tests
+
+Jest with ts-jest in ESM mode. Tests live in `__tests__/` directories next to source. Redis is mocked via `ioredis-mock`. Integration tests (e.g. `roomHandlers.integration.test.ts`) spin up a real socket.io server against the mocked Redis.
+
+When writing tests that touch Redis, import from the same modules the production code uses — `ioredis-mock` is injected globally via Jest module mapping, so `server/src/lib/redis.ts` returns the mock automatically in tests.

@@ -37,6 +37,8 @@ interface GameStore {
   stealInitiatorId: string | null
   stealTargetId: string | null
   stealOriginalPosition: number | null
+  
+  connectionStatus: 'connecting' | 'connected' | 'reconnecting' | 'expired'
 
   disconnectedPlayerIds: string[]
   setRoom: (roomCode: string, playerId: string) => void
@@ -64,6 +66,7 @@ interface GameStore {
   setStealInitiatorId: (id: string | null) => void
   setStealTargetId: (id: string | null) => void
   setStealOriginalPosition: (pos: number | null) => void
+  setConnectionStatus: (status: 'connecting' | 'connected' | 'reconnecting' | 'expired') => void
   leaveRoom: () => void
 }
 
@@ -87,11 +90,12 @@ export const useGameStore = create<GameStore>((set) => ({
   stealInitiatorId: null,
   stealTargetId: null,
   stealOriginalPosition: null,
+  connectionStatus: 'connecting',
   disconnectedPlayerIds: [],
 
   setRoom: (roomCode, playerId) => {
     persistSession(roomCode, playerId)
-    set({ roomCode, playerId })
+    set({ roomCode, playerId, connectionStatus: 'connected' })
   },
   setSettings: (settings) => set({ settings }),
   restoreSession: ({ roomCode, playerId, players, settings, phase, currentPlayerId, currentSong, roundNumber }) =>
@@ -119,6 +123,7 @@ export const useGameStore = create<GameStore>((set) => ({
   setStealInitiatorId: (id) => set({ stealInitiatorId: id }),
   setStealTargetId: (id) => set({ stealTargetId: id }),
   setStealOriginalPosition: (pos) => set({ stealOriginalPosition: pos }),
+  setConnectionStatus: (status) => set({ connectionStatus: status }),
   setPlayerDisconnected: (id) => set((s) => ({ disconnectedPlayerIds: s.disconnectedPlayerIds.includes(id) ? s.disconnectedPlayerIds : [...s.disconnectedPlayerIds, id] })),
   setPlayerReconnected: (id) => set((s) => ({ disconnectedPlayerIds: s.disconnectedPlayerIds.filter((x) => x !== id) })),
   transferHost: (newHostId) => set((s) => ({

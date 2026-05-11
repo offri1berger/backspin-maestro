@@ -11,20 +11,32 @@ export const useSocket = () => {
     let placementResultTimer: ReturnType<typeof setTimeout> | null = null
 
     socket.on('connect', () => {
+      const store = useGameStore.getState()
       const saved = loadSession()
-      if (!saved) return
+      if (!saved) {
+        store.setConnectionStatus('connected')
+        return
+      }
       socket.emit('room:rejoin', saved, (result) => {
         if (!result.success || result.roomStatus === 'finished') {
           clearSession()
+          const s = useGameStore.getState()
+          if (s.roomCode === saved.roomCode) {
+            s.leaveRoom()
+            s.setConnectionStatus('expired')
+            navigate('/')
+          } else {
+            s.setConnectionStatus('connected')
+          }
           return
         }
-        const store = useGameStore.getState()
-        // Bail out if the user has created/joined a different room while
-        // this rejoin was in flight — otherwise we'd clobber their new
-        // session with the stale one and route them into the old game.
-        if (store.roomCode && store.roomCode !== saved.roomCode) return
+        const s = useGameStore.getState()
+        if (s.roomCode && s.roomCode !== saved.roomCode) {
+          s.setConnectionStatus('connected')
+          return
+        }
         if (result.roomStatus === 'playing' && result.gameState) {
-          store.restoreSession({
+          s.restoreSession({
             roomCode: saved.roomCode,
             playerId: saved.playerId,
             players: result.players,
@@ -36,7 +48,7 @@ export const useSocket = () => {
           })
           navigate('/game')
         } else {
-          store.restoreSession({
+          s.restoreSession({
             roomCode: saved.roomCode,
             playerId: saved.playerId,
             players: result.players,
@@ -44,7 +56,20 @@ export const useSocket = () => {
           })
           navigate('/lobby')
         }
+        s.setConnectionStatus('connected')
       })
+    })
+
+    socket.on('disconnect', () => {
+      const s = useGameStore.getState()
+      // Only show the banner when there's actually a session at risk —
+      // a disconnect on the lobby (no room yet) is just noise.
+      if (s.roomCode) s.setConnectionStatus('reconnecting')
+    })
+
+    socket.io.on('reconnect_attempt', () => {
+      const s = useGameStore.getState()
+      if (s.roomCode) s.setConnectionStatus('reconnecting')
     })
 
     socket.connect()
@@ -185,6 +210,8 @@ export const useSocket = () => {
     return () => {
       if (placementResultTimer) clearTimeout(placementResultTimer)
       socket.off('connect')
+      socket.off('disconnect')
+      socket.io.off('reconnect_attempt')
       socket.off('player:joined')
       socket.off('player:left')
       socket.off('game:starting')

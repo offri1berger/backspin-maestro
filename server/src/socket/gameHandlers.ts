@@ -76,12 +76,11 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       const roomCode = rooms[0]
       if (!roomCode) { cb('not_in_room'); return }
 
-      if (!(await tryClaimResolution(roomCode))) { cb('steal_window_closed'); return }
-      await cancelStealFire(roomCode)
-
       const gameState = await getGameState(roomCode)
       if (!gameState) { cb('game_not_found'); return }
       if (!gameState.currentSongId) { cb('no_current_song'); return }
+
+      if (await isResolved(roomCode)) { cb('steal_window_closed'); return }
 
       const pending = await getPending(roomCode)
       if (!pending) { cb('no_pending_result'); return }
@@ -93,6 +92,9 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       if (!targetPlayer || targetPlayer.roomCode !== roomCode) { cb('target_not_found'); return }
       if (stealer.id === targetPlayerId) { cb('cannot_steal_from_self'); return }
       if (stealer.tokens < 1) { cb('insufficient_tokens'); return }
+
+      if (!(await tryClaimResolution(roomCode))) { cb('steal_window_closed'); return }
+      await cancelStealFire(roomCode)
 
       const dbSong = await db.selectFrom('songs').selectAll()
         .where('id', '=', gameState.currentSongId).executeTakeFirstOrThrow()
@@ -171,6 +173,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
 
       const gameState = await getGameState(roomCode)
       if (!gameState) { cb('game_not_found'); return }
+      if (gameState.phase !== 'song_phase') { cb('wrong_phase'); return }
 
       const player = await getPlayerBySocketId(socket.id)
       if (!player) { cb('player_not_found'); return }

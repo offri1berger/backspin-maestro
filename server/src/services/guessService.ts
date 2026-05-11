@@ -10,12 +10,13 @@ export const normalize = (str: string) =>
     .replace(/[^a-z0-9\u0590-\u05ff\s]/g, '') 
     .trim()
 
-    const isFuzzyMatch = (input: string, target: string): boolean => {
-      const a = normalize(input)
-      const b = normalize(target)
-      if (b.includes(a) || a.includes(b)) return true
-      const maxDistance = b.length <= 4 ? 1 : b.length <= 8 ? 2 : 3;
-      return distance(a, b) <= maxDistance
+export const isFuzzyMatch = (input: string, target: string): boolean => {
+  const a = normalize(input)
+  const b = normalize(target)
+  if (!a || !b) return false
+  if (b.includes(a) || a.includes(b)) return true
+  const maxDistance = b.length <= 4 ? 1 : b.length <= 8 ? 2 : 3
+  return distance(a, b) <= maxDistance
 }
 
 export const handleGuessService = async (

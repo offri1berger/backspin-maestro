@@ -4,18 +4,22 @@ import LobbyPage from './pages/LobbyPage'
 import WaitingRoomPage from './pages/WaitingRoomPage'
 import GamePage from './pages/GamePage'
 import GameOverPage from './pages/GameOverPage'
+import ConnectionBanner from './components/ConnectionBanner'
 
 const App = () => {
   useSocket()
 
   return (
-    <Routes>
-      <Route path="/" element={<LobbyPage />} />
-      <Route path="/lobby" element={<WaitingRoomPage />} />
-      <Route path="/game" element={<GamePage />} />
-      <Route path="/over" element={<GameOverPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <ConnectionBanner />
+      <Routes>
+        <Route path="/" element={<LobbyPage />} />
+        <Route path="/lobby" element={<WaitingRoomPage />} />
+        <Route path="/game" element={<GamePage />} />
+        <Route path="/over" element={<GameOverPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   )
 }
 

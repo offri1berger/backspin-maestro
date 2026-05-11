@@ -94,7 +94,7 @@ const savePlayer = async (player: SessionPlayer) => {
 export const updatePlayerTokens = async (id: string, tokens: number) => {
   const player = await getSessionPlayer(id)
   if (!player) return
-  await savePlayer({ ...player, tokens })
+  await savePlayer({ ...player, tokens: Math.max(0, tokens) })
 }
 
 export const updatePlayerTurnOrder = async (id: string, turnOrder: number) => {
