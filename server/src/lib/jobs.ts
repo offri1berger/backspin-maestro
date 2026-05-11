@@ -162,7 +162,24 @@ const processCardReveal = async (io: IoServer, data: CardRevealData): Promise<vo
   }
   await clearPending(roomCode)
   const next = await nextTurnService(roomCode)
-  if ('error' in next) return
+  if ('error' in next) {
+    if (next.error === 'no_songs_left') {
+      const players = await buildGameOverPlayers(roomCode)
+      if (players.length === 0) return
+      const leader = [...players].sort((a, b) =>
+        b.timeline.length - a.timeline.length
+        || b.tokens - a.tokens
+        || a.turnOrder - b.turnOrder
+      )[0]
+      await updateRoomStatus(roomCode, 'finished')
+      await deleteUsedSongs(roomCode)
+      await cleanupRoomState(roomCode)
+      io.to(roomCode).emit('game:over', leader.id, players)
+      return
+    }
+    console.error('processCardReveal: nextTurnService failed', { roomCode, error: next.error })
+    return
+  }
   io.to(roomCode).emit('phase:changed', 'song_phase', new Date().toISOString(), next.nextPlayerId)
   io.to(roomCode).emit('song:new', next.song)
 }

@@ -1,8 +1,24 @@
 import type { Player } from '@hitster/shared'
 import { useGameStore } from '../../store/gameStore'
 import { ArrowIcon, Logo } from '../ui/Logo'
+import socket from '../../socket'
 
-function PlayerRow({ player, offline }: { player: Player; offline: boolean }) {
+function PlayerRow({
+  player,
+  offline,
+  canKick,
+}: {
+  player: Player
+  offline: boolean
+  canKick: boolean
+}) {
+  const handleKick = () => {
+    if (!window.confirm(`Remove ${player.name} from the room?`)) return
+    socket.emit('conductor:kick', { playerId: player.id }, (error) => {
+      if (error) console.error('kick error:', error)
+    })
+  }
+
   return (
     <div className={`flex items-center gap-3.5 px-[18px] py-3.5 rounded-2xl border border-line transition-opacity ${offline ? 'opacity-40' : ''}`}>
       {player.avatar
@@ -11,7 +27,16 @@ function PlayerRow({ player, offline }: { player: Player; offline: boolean }) {
       }
       <span className="flex-1 text-base font-semibold text-on-bg">{player.name}</span>
       {offline && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">offline</span>}
-      {!offline && player.isHost && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">host</span>}
+      {!offline && player.isHost && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">conductor</span>}
+      {canKick && (
+        <button
+          onClick={handleKick}
+          aria-label={`Remove ${player.name}`}
+          className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted hover:text-bad transition-colors cursor-pointer bg-transparent border-0 p-0"
+        >
+          remove
+        </button>
+      )}
     </div>
   )
 }
@@ -61,7 +86,14 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
           </div>
 
           <div className="flex flex-col gap-2 mb-8">
-            {players.map((p) => <PlayerRow key={p.id} player={p} offline={disconnectedPlayerIds.includes(p.id)} />)}
+            {players.map((p) => (
+              <PlayerRow
+                key={p.id}
+                player={p}
+                offline={disconnectedPlayerIds.includes(p.id)}
+                canKick={isHost && p.id !== playerId}
+              />
+            ))}
           </div>
 
           {isHost ? (
@@ -86,7 +118,7 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
             </>
           ) : (
             <p className="text-center font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
-              {ready ? 'waiting for host to start…' : 'waiting for more players…'}
+              {ready ? 'waiting for the conductor to start…' : 'waiting for more players…'}
             </p>
           )}
         </div>

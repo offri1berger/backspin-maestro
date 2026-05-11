@@ -212,6 +212,23 @@ export const useSocket = () => {
       navigate('/lobby')
     })
 
+    socket.on('player:kicked', (kickedId) => {
+      const store = useGameStore.getState()
+      if (kickedId === store.playerId) {
+        // We just got kicked — surface a notice and route out before
+        // wiping local state so the LobbyPage can read it on mount.
+        store.setKickNotice({ message: 'You were removed by the Conductor.' })
+        store.leaveRoom()
+        navigate('/')
+      } else {
+        const kicked = store.players.find((p) => p.id === kickedId)
+        store.removePlayer(kickedId)
+        if (kicked) {
+          store.setKickNotice({ message: `${kicked.name} was removed by the Conductor.` })
+        }
+      }
+    })
+
     return () => {
       if (placementResultTimer) clearTimeout(placementResultTimer)
       socket.off('connect')
@@ -233,6 +250,7 @@ export const useSocket = () => {
       socket.off('player:reconnected')
       socket.off('host:transferred')
       socket.off('game:reset')
+      socket.off('player:kicked')
       socket.disconnect()
     }
   }, [])

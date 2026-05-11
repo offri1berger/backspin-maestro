@@ -40,6 +40,10 @@ interface GameStore {
   
   connectionStatus: 'connecting' | 'connected' | 'reconnecting' | 'expired'
 
+  // Transient notice for "X was removed by the Conductor" / "You were
+  // removed by the Conductor". Auto-cleared by the component that renders it.
+  kickNotice: { message: string } | null
+
   disconnectedPlayerIds: string[]
   setRoom: (roomCode: string, playerId: string) => void
   setSettings: (settings: RoomSettings) => void
@@ -67,6 +71,7 @@ interface GameStore {
   setStealTargetId: (id: string | null) => void
   setStealOriginalPosition: (pos: number | null) => void
   setConnectionStatus: (status: 'connecting' | 'connected' | 'reconnecting' | 'expired') => void
+  setKickNotice: (notice: { message: string } | null) => void
   leaveRoom: () => void
 }
 
@@ -91,6 +96,7 @@ export const useGameStore = create<GameStore>((set) => ({
   stealTargetId: null,
   stealOriginalPosition: null,
   connectionStatus: 'connecting',
+  kickNotice: null,
   disconnectedPlayerIds: [],
 
   setRoom: (roomCode, playerId) => {
@@ -124,6 +130,7 @@ export const useGameStore = create<GameStore>((set) => ({
   setStealTargetId: (id) => set({ stealTargetId: id }),
   setStealOriginalPosition: (pos) => set({ stealOriginalPosition: pos }),
   setConnectionStatus: (status) => set({ connectionStatus: status }),
+  setKickNotice: (notice) => set({ kickNotice: notice }),
   setPlayerDisconnected: (id) => set((s) => ({ disconnectedPlayerIds: s.disconnectedPlayerIds.includes(id) ? s.disconnectedPlayerIds : [...s.disconnectedPlayerIds, id] })),
   setPlayerReconnected: (id) => set((s) => ({ disconnectedPlayerIds: s.disconnectedPlayerIds.filter((x) => x !== id) })),
   transferHost: (newHostId) => set((s) => ({

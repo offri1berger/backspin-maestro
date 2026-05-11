@@ -67,3 +67,7 @@ export const StealPayloadSchema = z.object({
 export const DragMovePayloadSchema = z.object({
   slot: z.number().int().min(0).nullable(),
 })
+
+export const KickPayloadSchema = z.object({
+  playerId: PlayerIdSchema,
+})

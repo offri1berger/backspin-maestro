@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react'
 import { useSocket } from './hooks/useSocket'
 import LobbyPage from './pages/LobbyPage'
 import ConnectionBanner from './components/ConnectionBanner'
+import KickNotice from './components/KickNotice'
 
 const WaitingRoomPage = lazy(() => import('./pages/WaitingRoomPage'))
 const GamePage = lazy(() => import('./pages/GamePage'))
@@ -14,6 +15,7 @@ const App = () => {
   return (
     <>
       <ConnectionBanner />
+      <KickNotice />
       <Suspense fallback={null}>
         <Routes>
           <Route path="/" element={<LobbyPage />} />
