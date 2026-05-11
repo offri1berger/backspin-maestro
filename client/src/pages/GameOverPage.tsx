@@ -14,6 +14,7 @@ const GameOverPage = () => {
   const isHost = players.find((p) => p.id === playerId)?.isHost ?? false
 
   const handleRematch = () => {
+    if (!window.confirm('Start a rematch with the same players and settings?')) return
     socket.emit('room:reset', (error) => {
       if (error) console.error('rematch error:', error)
     })
@@ -137,7 +138,7 @@ const GameOverPage = () => {
             </button>
           ) : (
             <div className="flex-[2] h-14 rounded-full border border-line flex items-center justify-center font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
-              Waiting for host…
+              Waiting for the conductor…
             </div>
           )}
           <button

@@ -204,7 +204,15 @@ export const useSocket = () => {
     })
 
     socket.on('host:transferred', (newHostId) => {
-      useGameStore.getState().transferHost(newHostId)
+      const store = useGameStore.getState()
+      const newHost = store.players.find((p) => p.id === newHostId)
+      store.transferHost(newHostId)
+      const message = newHostId === store.playerId
+        ? 'The baton has passed to you.'
+        : newHost
+          ? `The baton has passed to ${newHost.name}.`
+          : 'The baton has passed.'
+      store.setKickNotice({ message })
     })
 
     socket.on('game:reset', (players) => {
