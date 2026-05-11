@@ -13,8 +13,10 @@ const ConnectionBanner = () => {
     <div
       role="status"
       aria-live="polite"
-      className="fixed top-3 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-4 py-2 rounded-full border border-line bg-surface text-on-surface"
-      style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}
+      className={`fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-2 px-4 py-1.5 text-on-surface ${
+        reconnecting ? 'bg-surface' : 'bg-bad text-white'
+      }`}
+      style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.25)' }}
     >
       {reconnecting && (
         <span

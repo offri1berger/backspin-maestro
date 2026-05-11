@@ -89,9 +89,14 @@ export const GameStage = ({
           {showSkipButton && isMyTurn && !isWaitingForNextTurn && (myPlayer?.tokens ?? 0) >= 1 && (
             <button
               onClick={onSkip}
-              className="self-center bg-transparent border border-line rounded-full px-5 py-2 font-mono text-[11px] tracking-[0.12em] uppercase text-muted cursor-pointer"
+              aria-label="Skip this song (costs 1 token)"
+              className="self-center group flex items-center gap-2 bg-transparent border border-line rounded-full pl-5 pr-1.5 py-1.5 font-mono text-[11px] tracking-[0.12em] uppercase text-muted cursor-pointer hover:border-accent hover:text-on-bg transition-colors"
             >
-              Skip · spend 1 ★
+              Skip song
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-bad/15 text-bad font-bold text-[10px] tracking-[0.1em]">
+                <span aria-hidden>−1</span>
+                <span className="text-[11px] leading-none">★</span>
+              </span>
             </button>
           )}
         </>

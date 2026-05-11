@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import Timeline from './Timeline'
 
@@ -16,6 +16,14 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
   // Initial value is enough — StealOverlay unmounts when the steal window
   // closes, so it remounts fresh for each new steal cycle.
   const [pendingPosition, setPendingPosition] = useState<number | null>(stealOriginalPosition)
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [onClose])
 
   if (!currentSong) return null
 

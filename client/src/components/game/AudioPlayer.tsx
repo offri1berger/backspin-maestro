@@ -27,6 +27,7 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
+  const hasPreview = !!song.previewUrl
 
   // Reset playback state via the audio element's own loadstart event (not synchronously in effect)
   useEffect(() => {
@@ -76,7 +77,17 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
             style={{ width: '100%', height: '100%' }}
           />
           <div className="absolute inset-0 flex items-center justify-center">
-            {isMyTurn ? (
+            {!hasPreview ? (
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                aria-label="No audio preview available"
+                style={{ background: 'rgba(255,255,255,0.08)' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" style={{ opacity: 0.4 }}>
+                  <path d="M2 2l12 12M2 14L14 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </div>
+            ) : isMyTurn ? (
               <button
                 onClick={toggle}
                 className="w-8 h-8 rounded-full bg-accent text-accent-ink cursor-pointer flex items-center justify-center"
@@ -104,7 +115,9 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
         {/* Track info + progress */}
         <div className="flex-1 min-w-0">
           <div className="font-mono tracking-[0.15em] uppercase text-accent" style={{ fontSize: 9 }}>
-            {isMyTurn ? 'Drop it on your timeline' : 'Waiting…'} · {fmt(currentTime)} / 0:30
+            {!hasPreview
+              ? 'No preview available'
+              : `${isMyTurn ? 'Drop it on your timeline' : 'Waiting…'} · ${fmt(currentTime)} / 0:30`}
           </div>
           <div
             className="mt-2 h-1 rounded-sm relative overflow-hidden"
@@ -144,7 +157,17 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
           style={{ width: '100%', height: '100%' }}
         />
         <div className="absolute inset-0 flex items-center justify-center">
-          {isMyTurn ? (
+          {!hasPreview ? (
+            <div
+              className="w-[52px] h-[52px] rounded-full flex items-center justify-center"
+              aria-label="No audio preview available"
+              style={{ background: 'rgba(255,255,255,0.08)' }}
+            >
+              <svg width="18" height="18" viewBox="0 0 16 16" style={{ opacity: 0.4 }}>
+                <path d="M2 2l12 12M2 14L14 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </div>
+          ) : isMyTurn ? (
             <button
               onClick={toggle}
               className="w-[52px] h-[52px] rounded-full bg-accent text-accent-ink cursor-pointer flex items-center justify-center"
@@ -175,14 +198,14 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
       {/* Track meta */}
       <div className="flex-1 min-w-0">
         <div className="font-mono text-[8px] tracking-[0.2em] uppercase text-accent">
-          Now playing · {fmt(currentTime)} / 0:30
+          {hasPreview ? `Now playing · ${fmt(currentTime)} / 0:30` : 'No preview available'}
         </div>
 
         <h2 className="font-display text-[34px] mt-1.5 leading-[0.95] tracking-[-0.02em] text-on-surface" style={{ margin: '6px 0 0' }}>
           Mystery hit
           <br />
           <em className="not-italic text-accent" style={{ opacity: 0.85, fontSize: 30 }}>
-            {isMyTurn ? 'drop it on your timeline' : 'waiting…'}
+            {!hasPreview ? 'use the year hints' : isMyTurn ? 'drop it on your timeline' : 'waiting…'}
           </em>
         </h2>
 

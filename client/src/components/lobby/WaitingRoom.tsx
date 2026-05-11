@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Player } from '@hitster/shared'
 import { useGameStore } from '../../store/gameStore'
 import { ArrowIcon, Logo } from '../ui/Logo'
@@ -53,6 +54,17 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
   const playerId = useGameStore((s) => s.playerId)
   const isHost = players.find((p) => p.id === playerId)?.isHost ?? false
   const ready = players.length >= 2
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(roomCode)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      // clipboard API can fail in non-secure contexts; silently ignore
+    }
+  }
 
   return (
     <div className="min-h-screen bg-bg flex flex-col">
@@ -72,7 +84,16 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
         </div>
         <div className="flex items-center gap-4">
           <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Room</span>
-          <span className="font-mono text-[20px] tracking-[0.18em] text-accent font-semibold">{roomCode}</span>
+          <button
+            onClick={handleCopyCode}
+            aria-label={copied ? 'Room code copied' : 'Copy room code'}
+            className="group flex items-center gap-2 bg-transparent border-none p-0 cursor-pointer"
+          >
+            <span className="font-mono text-[20px] tracking-[0.18em] text-accent font-semibold group-hover:opacity-80 transition-opacity">{roomCode}</span>
+            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted group-hover:text-on-bg transition-colors">
+              {copied ? 'copied!' : 'copy'}
+            </span>
+          </button>
         </div>
       </div>
 
