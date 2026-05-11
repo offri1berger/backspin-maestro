@@ -40,14 +40,23 @@ const GameOverPage = () => {
         </div>
 
         <div className="relative flex-1 flex flex-col justify-center">
-          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-accent">
+          <div
+            className="font-mono text-[10px] tracking-[0.2em] uppercase text-accent winner-fade"
+            style={{ animationDelay: '120ms' }}
+          >
             {isWinner ? 'You won! 🎉' : "Tonight's winner"}
           </div>
-          <h1 className="font-display text-[100px] leading-[0.9] mt-3.5 mb-0 tracking-[-0.02em] text-on-bg">
+          <h1
+            className="font-display text-[100px] leading-[0.9] mt-3.5 mb-0 tracking-[-0.02em] text-on-bg winner-rise"
+            style={{ animationDelay: '260ms' }}
+          >
             {winner?.name}<br />
             <em className="italic text-accent text-[72px]">tops the charts.</em>
           </h1>
-          <p className="mt-6 text-muted text-base max-w-[420px] leading-[1.55]">
+          <p
+            className="mt-6 text-muted text-base max-w-[420px] leading-[1.55] winner-fade"
+            style={{ animationDelay: '760ms' }}
+          >
             {winner?.timeline.length} correct placements · {winner?.tokens} bonus stars.
             {isWinner ? ' Well played!' : ' Better luck next time.'}
           </p>

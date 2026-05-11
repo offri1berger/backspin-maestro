@@ -27,7 +27,7 @@ function PlayerRow({
         : <div className="w-9 h-9 rounded-full bg-line flex items-center justify-center font-display text-[20px] text-on-bg shrink-0">{player.name.charAt(0).toUpperCase()}</div>
       }
       <span className="flex-1 text-base font-semibold text-on-bg">{player.name}</span>
-      {offline && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">offline</span>}
+      {offline && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">reconnecting…</span>}
       {!offline && player.isHost && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">conductor</span>}
       {canKick && (
         <button

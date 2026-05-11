@@ -50,6 +50,8 @@ export interface SetupFormProps {
   avatar: string | undefined
   onAvatarChange: (v: string | undefined) => void
   onSubmit: () => void
+  error?: string | null
+  submitting?: boolean
 }
 
 export const SetupForm = ({
@@ -60,9 +62,11 @@ export const SetupForm = ({
   songsPerPlayer, onSongsPerPlayerChange,
   avatar, onAvatarChange,
   onSubmit,
+  error,
+  submitting = false,
 }: SetupFormProps) => {
   const isCreate = tab === 'create'
-  const disabled = isCreate ? !name.trim() : !name.trim() || !roomCode.trim()
+  const disabled = (isCreate ? !name.trim() : !name.trim() || !roomCode.trim()) || submitting
 
   return (
     <div className="min-h-screen lg:h-screen flex flex-col px-5 py-6 lg:px-16 lg:py-14 bg-bg-2 lg:border-l border-line lg:overflow-hidden">
@@ -162,13 +166,32 @@ export const SetupForm = ({
 
       <div className="flex-1 lg:max-h-16" />
 
+      {error && (
+        <p
+          role="alert"
+          aria-live="polite"
+          className="mt-4 -mb-2 font-mono text-[11px] tracking-[0.1em] uppercase text-bad text-center"
+        >
+          {error}
+        </p>
+      )}
+
       <button
         onClick={onSubmit}
         disabled={disabled}
         className="mt-6 lg:mt-7 w-full h-[56px] lg:h-[60px] rounded-full bg-accent text-accent-ink border-none cursor-pointer font-body font-semibold text-[17px] flex items-center justify-center gap-2.5 transition-opacity duration-150 disabled:opacity-40"
       >
-        {isCreate ? 'Cut the deck' : 'Join room'}
-        <ArrowIcon />
+        {submitting ? (
+          <>
+            <span className="inline-block w-4 h-4 rounded-full border-2 border-accent-ink border-r-transparent animate-spin" aria-hidden />
+            {isCreate ? 'Creating…' : 'Joining…'}
+          </>
+        ) : (
+          <>
+            {isCreate ? 'Cut the deck' : 'Join room'}
+            <ArrowIcon />
+          </>
+        )}
       </button>
     </div>
   )

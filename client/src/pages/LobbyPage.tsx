@@ -7,7 +7,14 @@ import { HeroPanel } from '../components/lobby/HeroPanel'
 import { SetupForm } from '../components/lobby/SetupForm'
 import { Logo } from '../components/ui/Logo'
 
-const NAV_LINKS = ['How to play', 'Songbook', 'Sign in']
+const ERROR_MESSAGES: Record<string, string> = {
+  room_not_found: 'Room not found — check the code.',
+  room_full: 'Room is full (max 6 players).',
+  game_already_started: 'That game has already started.',
+  invalid_payload: 'Something looks off — try again.',
+  rate_limited: 'Slow down — try again in a moment.',
+  server_error: 'Server error. Try again.',
+}
 
 const LobbyPage = () => {
   const navigate = useNavigate()
@@ -17,6 +24,8 @@ const LobbyPage = () => {
   const [decade, setDecade] = useState<Decade>('all')
   const [songsPerPlayer, setSongsPerPlayer] = useState(10)
   const [avatar, setAvatar] = useState<string | undefined>(undefined)
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   const { setRoom, setPlayers, roomCode: storeRoomCode, phase, leaveRoom } = useGameStore()
 
@@ -27,8 +36,12 @@ const LobbyPage = () => {
     else navigate('/lobby', { replace: true })
   }, [storeRoomCode, phase, navigate])
 
+  useEffect(() => { setError(null) }, [tab, name, roomCode])
+
   const handleCreate = () => {
-    if (!name.trim()) return
+    if (!name.trim() || submitting) return
+    setError(null)
+    setSubmitting(true)
     leaveRoom()
     socket.connect()
     socket.emit('room:create', {
@@ -36,7 +49,11 @@ const LobbyPage = () => {
       avatar,
       settings: { songsPerPlayer, decadeFilter: decade },
     }, (result) => {
-      if ('error' in result) { alert(result.error); return }
+      setSubmitting(false)
+      if ('error' in result) {
+        setError(ERROR_MESSAGES[result.error] ?? 'Could not create room.')
+        return
+      }
       setRoom(result.roomCode, result.playerId)
       setPlayers([{ id: result.playerId, name, avatar, tokens: 2, isHost: true, turnOrder: 0, timeline: result.timeline }])
       navigate('/lobby')
@@ -44,11 +61,17 @@ const LobbyPage = () => {
   }
 
   const handleJoin = () => {
-    if (!name.trim() || !roomCode.trim()) return
+    if (!name.trim() || !roomCode.trim() || submitting) return
+    setError(null)
+    setSubmitting(true)
     leaveRoom()
     socket.connect()
     socket.emit('room:join', { roomCode: roomCode.toUpperCase(), playerName: name, avatar }, (result) => {
-      if (!result.success) { alert(result.error); return }
+      setSubmitting(false)
+      if (!result.success) {
+        setError(ERROR_MESSAGES[result.error ?? ''] ?? 'Could not join room.')
+        return
+      }
       setRoom(result.roomCode!, result.playerId!)
       setPlayers([
         ...(result.players ?? []),
@@ -63,13 +86,6 @@ const LobbyPage = () => {
       {/* Full-width top nav — desktop only */}
       <div className="hidden lg:flex col-span-2 px-16 py-5 border-b border-line items-center justify-between">
         <Logo />
-        <nav className="flex gap-7">
-          {NAV_LINKS.map((l) => (
-            <span key={l} className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted cursor-pointer">
-              {l}
-            </span>
-          ))}
-        </nav>
       </div>
 
       {/* Two-column content */}
@@ -84,6 +100,8 @@ const LobbyPage = () => {
         songsPerPlayer={songsPerPlayer} onSongsPerPlayerChange={setSongsPerPlayer}
         avatar={avatar}               onAvatarChange={setAvatar}
         onSubmit={tab === 'create' ? handleCreate : handleJoin}
+        error={error}
+        submitting={submitting}
       />
     </div>
   )

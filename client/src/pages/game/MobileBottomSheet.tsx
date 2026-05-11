@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { Player } from '@hitster/shared'
 import AudioPlayer from '../../components/game/AudioPlayer'
 import { useGameStore } from '../../store/gameStore'
@@ -15,17 +16,33 @@ interface Props {
   onSkip: () => void
   onGuessChange: (field: 'artist' | 'title', value: string) => void
   onConfirm: () => void
+  onHeightChange?: (height: number) => void
 }
 
 const MobileBottomSheet: React.FC<Props> = ({
   isMyTurn, canSteal, mobilePending, mobileConfirmed, guess, myPlayer,
   stealerName, countdown, onStealInitiate, onSkip, onGuessChange, onConfirm,
-}) => {  
+  onHeightChange,
+}) => {
   const { isStealWindowOpen, currentSong, isWaitingForNextTurn } = useGameStore()
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!onHeightChange) return
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height
+      if (h != null) onHeightChange(h)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [onHeightChange])
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 bg-bg border-t border-line z-20 px-4 pt-3 flex flex-col gap-2"
+      ref={ref}
+      className="sheet-slide-up fixed bottom-0 left-0 right-0 bg-bg border-t border-line z-20 px-4 pt-3 flex flex-col gap-2"
       style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 16px))' }}
     >
       {isStealWindowOpen && (

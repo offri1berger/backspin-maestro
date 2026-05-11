@@ -5,14 +5,7 @@ import { db } from './database.js'
 console.log('starting seed...')
 
 const songs = [
-  { q: 'Smoke on the Water Deep Purple', year: 1972 },
-  { q: 'Maybe Tommorrow Stereophonics', year: 2003 },
-  { q: 'Mercy Duffy', year: 2008 },
-  { q: 'Love On Top Beyoncé', year: 2011 },
-  { q: "Friday I'm In Love The Cure", year: 1992 },
-  { q: 'Son Of A Preacher Man Dusty Springfield', year: 1969 },
-  // { q: '', year:  },
-
+  { q: 'Royals Lorde', year: 2012 },
 ]
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))

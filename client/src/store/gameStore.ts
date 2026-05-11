@@ -2,11 +2,16 @@ import { create } from 'zustand'
 import type { GamePhase, Player, Song, RoomSettings, StealResultPayload } from '@hitster/shared'
 
 const SESSION_KEY = 'hitster_session'
+const MUTED_KEY = 'hitster_muted'
 
 export const persistSession = (roomCode: string, playerId: string) =>
   sessionStorage.setItem(SESSION_KEY, JSON.stringify({ roomCode, playerId }))
 
 export const clearSession = () => sessionStorage.removeItem(SESSION_KEY)
+
+const loadMuted = (): boolean => {
+  try { return localStorage.getItem(MUTED_KEY) === '1' } catch { return false }
+}
 
 export const loadSession = (): { roomCode: string; playerId: string } | null => {
   try {
@@ -40,6 +45,8 @@ interface GameStore {
   
   connectionStatus: 'connecting' | 'connected' | 'reconnecting' | 'expired'
 
+  muted: boolean
+
   // Transient notice for "X was removed by the Conductor" / "You were
   // removed by the Conductor". Auto-cleared by the component that renders it.
   kickNotice: { message: string } | null
@@ -72,6 +79,7 @@ interface GameStore {
   setStealOriginalPosition: (pos: number | null) => void
   setConnectionStatus: (status: 'connecting' | 'connected' | 'reconnecting' | 'expired') => void
   setKickNotice: (notice: { message: string } | null) => void
+  setMuted: (val: boolean) => void
   leaveRoom: () => void
 }
 
@@ -97,6 +105,7 @@ export const useGameStore = create<GameStore>((set) => ({
   stealOriginalPosition: null,
   connectionStatus: 'connecting',
   kickNotice: null,
+  muted: loadMuted(),
   disconnectedPlayerIds: [],
 
   setRoom: (roomCode, playerId) => {
@@ -131,6 +140,10 @@ export const useGameStore = create<GameStore>((set) => ({
   setStealOriginalPosition: (pos) => set({ stealOriginalPosition: pos }),
   setConnectionStatus: (status) => set({ connectionStatus: status }),
   setKickNotice: (notice) => set({ kickNotice: notice }),
+  setMuted: (val) => {
+    try { localStorage.setItem(MUTED_KEY, val ? '1' : '0') } catch { /* ignore */ }
+    set({ muted: val })
+  },
   setPlayerDisconnected: (id) => set((s) => ({ disconnectedPlayerIds: s.disconnectedPlayerIds.includes(id) ? s.disconnectedPlayerIds : [...s.disconnectedPlayerIds, id] })),
   setPlayerReconnected: (id) => set((s) => ({ disconnectedPlayerIds: s.disconnectedPlayerIds.filter((x) => x !== id) })),
   transferHost: (newHostId) => set((s) => ({

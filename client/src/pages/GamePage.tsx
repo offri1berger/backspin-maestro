@@ -11,6 +11,8 @@ import { Logo } from '../components/ui/Logo'
 import StealPill from './game/StealPill'
 import MobilePlayerBar from './game/MobilePlayerBar'
 import MobileBottomSheet from './game/MobileBottomSheet'
+import { sfx } from '../lib/sfx'
+import MuteToggle from '../components/ui/MuteToggle'
 
 const GamePage = () => {
   const navigate = useNavigate()
@@ -34,6 +36,7 @@ const GamePage = () => {
 
   const [mobilePending, _setMobilePending] = useState<number | null>(null)
   const [mobileConfirmed, setMobileConfirmed] = useState(false)
+  const [sheetHeight, setSheetHeight] = useState(320)
   const setMobilePending = (val: number | null) => {
     _setMobilePending(val)
     if (val === null) setMobileConfirmed(false)
@@ -60,6 +63,11 @@ const GamePage = () => {
     const iv = setInterval(() => setCountdown((c) => (c <= 1 ? (clearInterval(iv), 0) : c - 1)), 1000)
     return () => { clearTimeout(t); clearInterval(iv); setCountdown(0) }
   }, [isStealWindowOpen, stealWindowSeconds])
+
+  // Steal-window tick: subtle click on the last 3 seconds.
+  useEffect(() => {
+    if (isStealWindowOpen && countdown > 0 && countdown <= 3) sfx.tick()
+  }, [isStealWindowOpen, countdown])
 
   const handlePlace = (position: number, onError?: () => void) => {
     if (guess.artist.trim() && guess.title.trim()) {
@@ -136,6 +144,7 @@ const GamePage = () => {
           </div>
           <div className="flex items-center gap-6">
             <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">First to {songsToWin} cards wins</span>
+            <MuteToggle />
             <button
               onClick={handleLeave}
               className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted hover:text-on-bg cursor-pointer border-0 bg-transparent p-0 transition-colors"
@@ -175,6 +184,7 @@ const GamePage = () => {
           <div className="flex items-center gap-3">
             <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">{players.length}p · first to {songsToWin}</span>
             <span className="font-mono text-[11px] tracking-[0.18em] text-accent font-semibold">{roomCode}</span>
+            <MuteToggle />
             <button
               onClick={handleLeave}
               className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted hover:text-on-bg cursor-pointer border-0 bg-transparent p-0 transition-colors"
@@ -188,7 +198,7 @@ const GamePage = () => {
 
         <div
           className="flex-1 overflow-y-auto px-4 pt-4"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 360px)' }}
+          style={{ paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${sheetHeight + 16}px)` }}
         >
           <GameStage
             onPlace={handlePlace}
@@ -218,6 +228,7 @@ const GamePage = () => {
             setMobileConfirmed(true)
             handlePlace(mobilePending!, () => setMobileConfirmed(false))
           }}
+          onHeightChange={setSheetHeight}
         />
       </div>
     </div>

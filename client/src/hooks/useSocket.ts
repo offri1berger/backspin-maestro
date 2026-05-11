@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import socket from '../socket'
 import { useGameStore, loadSession, clearSession } from '../store/gameStore'
+import { sfx, setMutedAccessor } from '../lib/sfx'
 
 export const useSocket = () => {
   const navigate = useNavigate()
@@ -9,6 +10,10 @@ export const useSocket = () => {
   // Funnel it through a ref so the effect can stay register-once.
   const navigateRef = useRef(navigate)
   useEffect(() => { navigateRef.current = navigate }, [navigate])
+
+  useEffect(() => {
+    setMutedAccessor(() => useGameStore.getState().muted)
+  }, [])
 
   useEffect(() => {
     const navigate = (to: string) => navigateRef.current(to)
@@ -135,6 +140,10 @@ export const useSocket = () => {
           })
           store.setPlayers(updatedPlayers)
         }
+        sfx.place()
+        setTimeout(() => sfx.correct(), 120)
+      } else {
+        sfx.wrong()
       }
 
       store.setRemoteDragSlot(null)
@@ -192,6 +201,7 @@ export const useSocket = () => {
       const store = useGameStore.getState()
       store.setPlayers(players)
       store.setGameOver(winnerId)
+      sfx.win()
       navigate('/over')
     })
 

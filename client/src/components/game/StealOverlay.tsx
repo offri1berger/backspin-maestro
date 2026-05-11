@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 import Timeline from './Timeline'
 
 interface Props {
@@ -16,6 +17,7 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
   // Initial value is enough — StealOverlay unmounts when the steal window
   // closes, so it remounts fresh for each new steal cycle.
   const [pendingPosition, setPendingPosition] = useState<number | null>(stealOriginalPosition)
+  const trapRef = useFocusTrap<HTMLDivElement>(true)
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -31,6 +33,10 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
 
   return (
     <div
+      ref={trapRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Steal attempt"
       className="fixed inset-0 z-50 flex items-center justify-center p-6"
       style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(10px)' }}
     >

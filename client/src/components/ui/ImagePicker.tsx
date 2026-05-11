@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 interface Props {
   options: string[]
@@ -11,6 +12,7 @@ interface Props {
 const ImagePicker = ({ options, value, onChange, fallback = '?', label = 'image' }: Props) => {
   const [showModal, setShowModal] = useState(false)
   const [pending, setPending] = useState<string | undefined>(undefined)
+  const trapRef = useFocusTrap<HTMLDivElement>(showModal)
 
   const open = () => {
     setPending(value)
@@ -26,6 +28,15 @@ const ImagePicker = ({ options, value, onChange, fallback = '?', label = 'image'
     onChange(undefined)
     setShowModal(false)
   }
+
+  useEffect(() => {
+    if (!showModal) return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowModal(false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [showModal])
 
   return (
     <>
@@ -59,6 +70,10 @@ const ImagePicker = ({ options, value, onChange, fallback = '?', label = 'image'
           onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false) }}
         >
           <div
+            ref={trapRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Choose ${label}`}
             className="bg-bg-2 border border-line rounded-2xl w-full max-w-lg flex flex-col max-h-[85vh]"
             onClick={(e) => e.stopPropagation()}
           >
