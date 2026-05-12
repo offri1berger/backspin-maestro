@@ -16,6 +16,7 @@ import { roomLimiter } from '../lib/rateLimit.js'
 import { parsePayload } from '../lib/validate.js'
 import { requireConductor } from '../lib/authz.js'
 import { logger } from '../lib/logger.js'
+import { getSocketRoomCode } from '../lib/socketRoom.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
@@ -82,8 +83,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
   socket.on('game:start', async (cb) => {
     try {
       if (!roomLimiter.allow(socket.id)) { cb('rate_limited'); return }
-      const rooms = [...socket.rooms].filter((r) => r !== socket.id)
-      const roomCode = rooms[0]
+      const roomCode = getSocketRoomCode(socket)
       if (!roomCode) { cb('not_in_room'); return }
 
       const result = await startGameService(roomCode, socket.id)
@@ -144,8 +144,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
   socket.on('room:reset', async (cb) => {
     try {
       if (!roomLimiter.allow(socket.id)) { cb('rate_limited'); return }
-      const rooms = [...socket.rooms].filter((r) => r !== socket.id)
-      const roomCode = rooms[0]
+      const roomCode = getSocketRoomCode(socket)
       if (!roomCode) { cb('not_in_room'); return }
 
       const result = await resetRoomService(roomCode, socket.id)
