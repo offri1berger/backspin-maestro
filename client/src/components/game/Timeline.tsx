@@ -243,6 +243,18 @@ const Timeline = ({
           {!isMyTurn && currentSong && spectatorDragSlot === null && !isWaiting && (
             <MysteryCardFace fullWidth />
           )}
+
+          {showPlaceButton && isMyTurn && !isWaiting && pendingPos !== null && (
+            <button
+              onClick={handleConfirmPlace}
+              className="w-full h-12 rounded-full bg-accent text-accent-ink border-0 cursor-pointer font-body font-semibold text-sm flex items-center justify-center gap-2 mt-1"
+            >
+              Lock in placement
+              <svg width="14" height="14" viewBox="0 0 14 14">
+                <path d="M3 7l3 3 5-6" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
         </div>
 
         <DragOverlay dropAnimation={null}>
