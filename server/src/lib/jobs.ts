@@ -15,9 +15,9 @@ import {
   getSessionRoom,
   updateRoomStatus,
   getPlayersByRoomCode,
-  getTimeline,
 } from './session.js'
 import { checkWinCondition, nextTurnService } from '../services/gameService.js'
+import { toPlayerWithTimeline } from '../services/mappers.js'
 import { deleteUsedSongs } from './gameCache.js'
 import { logger } from './logger.js'
 import { jobDuration, jobsCompleted, jobsFailed, jobsStalled } from './metrics.js'
@@ -111,17 +111,7 @@ export const cancelRoomTimers = async (roomCode: string): Promise<void> => {
 
 const buildGameOverPlayers = async (roomCode: string) => {
   const players = await getPlayersByRoomCode(roomCode)
-  return Promise.all(
-    players.map(async (p) => ({
-      id: p.id,
-      name: p.name,
-      avatar: p.avatar || undefined,
-      tokens: p.tokens,
-      isHost: p.isHost,
-      turnOrder: p.turnOrder,
-      timeline: await getTimeline(p.id),
-    })),
-  )
+  return Promise.all(players.map(toPlayerWithTimeline))
 }
 
 const finishGame = async (io: IoServer, roomCode: string, winnerId: string) => {

@@ -4,21 +4,15 @@ import { createSessionRoom, createSessionPlayer, getSessionRoom, getPlayersByRoo
 import { getGameState, deleteGameState, deleteUsedSongs } from '../lib/gameCache.js'
 import { db } from '../db/database.js'
 import { getRandomSong, markSongAsUsed } from './songService.js'
-import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, RejoinResult, Player, GameState, Song, TimelineEntry } from '@hitster/shared'
+import { toSong, toPlayer, toPlayerWithTimeline } from './mappers.js'
+import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, RejoinResult, Player, GameState, TimelineEntry } from '@hitster/shared'
 
 type CreateRoomSuccess = { roomCode: string; playerId: string; timeline: TimelineEntry[] }
 
 const assignStarterSong = async (roomCode: string, playerId: string) => {
   const dbSong = await getRandomSong(roomCode)
   if (!dbSong) return
-  const song: Song = {
-    id: dbSong.id,
-    title: dbSong.title,
-    artist: dbSong.artist,
-    year: dbSong.year,
-    previewUrl: dbSong.preview_url,
-    deezerTrackId: dbSong.deezer_id,
-  }
+  const song = toSong(dbSong)
   await markSongAsUsed(roomCode, song.id)
   await addToTimeline(playerId, song)
 }
@@ -82,15 +76,7 @@ export const joinRoomService = async (
     roomCode: room.code,
     playerId: player.id,
     timeline: await getTimeline(player.id),
-    players: existingPlayers.map((p) => ({
-      id: p.id,
-      name: p.name,
-      avatar: p.avatar || undefined,
-      tokens: p.tokens,
-      isHost: p.isHost,
-      turnOrder: p.turnOrder,
-      timeline: [],
-    })),
+    players: existingPlayers.map((p) => toPlayer(p)),
     settings: {
       songsPerPlayer: room.songsPerPlayer,
       decadeFilter: room.decadeFilter,
@@ -114,17 +100,7 @@ export const rejoinRoomService = async (
   await updatePlayerSocketId(playerId, socketId)
 
   const sessionPlayers = await getPlayersByRoomCode(roomCode)
-  const players: Player[] = await Promise.all(
-    sessionPlayers.map(async (p) => ({
-      id: p.id,
-      name: p.name,
-      avatar: p.avatar || undefined,
-      tokens: p.tokens,
-      isHost: p.isHost,
-      turnOrder: p.turnOrder,
-      timeline: await getTimeline(p.id),
-    }))
-  )
+  const players: Player[] = await Promise.all(sessionPlayers.map(toPlayerWithTimeline))
 
   let gameState: GameState | null = null
   if (room.status === 'playing') {
@@ -137,16 +113,7 @@ export const rejoinRoomService = async (
           .selectAll()
           .where('id', '=', cached.currentSongId)
           .executeTakeFirst()
-        if (dbSong) {
-          currentSong = {
-            id: dbSong.id,
-            title: dbSong.title,
-            artist: dbSong.artist,
-            year: dbSong.year,
-            previewUrl: dbSong.preview_url,
-            deezerTrackId: dbSong.deezer_id,
-          }
-        }
+        if (dbSong) currentSong = toSong(dbSong)
       }
       gameState = {
         phase: cached.phase,
@@ -186,17 +153,8 @@ export const resetRoomService = async (
     await assignStarterSong(roomCode, p.id)
   }
 
-  const players: Player[] = await Promise.all(
-    sessionPlayers.map(async (p) => ({
-      id: p.id,
-      name: p.name,
-      avatar: p.avatar || undefined,
-      tokens: 2,
-      isHost: p.isHost,
-      turnOrder: 0,
-      timeline: await getTimeline(p.id),
-    }))
-  )
+  const freshPlayers = await getPlayersByRoomCode(roomCode)
+  const players: Player[] = await Promise.all(freshPlayers.map(toPlayerWithTimeline))
 
   return { players }
 }

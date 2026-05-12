@@ -27,6 +27,7 @@ import {
 import { parsePayload } from '../lib/validate.js'
 import { logger } from '../lib/logger.js'
 import { getSocketRoomCode } from '../lib/socketRoom.js'
+import { toSong } from '../services/mappers.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
@@ -99,10 +100,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       const dbSong = await db.selectFrom('songs').selectAll()
         .where('id', '=', gameState.currentSongId).executeTakeFirstOrThrow()
 
-      const song = {
-        id: dbSong.id, title: dbSong.title, artist: dbSong.artist,
-        year: dbSong.year, previewUrl: dbSong.preview_url, deezerTrackId: dbSong.deezer_id,
-      }
+      const song = toSong(dbSong)
 
       await updatePlayerTokens(stealer.id, stealer.tokens - 1)
       io.to(roomCode).emit('tokens:updated', stealer.id, stealer.tokens - 1)
@@ -189,11 +187,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       const freshPreviewUrl = await getFreshPreviewUrl(song.deezer_id)
       await setGameState(roomCode, { ...gameState, currentSongId: song.id, phase: 'song_phase', phaseStartedAt: new Date().toISOString() })
 
-      io.to(roomCode).emit('song:new', {
-        id: song.id, title: song.title, artist: song.artist,
-        year: song.year, previewUrl: freshPreviewUrl ?? song.preview_url,
-        deezerTrackId: song.deezer_id,
-      })
+      io.to(roomCode).emit('song:new', toSong(song, freshPreviewUrl))
 
       cb()
     } catch (err) {

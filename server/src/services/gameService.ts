@@ -1,6 +1,7 @@
-import { getSessionRoom, getPlayersByRoomCode, updatePlayerTurnOrder, updateRoomStatus, getTimelineCount, getTimeline } from '../lib/session.js'
+import { getSessionRoom, getPlayersByRoomCode, updatePlayerTurnOrder, updateRoomStatus, getTimelineCount } from '../lib/session.js'
 import { getFreshPreviewUrl, getRandomSong, markSongAsUsed } from './songService.js'
 import { getGameState, setGameState } from '../lib/gameCache.js'
+import { toSong, toPlayerWithTimeline } from './mappers.js'
 import type { Player, Song, GameState } from '@hitster/shared'
 
 export const startGameService = async (
@@ -29,26 +30,13 @@ export const startGameService = async (
   const phaseStartedAt = new Date().toISOString()
 
   const players: Player[] = await Promise.all(
-    shuffled.map(async (p, i) => ({
-      id: p.id,
-      name: p.name,
-      avatar: p.avatar || undefined,
-      tokens: p.tokens,
-      isHost: p.isHost,
-      turnOrder: i,
-      timeline: await getTimeline(p.id),
-    }))
+    shuffled.map(async (p, i) => ({ ...(await toPlayerWithTimeline(p)), turnOrder: i }))
   )
 
   const dbSong = await getRandomSong(roomCode)
-  const songForClient: Song | null = dbSong ? {
-    id: dbSong.id,
-    title: dbSong.title,
-    artist: dbSong.artist,
-    year: dbSong.year,
-    previewUrl: (await getFreshPreviewUrl(dbSong.deezer_id)) ?? dbSong.preview_url,
-    deezerTrackId: dbSong.deezer_id,
-  } : null
+  const songForClient: Song | null = dbSong
+    ? toSong(dbSong, await getFreshPreviewUrl(dbSong.deezer_id))
+    : null
 
   if (dbSong) await markSongAsUsed(roomCode, dbSong.id)
 
@@ -103,14 +91,7 @@ export const nextTurnService = async (
 
   return {
     nextPlayerId: nextPlayer.id,
-    song: {
-      id: song.id,
-      title: song.title,
-      artist: song.artist,
-      year: song.year,
-      previewUrl: freshPreviewUrl ?? song.preview_url,
-      deezerTrackId: song.deezer_id,
-    },
+    song: toSong(song, freshPreviewUrl),
   }
 }
 

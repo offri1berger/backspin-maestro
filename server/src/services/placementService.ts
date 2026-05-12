@@ -1,6 +1,7 @@
 import { db } from '../db/database.js'
 import { getGameState, setGameState } from '../lib/gameCache.js'
 import { getTimeline, addToTimeline } from '../lib/session.js'
+import { toSong } from './mappers.js'
 import type { Song } from '@hitster/shared'
 
 export const validatePlacement = async (
@@ -20,14 +21,7 @@ export const validatePlacement = async (
     .where('id', '=', gameState.currentSongId)
     .executeTakeFirstOrThrow()
 
-  const song: Song = {
-    id: dbSong.id,
-    title: dbSong.title,
-    artist: dbSong.artist,
-    year: dbSong.year,
-    previewUrl: dbSong.preview_url,
-    deezerTrackId: dbSong.deezer_id,
-  }
+  const song = toSong(dbSong)
 
   const timeline = await getTimeline(playerId)
 
