@@ -1,9 +1,9 @@
+import 'dotenv/config'
 import express from 'express'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 import { createAdapter } from '@socket.io/redis-adapter'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import type { ServerToClientEvents, ClientToServerEvents } from '@backspin-maestro/shared'
 import { registerRoomHandlers } from './socket/roomHandlers.js'
 import { registerGameHandlers } from './socket/gameHandlers.js'
@@ -14,8 +14,6 @@ import { redis, pubClient, subClient } from './lib/redis.js'
 import { startRoomWorker, closeRoomQueue, getRoomQueue } from './lib/jobs.js'
 import { logger } from './lib/logger.js'
 import { collectMetrics, setMetricsSources } from './lib/metrics.js'
-
-dotenv.config()
 
 const app = express()
 const httpServer = createServer(app)
