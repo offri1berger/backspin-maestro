@@ -36,4 +36,11 @@ export const AVATARS: string[] = [
   `${R2}/tom%20yorke.jpg`,
   `${R2}/tupac.jpg`,
   `${R2}/angus%20young.jpg`,
-]
+  `${R2}/layne%20staley.jpg`,
+  `${R2}/bruno%20mars.jpg`,
+  `${R2}/bob%20dylan.jpg`,
+  `${R2}/mark%20knopfler.jpg`,
+  `${R2}/snoop%20dogg.jpg`,
+  `${R2}/the%20weekend.jpg`,
+  `${R2}/whitney%20houston.jpg`,
+];
