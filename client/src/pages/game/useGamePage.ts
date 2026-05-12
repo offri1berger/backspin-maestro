@@ -56,9 +56,9 @@ export const useGamePage = () => {
       socket.emit('song:guess', { artist: guess.artist, title: guess.title })
     }
     const snapshot = useGameStore.getState()
-    socket.emit('card:place', { position }, (error) => {
-      if (error) {
-        console.error('place error:', error, {
+    socket.emit('card:place', { position }, (result) => {
+      if ('error' in result) {
+        console.error('place error:', result.error, {
           clientPlayerId: snapshot.playerId,
           clientCurrentPlayerId: snapshot.currentPlayerId,
           isMyTurn: snapshot.currentPlayerId === snapshot.playerId,
@@ -76,13 +76,13 @@ export const useGamePage = () => {
   }
 
   const handleSkip = () => {
-    socket.emit('song:skip', (error) => { if (error) console.error('skip error:', error) })
+    socket.emit('song:skip', (result) => { if ('error' in result) console.error('skip error:', result.error) })
   }
 
   const handleStealAttempt = (position: number) => {
     if (!currentPlayerId) return
-    socket.emit('steal:attempt', { targetPlayerId: currentPlayerId, position }, (error) => {
-      if (error) console.error('steal error:', error)
+    socket.emit('steal:attempt', { targetPlayerId: currentPlayerId, position }, (result) => {
+      if ('error' in result) console.error('steal error:', result.error)
     })
     setIsAttemptingSteal(false)
   }

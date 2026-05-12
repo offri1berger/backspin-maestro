@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { Player } from '@hitster/shared'
+import type { Player } from '@backspin-maestro/shared'
 import AudioPlayer from '../../components/game/AudioPlayer'
 import { useGameStore } from '../../store/gameStore'
 

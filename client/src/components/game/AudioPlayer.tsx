@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Song } from '@hitster/shared'
+import type { Song } from '@backspin-maestro/shared'
 import socket from '../../socket'
 
 interface Props {

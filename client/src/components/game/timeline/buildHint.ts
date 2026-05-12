@@ -1,4 +1,4 @@
-import type { TimelineEntry } from '@hitster/shared'
+import type { TimelineEntry } from '@backspin-maestro/shared'
 
 export const buildHint = (timeline: TimelineEntry[], pos: number): string => {
   const left = pos > 0 ? timeline[pos - 1]?.song.year : undefined

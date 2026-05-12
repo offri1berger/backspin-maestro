@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Player } from '@hitster/shared'
+import type { Player } from '@backspin-maestro/shared'
 import { useGameStore } from '../../store/gameStore'
 import { ArrowIcon, Logo } from '../ui/Logo'
 import socket from '../../socket'
@@ -17,8 +17,8 @@ function PlayerRow({
 }) {
   const handleKick = () => {
     if (!window.confirm(`Remove ${player.name} from the room?`)) return
-    socket.emit('conductor:kick', { playerId: player.id }, (error) => {
-      if (error) console.error('kick error:', error)
+    socket.emit('conductor:kick', { playerId: player.id }, (result) => {
+      if ('error' in result) console.error('kick error:', result.error)
     })
   }
 

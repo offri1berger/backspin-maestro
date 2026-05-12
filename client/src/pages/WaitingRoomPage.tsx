@@ -1,4 +1,5 @@
 import { Navigate, useNavigate } from 'react-router-dom'
+import type { GameStartResult } from '@backspin-maestro/shared'
 import { useGameStore } from '../store/gameStore'
 import { WaitingRoom } from '../components/lobby/WaitingRoom'
 import socket from '../socket'
@@ -10,7 +11,7 @@ const WaitingRoomPage = () => {
   if (!roomCode) return <Navigate to="/" replace />
 
   const handleStart = () => {
-    socket.emit('game:start', (error) => { if (error) alert(error) })
+    socket.emit('game:start', (result: GameStartResult) => { if ('error' in result) alert(result.error) })
   }
 
   const handleLeave = () => {

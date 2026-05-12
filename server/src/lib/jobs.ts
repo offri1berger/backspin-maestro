@@ -5,7 +5,7 @@ import type {
   ServerToClientEvents,
   ClientToServerEvents,
   PlacementResultPayload,
-} from '@hitster/shared'
+} from '@backspin-maestro/shared'
 import {
   tryClaimResolution,
   clearPending,

@@ -1,5 +1,5 @@
 {
-  "name": "@hitster/server",
+  "name": "@backspin-maestro/server",
   "version": "0.0.1",
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -12,7 +12,7 @@
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch"
   },
   "dependencies": {
-    "@hitster/shared": "workspace:*",
+    "@backspin-maestro/shared": "workspace:*",
     "@jest/globals": "^30.4.1",
     "@socket.io/redis-adapter": "^8.3.0",
     "bullmq": "^5.0.0",

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { DecadeFilter } from '@hitster/shared'
+import type { DecadeFilter } from '@backspin-maestro/shared'
 import socket from '../socket'
 import { useGameStore } from '../store/gameStore'
 import { HeroPanel } from '../components/lobby/HeroPanel'
@@ -71,14 +71,14 @@ const LobbyPage = () => {
     socket.connect()
     socket.emit('room:join', { roomCode: roomCode.toUpperCase(), playerName: name, avatar }, (result) => {
       setSubmitting(false)
-      if (!result.success) {
-        setError(ERROR_MESSAGES[result.error ?? ''] ?? 'Could not join room.')
+      if ('error' in result) {
+        setError(ERROR_MESSAGES[result.error] ?? 'Could not join room.')
         return
       }
-      setRoom(result.roomCode!, result.playerId!)
+      setRoom(result.roomCode, result.playerId)
       setPlayers([
-        ...(result.players ?? []),
-        { id: result.playerId!, name, avatar, tokens: 2, isHost: false, turnOrder: 0, timeline: result.timeline ?? [] },
+        ...result.players,
+        { id: result.playerId, name, avatar, tokens: 2, isHost: false, turnOrder: 0, timeline: result.timeline },
       ])
       navigate('/lobby')
     })

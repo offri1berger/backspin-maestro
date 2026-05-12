@@ -39,7 +39,7 @@ describe('gameStore (smoke)', () => {
     expect(s.roomCode).toBe('ABCDEF')
     expect(s.playerId).toBe('player-1')
     expect(s.connectionStatus).toBe('connected')
-    expect(sessionStorage.getItem('hitster_session')).toContain('ABCDEF')
+    expect(sessionStorage.getItem('backspin_maestro_session')).toContain('ABCDEF')
   })
 
   it('leaveRoom clears state and the persisted session', () => {
@@ -49,7 +49,7 @@ describe('gameStore (smoke)', () => {
     const s = useGameStore.getState()
     expect(s.roomCode).toBeNull()
     expect(s.playerId).toBeNull()
-    expect(sessionStorage.getItem('hitster_session')).toBeNull()
+    expect(sessionStorage.getItem('backspin_maestro_session')).toBeNull()
   })
 
   it('tracks disconnected players without duplicating ids', () => {

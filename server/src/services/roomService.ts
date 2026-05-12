@@ -6,7 +6,7 @@ import { db } from '../db/database.js'
 import { getRandomSong, markSongAsUsed } from './songService.js'
 import { toSong, toPlayer, toPlayerWithTimeline } from './mappers.js'
 import { config } from '../lib/config.js'
-import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, RejoinResult, Player, GameState, TimelineEntry } from '@hitster/shared'
+import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, RejoinResult, Player, GameState, TimelineEntry } from '@backspin-maestro/shared'
 
 type CreateRoomSuccess = { roomCode: string; playerId: string; timeline: TimelineEntry[] }
 
@@ -135,10 +135,12 @@ export const rejoinRoomService = async (
   }
 }
 
+export type ResetRoomError = 'room_not_found' | 'not_host'
+
 export const resetRoomService = async (
   roomCode: string,
   socketId: string,
-): Promise<{ players: Player[] } | { error: string }> => {
+): Promise<{ players: Player[] } | { error: ResetRoomError }> => {
   const room = await getSessionRoom(roomCode)
   if (!room) return { error: 'room_not_found' }
 

@@ -1,5 +1,5 @@
-import type { DecadeFilter, SpecificDecade } from '@hitster/shared'
-import { SPECIFIC_DECADES_ORDER } from '@hitster/shared'
+import type { DecadeFilter, SpecificDecade } from '@backspin-maestro/shared'
+import { SPECIFIC_DECADES_ORDER } from '@backspin-maestro/shared'
 import ImagePicker from '../ui/ImagePicker'
 import { AVATARS } from '../../lib/avatars'
 import { Logo, ArrowIcon } from '../ui/Logo'

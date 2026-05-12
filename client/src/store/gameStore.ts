@@ -1,8 +1,8 @@
 import { create } from 'zustand'
-import type { GamePhase, Player, Song, RoomSettings, StealResultPayload } from '@hitster/shared'
+import type { GamePhase, Player, Song, RoomSettings, StealResultPayload } from '@backspin-maestro/shared'
 
-const SESSION_KEY = 'hitster_session'
-const MUTED_KEY = 'hitster_muted'
+const SESSION_KEY = 'backspin_maestro_session'
+const MUTED_KEY = 'backspin_maestro_muted'
 
 export const persistSession = (roomCode: string, playerId: string) =>
   sessionStorage.setItem(SESSION_KEY, JSON.stringify({ roomCode, playerId }))
@@ -83,30 +83,42 @@ interface GameStore {
   leaveRoom: () => void
 }
 
-export const useGameStore = create<GameStore>((set) => ({
-  roomCode: null,
-  playerId: null,
-  settings: null,
-  players: [],
+// Per-game state cleared on resetGame (host pressed reset) AND on leaveRoom.
+// Does NOT include session identity (roomCode/playerId/settings) — those only
+// clear on leaveRoom — nor app-level state (connectionStatus/kickNotice/muted).
+const INITIAL_GAME_STATE = {
   phase: null,
   currentPlayerId: null,
   currentSong: null,
   roundNumber: 1,
+  winnerId: null,
   pendingPosition: null,
   placementResult: null,
   isWaitingForNextTurn: false,
   hasGuessed: false,
-  winnerId: null,
-  remoteDragSlot: null,
   stealResult: null,
   isStealWindowOpen: false,
   stealInitiatorId: null,
   stealTargetId: null,
   stealOriginalPosition: null,
+  disconnectedPlayerIds: [] as string[],
+}
+
+// Full reset for leaveRoom — also clears session identity and the remote drag preview.
+const INITIAL_STATE = {
+  ...INITIAL_GAME_STATE,
+  roomCode: null,
+  playerId: null,
+  settings: null,
+  players: [] as Player[],
+  remoteDragSlot: null,
+}
+
+export const useGameStore = create<GameStore>((set) => ({
+  ...INITIAL_STATE,
   connectionStatus: 'connecting',
   kickNotice: null,
   muted: loadMuted(),
-  disconnectedPlayerIds: [],
 
   setRoom: (roomCode, playerId) => {
     persistSession(roomCode, playerId)
@@ -152,48 +164,10 @@ export const useGameStore = create<GameStore>((set) => ({
   resetGame: (players) => {
     const { roomCode, playerId } = useGameStore.getState()
     if (roomCode && playerId) persistSession(roomCode, playerId)
-    set({
-      players,
-      phase: null,
-      currentPlayerId: null,
-      currentSong: null,
-      roundNumber: 1,
-      winnerId: null,
-      pendingPosition: null,
-      placementResult: null,
-      isWaitingForNextTurn: false,
-      hasGuessed: false,
-      stealResult: null,
-      isStealWindowOpen: false,
-      stealInitiatorId: null,
-      stealTargetId: null,
-      stealOriginalPosition: null,
-      disconnectedPlayerIds: [],
-    })
+    set({ ...INITIAL_GAME_STATE, players })
   },
   leaveRoom: () => {
     clearSession()
-    set({
-      roomCode: null,
-      playerId: null,
-      settings: null,
-      players: [],
-      phase: null,
-      currentPlayerId: null,
-      currentSong: null,
-      roundNumber: 1,
-      winnerId: null,
-      pendingPosition: null,
-      placementResult: null,
-      isWaitingForNextTurn: false,
-      hasGuessed: false,
-      remoteDragSlot: null,
-      stealResult: null,
-      isStealWindowOpen: false,
-      stealInitiatorId: null,
-      stealTargetId: null,
-      stealOriginalPosition: null,
-      disconnectedPlayerIds: [],
-    })
+    set(INITIAL_STATE)
   },
 }))

@@ -2,13 +2,28 @@ import { db } from '../db/database.js'
 import { getGameState, setGameState } from '../lib/gameCache.js'
 import { getTimeline, addToTimeline } from '../lib/session.js'
 import { toSong } from './mappers.js'
-import type { Song } from '@hitster/shared'
+import type { Song } from '@backspin-maestro/shared'
 
-export const validatePlacement = async (
+export type PlacementEvaluation = {
+  correct: boolean
+  correctPosition: number
+  song: Song
+}
+
+export type PlacementError =
+  | 'game_not_found'
+  | 'wrong_phase'
+  | 'not_your_turn'
+  | 'no_current_song'
+  | 'invalid_position'
+
+// Pure-ish: reads game state + timeline, computes correctness, returns the
+// evaluation. No writes — safe to call in tests without arranging cleanup.
+export const evaluatePlacement = async (
   roomCode: string,
   playerId: string,
-  position: number
-): Promise<{ correct: boolean; correctPosition: number; song: Song } | { error: string }> => {
+  position: number,
+): Promise<PlacementEvaluation | { error: PlacementError }> => {
   const gameState = await getGameState(roomCode)
   if (!gameState) return { error: 'game_not_found' }
   if (gameState.phase !== 'song_phase') return { error: 'wrong_phase' }
@@ -22,7 +37,6 @@ export const validatePlacement = async (
     .executeTakeFirstOrThrow()
 
   const song = toSong(dbSong)
-
   const timeline = await getTimeline(playerId)
 
   if (position > timeline.length) return { error: 'invalid_position' }
@@ -36,8 +50,22 @@ export const validatePlacement = async (
   const correctIdx = timeline.findIndex((t) => t.song.year > song.year)
   const correctPosition = correctIdx === -1 ? timeline.length : correctIdx
 
-  if (correct) {
-    await addToTimeline(playerId, song)
+  return { correct, correctPosition, song }
+}
+
+// Side effects: append to the player's timeline (if correct) and advance the
+// room into the steal window. Caller is expected to have validated first via
+// evaluatePlacement on the same (roomCode, playerId) snapshot.
+export const applyPlacement = async (
+  roomCode: string,
+  playerId: string,
+  evaluation: PlacementEvaluation,
+): Promise<void> => {
+  const gameState = await getGameState(roomCode)
+  if (!gameState) return
+
+  if (evaluation.correct) {
+    await addToTimeline(playerId, evaluation.song)
   }
 
   await setGameState(roomCode, {
@@ -45,6 +73,16 @@ export const validatePlacement = async (
     phase: 'steal_window',
     phaseStartedAt: new Date().toISOString(),
   })
+}
 
-  return { correct, correctPosition, song }
+// Back-compat facade: evaluate then (if no error) apply.
+export const validatePlacement = async (
+  roomCode: string,
+  playerId: string,
+  position: number,
+): Promise<PlacementEvaluation | { error: PlacementError }> => {
+  const evaluation = await evaluatePlacement(roomCode, playerId, position)
+  if ('error' in evaluation) return evaluation
+  await applyPlacement(roomCode, playerId, evaluation)
+  return evaluation
 }

@@ -1,4 +1,4 @@
-import type { TimelineEntry } from '@hitster/shared'
+import type { TimelineEntry } from '@backspin-maestro/shared'
 
 const VerticalYearCard = ({ entry }: { entry: TimelineEntry }) => (
   <div className="card-place-in flex items-center gap-[14px] overflow-hidden min-h-[68px] rounded-[18px] px-[18px] py-[14px] bg-surface text-on-surface">

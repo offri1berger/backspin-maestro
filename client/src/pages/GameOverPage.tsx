@@ -15,8 +15,8 @@ const GameOverPage = () => {
 
   const handleRematch = () => {
     if (!window.confirm('Start a rematch with the same players and settings?')) return
-    socket.emit('room:reset', (error) => {
-      if (error) console.error('rematch error:', error)
+    socket.emit('room:reset', (result) => {
+      if ('error' in result) console.error('rematch error:', result.error)
     })
   }
 

@@ -10,7 +10,8 @@ import type {
   CreateRoomResult,
   JoinRoomResult,
   RejoinResult,
-} from '@hitster/shared'
+  GameStartResult,
+} from '@backspin-maestro/shared'
 
 // ─── Mocks (must come before importing handlers) ───────────────────────────
 const redis = new RedisMock()
@@ -138,8 +139,8 @@ const rejoinRoom = (client: ClientSocket, playerId: string, roomCode: string) =>
   )
 
 const startGame = (client: ClientSocket) =>
-  new Promise<string | undefined>((resolve) =>
-    client.emit('game:start', (error?: string) => resolve(error)),
+  new Promise<GameStartResult>((resolve) =>
+    client.emit('game:start', (result: GameStartResult) => resolve(result)),
   )
 
 const waitFor = <T>(client: ClientSocket, event: string, timeoutMs = 1000): Promise<T> =>
@@ -285,8 +286,9 @@ describe('socket: game:start', () => {
     songQueue.push({ id: 'b', title: 't', artist: 'a', year: 2000, preview_url: '', deezer_id: 'd' })
     await joinRoom(joiner, created.roomCode, 'Bob')
 
-    const err = await startGame(joiner)
-    expect(err).toBe('not_host')
+    const result = await startGame(joiner)
+    expect(result.success).toBe(false)
+    if (!result.success) expect(result.error).toBe('not_host')
     host.close()
     joiner.close()
   })
@@ -296,8 +298,9 @@ describe('socket: game:start', () => {
     songQueue.push({ id: 'h', title: 't', artist: 'a', year: 2000, preview_url: '', deezer_id: 'd' })
     await createRoom(host, 'Alice')
 
-    const err = await startGame(host)
-    expect(err).toBe('not_enough_players')
+    const result = await startGame(host)
+    expect(result.success).toBe(false)
+    if (!result.success) expect(result.error).toBe('not_enough_players')
     host.close()
   })
 
@@ -314,8 +317,8 @@ describe('socket: game:start', () => {
     songQueue.push({ id: 'first', title: 'tr', artist: 'ar', year: 1995, preview_url: '', deezer_id: 'df' })
 
     const gameStartingPromise = waitFor<unknown>(joiner, 'game:starting', 2000)
-    const err = await startGame(host)
-    expect(err).toBeUndefined()
+    const result = await startGame(host)
+    expect(result.success).toBe(true)
 
     const event = await gameStartingPromise
     expect(event).toBeDefined()

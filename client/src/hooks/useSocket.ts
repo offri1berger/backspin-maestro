@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { ServerToClientEvents } from '@backspin-maestro/shared'
 import socket from '../socket'
 import { useGameStore, loadSession, clearSession } from '../store/gameStore'
 import { sfx, setMutedAccessor } from '../lib/sfx'
@@ -19,6 +20,7 @@ export const useSocket = () => {
     const navigate = (to: string) => navigateRef.current(to)
     let placementResultTimer: ReturnType<typeof setTimeout> | null = null
 
+    // ── Built-in socket.io lifecycle events (not in ServerToClientEvents) ─────
     socket.on('connect', () => {
       const store = useGameStore.getState()
       const saved = loadSession()
@@ -83,192 +85,186 @@ export const useSocket = () => {
 
     socket.connect()
 
-    socket.on('player:joined', (player) => {
-      useGameStore.getState().addPlayer(player)
-    })
+    // ── Server→client game events: register declaratively so the cleanup
+    // list is auto-derived (forgetting to socket.off can't leak handlers). ───
+    const handlers: Partial<ServerToClientEvents> = {
+      'player:joined': (player) => {
+        useGameStore.getState().addPlayer(player)
+      },
 
-    socket.on('player:left', (playerId) => {
-      useGameStore.getState().removePlayer(playerId)
-    })
+      'player:left': (playerId) => {
+        useGameStore.getState().removePlayer(playerId)
+      },
 
-    socket.on('game:starting', (state, players) => {
-      useGameStore.getState().setGameStarted(players, state.phase, state.currentPlayerId)
-      navigate('/game')
-    })
+      'game:starting': (state, players) => {
+        useGameStore.getState().setGameStarted(players, state.phase, state.currentPlayerId)
+        navigate('/game')
+      },
 
-    socket.on('song:new', (song) => {
-      const store = useGameStore.getState()
-      store.setCurrentSong(song)
-      store.setIsWaitingForNextTurn(false)
-      store.setHasGuessed(false)
-      store.setStealResult(null)
-      store.setIsStealWindowOpen(false)
-      store.setStealInitiatorId(null)
-      store.setStealTargetId(null)
-      store.setStealOriginalPosition(null)
-    })
+      'song:new': (song) => {
+        const store = useGameStore.getState()
+        store.setCurrentSong(song)
+        store.setIsWaitingForNextTurn(false)
+        store.setHasGuessed(false)
+        store.setStealResult(null)
+        store.setIsStealWindowOpen(false)
+        store.setStealInitiatorId(null)
+        store.setStealTargetId(null)
+        store.setStealOriginalPosition(null)
+      },
 
-    socket.on('steal:open', (targetPlayerId, originalPosition) => {
-      const store = useGameStore.getState()
-      store.setIsWaitingForNextTurn(true)
-      store.setIsStealWindowOpen(true)
-      store.setStealTargetId(targetPlayerId)
-      store.setStealOriginalPosition(originalPosition)
-    })
+      'steal:open': (targetPlayerId, originalPosition) => {
+        const store = useGameStore.getState()
+        store.setIsWaitingForNextTurn(true)
+        store.setIsStealWindowOpen(true)
+        store.setStealTargetId(targetPlayerId)
+        store.setStealOriginalPosition(originalPosition)
+      },
 
-    socket.on('steal:extended', (stealerId) => {
-      useGameStore.getState().setStealInitiatorId(stealerId)
-    })
+      'steal:extended': (stealerId) => {
+        useGameStore.getState().setStealInitiatorId(stealerId)
+      },
 
-    socket.on('phase:changed', (phase, _phaseStartedAt, currentPlayerId) => {
-      const store = useGameStore.getState()
-      store.setPhase(phase)
-      if (currentPlayerId) store.setCurrentPlayerId(currentPlayerId)
-    })
+      'phase:changed': (phase, _phaseStartedAt, currentPlayerId) => {
+        const store = useGameStore.getState()
+        store.setPhase(phase)
+        if (currentPlayerId) store.setCurrentPlayerId(currentPlayerId)
+      },
 
-    socket.on('placement:result', (result) => {
-      const store = useGameStore.getState()
+      'placement:result': (result) => {
+        const store = useGameStore.getState()
 
-      if (result.correct) {
-        const currentSong = store.currentSong
-        if (currentSong) {
+        if (result.correct) {
+          const currentSong = store.currentSong
+          if (currentSong) {
+            const updatedPlayers = store.players.map((p) => {
+              if (p.id !== result.playerId) return p
+              const newEntry = { song: currentSong, position: result.correctPosition }
+              const newTimeline = [...p.timeline, newEntry].sort((a, b) => a.song.year - b.song.year)
+              return { ...p, timeline: newTimeline }
+            })
+            store.setPlayers(updatedPlayers)
+          }
+          sfx.place()
+          setTimeout(() => sfx.correct(), 120)
+        } else {
+          sfx.wrong()
+        }
+
+        store.setRemoteDragSlot(null)
+        store.setPendingPosition(null)
+        store.setIsStealWindowOpen(false)
+        store.setPlacementResult({
+          correct: result.correct,
+          song: result.correct ? undefined : result.song,
+        })
+        store.setIsWaitingForNextTurn(true)
+        if (placementResultTimer) clearTimeout(placementResultTimer)
+        placementResultTimer = setTimeout(() => store.setPlacementResult(null), result.correct ? 2000 : 3000)
+      },
+
+      'token:earned': (playerId, newTotal) => {
+        const store = useGameStore.getState()
+        const updatedPlayers = store.players.map((p) =>
+          p.id === playerId ? { ...p, tokens: newTotal } : p
+        )
+        store.setPlayers(updatedPlayers)
+        if (playerId === store.playerId) {
+          if (placementResultTimer) clearTimeout(placementResultTimer)
+          store.setPlacementResult({ correct: true, message: '🪙 Token earned!' })
+          placementResultTimer = setTimeout(() => store.setPlacementResult(null), 2000)
+        }
+      },
+
+      'steal:result': (result) => {
+        const store = useGameStore.getState()
+
+        if (result.correct) {
           const updatedPlayers = store.players.map((p) => {
-            if (p.id !== result.playerId) return p
-            const newEntry = { song: currentSong, position: result.correctPosition }
-            const newTimeline = [...p.timeline, newEntry].sort((a, b) => a.song.year - b.song.year)
+            if (p.id !== result.stealerId) return p
+            const newTimeline = [...p.timeline, { song: result.song, position: 0 }]
+              .sort((a, b) => a.song.year - b.song.year)
+              .map((entry, idx) => ({ ...entry, position: idx }))
             return { ...p, timeline: newTimeline }
           })
           store.setPlayers(updatedPlayers)
         }
-        sfx.place()
-        setTimeout(() => sfx.correct(), 120)
-      } else {
-        sfx.wrong()
-      }
 
-      store.setRemoteDragSlot(null)
-      store.setPendingPosition(null)
-      store.setIsStealWindowOpen(false)
-      store.setPlacementResult({
-        correct: result.correct,
-        song: result.correct ? undefined : result.song,
-      })
-      store.setIsWaitingForNextTurn(true)
-      if (placementResultTimer) clearTimeout(placementResultTimer)
-      placementResultTimer = setTimeout(() => store.setPlacementResult(null), result.correct ? 2000 : 3000)
-    })
+        store.setStealInitiatorId(null)
+        store.setStealResult(result)
+        setTimeout(() => store.setStealResult(null), 3000)
+      },
 
-    socket.on('token:earned', (playerId, newTotal) => {
-      const store = useGameStore.getState()
-      const updatedPlayers = store.players.map((p) =>
-        p.id === playerId ? { ...p, tokens: newTotal } : p
-      )
-      store.setPlayers(updatedPlayers)
-      if (playerId === store.playerId) {
-        if (placementResultTimer) clearTimeout(placementResultTimer)
-        store.setPlacementResult({ correct: true, message: '🪙 Token earned!' })
-        placementResultTimer = setTimeout(() => store.setPlacementResult(null), 2000)
-      }
-    })
+      'tokens:updated': (playerId, newTotal) => {
+        const store = useGameStore.getState()
+        store.setPlayers(store.players.map((p) =>
+          p.id === playerId ? { ...p, tokens: newTotal } : p
+        ))
+      },
 
-    socket.on('steal:result', (result) => {
-      const store = useGameStore.getState()
+      'game:over': (winnerId, players) => {
+        const store = useGameStore.getState()
+        store.setPlayers(players)
+        store.setGameOver(winnerId)
+        sfx.win()
+        navigate('/over')
+      },
 
-      if (result.correct) {
-        const updatedPlayers = store.players.map((p) => {
-          if (p.id !== result.stealerId) return p
-          const newTimeline = [...p.timeline, { song: result.song, position: 0 }]
-            .sort((a, b) => a.song.year - b.song.year)
-            .map((entry, idx) => ({ ...entry, position: idx }))
-          return { ...p, timeline: newTimeline }
-        })
-        store.setPlayers(updatedPlayers)
-      }
+      'player:disconnected': (playerId) => {
+        useGameStore.getState().setPlayerDisconnected(playerId)
+      },
 
-      store.setStealInitiatorId(null)
-      store.setStealResult(result)
-      setTimeout(() => store.setStealResult(null), 3000)
-    })
+      'player:reconnected': (playerId) => {
+        useGameStore.getState().setPlayerReconnected(playerId)
+      },
 
-    socket.on('tokens:updated', (playerId, newTotal) => {
-      const store = useGameStore.getState()
-      store.setPlayers(store.players.map((p) =>
-        p.id === playerId ? { ...p, tokens: newTotal } : p
-      ))
-    })
+      'host:transferred': (newHostId) => {
+        const store = useGameStore.getState()
+        const newHost = store.players.find((p) => p.id === newHostId)
+        store.transferHost(newHostId)
+        const message = newHostId === store.playerId
+          ? 'The baton has passed to you.'
+          : newHost
+            ? `The baton has passed to ${newHost.name}.`
+            : 'The baton has passed.'
+        store.setKickNotice({ message })
+      },
 
-    socket.on('game:over', (winnerId, players) => {
-      const store = useGameStore.getState()
-      store.setPlayers(players)
-      store.setGameOver(winnerId)
-      sfx.win()
-      navigate('/over')
-    })
+      'game:reset': (players) => {
+        useGameStore.getState().resetGame(players)
+        navigate('/lobby')
+      },
 
-    socket.on('player:disconnected', (playerId) => {
-      useGameStore.getState().setPlayerDisconnected(playerId)
-    })
-
-    socket.on('player:reconnected', (playerId) => {
-      useGameStore.getState().setPlayerReconnected(playerId)
-    })
-
-    socket.on('host:transferred', (newHostId) => {
-      const store = useGameStore.getState()
-      const newHost = store.players.find((p) => p.id === newHostId)
-      store.transferHost(newHostId)
-      const message = newHostId === store.playerId
-        ? 'The baton has passed to you.'
-        : newHost
-          ? `The baton has passed to ${newHost.name}.`
-          : 'The baton has passed.'
-      store.setKickNotice({ message })
-    })
-
-    socket.on('game:reset', (players) => {
-      useGameStore.getState().resetGame(players)
-      navigate('/lobby')
-    })
-
-    socket.on('player:kicked', (kickedId) => {
-      const store = useGameStore.getState()
-      if (kickedId === store.playerId) {
-        // We just got kicked — surface a notice and route out before
-        // wiping local state so the LobbyPage can read it on mount.
-        store.setKickNotice({ message: 'You were removed by the Conductor.' })
-        store.leaveRoom()
-        navigate('/')
-      } else {
-        const kicked = store.players.find((p) => p.id === kickedId)
-        store.removePlayer(kickedId)
-        if (kicked) {
-          store.setKickNotice({ message: `${kicked.name} was removed by the Conductor.` })
+      'player:kicked': (kickedId) => {
+        const store = useGameStore.getState()
+        if (kickedId === store.playerId) {
+          // We just got kicked — surface a notice and route out before
+          // wiping local state so the LobbyPage can read it on mount.
+          store.setKickNotice({ message: 'You were removed by the Conductor.' })
+          store.leaveRoom()
+          navigate('/')
+        } else {
+          const kicked = store.players.find((p) => p.id === kickedId)
+          store.removePlayer(kickedId)
+          if (kicked) {
+            store.setKickNotice({ message: `${kicked.name} was removed by the Conductor.` })
+          }
         }
-      }
-    })
+      },
+    }
+
+    const eventNames = Object.keys(handlers) as Array<keyof ServerToClientEvents>
+    for (const name of eventNames) {
+      // socket.io's typed `on` resolves per-event; the loop erases that, so cast.
+      socket.on(name, handlers[name] as never)
+    }
 
     return () => {
       if (placementResultTimer) clearTimeout(placementResultTimer)
       socket.off('connect')
       socket.off('disconnect')
       socket.io.off('reconnect_attempt')
-      socket.off('player:joined')
-      socket.off('player:left')
-      socket.off('game:starting')
-      socket.off('song:new')
-      socket.off('phase:changed')
-      socket.off('placement:result')
-      socket.off('token:earned')
-      socket.off('steal:open')
-      socket.off('steal:extended')
-      socket.off('steal:result')
-      socket.off('tokens:updated')
-      socket.off('game:over')
-      socket.off('player:disconnected')
-      socket.off('player:reconnected')
-      socket.off('host:transferred')
-      socket.off('game:reset')
-      socket.off('player:kicked')
+      for (const name of eventNames) socket.off(name)
       socket.disconnect()
     }
   }, [])

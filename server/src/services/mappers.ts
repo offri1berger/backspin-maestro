@@ -1,7 +1,7 @@
 import { getTimeline } from '../lib/session.js'
 import type { SessionPlayer } from '../lib/session.js'
 import type { Song as DbSong } from '../db/types.js'
-import type { Song, Player, TimelineEntry } from '@hitster/shared'
+import type { Song, Player, TimelineEntry } from '@backspin-maestro/shared'
 
 /**
  *  Map a DbSong to a Song, optionally replacing the preview URL with a fresh one from Deezer.

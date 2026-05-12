@@ -1,4 +1,4 @@
-import type { TimelineEntry } from '@hitster/shared'
+import type { TimelineEntry } from '@backspin-maestro/shared'
 
 const MiniYearCard = ({ entry }: { entry: TimelineEntry }) => (
   <div className="card-place-in shrink-0 w-[82px] p-[8px_8px_10px] rounded-[10px] bg-surface text-on-surface">

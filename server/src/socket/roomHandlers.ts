@@ -1,11 +1,11 @@
 import type { Socket, Server } from 'socket.io'
-import type { ServerToClientEvents, ClientToServerEvents } from '@hitster/shared'
+import type { ServerToClientEvents, ClientToServerEvents } from '@backspin-maestro/shared'
 import {
   CreateRoomPayloadSchema,
   JoinRoomPayloadSchema,
   RejoinPayloadSchema,
   KickPayloadSchema,
-} from '@hitster/shared'
+} from '@backspin-maestro/shared'
 import { createRoomService, joinRoomService, rejoinRoomService, resetRoomService } from '../services/roomService.js'
 import { startGameService } from '../services/gameService.js'
 import { cancelDisconnectTimer, finalizeDisconnect } from './disconnectHandler.js'
@@ -83,19 +83,19 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
 
   socket.on('game:start', async (cb) => {
     try {
-      if (!roomLimiter.allow(socket.id)) { cb('rate_limited'); return }
+      if (!roomLimiter.allow(socket.id)) { cb({ success: false, error: 'rate_limited' }); return }
       const roomCode = getSocketRoomCode(socket)
-      if (!roomCode) { cb('not_in_room'); return }
+      if (!roomCode) { cb({ success: false, error: 'not_in_room' }); return }
 
       const result = await startGameService(roomCode, socket.id)
-      if ('error' in result) { cb(result.error); return }
+      if ('error' in result) { cb({ success: false, error: result.error }); return }
 
       io.to(roomCode).emit('game:starting', result.gameState, result.players)
       if (result.song) io.to(roomCode).emit('song:new', result.song)
-      cb()
+      cb({ success: true })
     } catch (err) {
       logger.error({ err }, 'game:start handler threw')
-      cb('server_error')
+      cb({ success: false, error: 'server_error' })
     }
   })
 
@@ -109,22 +109,22 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
 
   socket.on('conductor:kick', async (payload, cb) => {
     try {
-      if (!roomLimiter.allow(socket.id)) { cb('rate_limited'); return }
+      if (!roomLimiter.allow(socket.id)) { cb({ success: false, error: 'rate_limited' }); return }
       const data = parsePayload(KickPayloadSchema, payload)
-      if (!data) { cb('invalid_payload'); return }
+      if (!data) { cb({ success: false, error: 'invalid_payload' }); return }
 
       const auth = await requireConductor(socket.id)
-      if (!auth.ok) { cb(auth.error); return }
-      if (data.playerId === auth.player.id) { cb('cannot_kick_self'); return }
+      if (!auth.ok) { cb({ success: false, error: auth.error }); return }
+      if (data.playerId === auth.player.id) { cb({ success: false, error: 'cannot_kick_self' }); return }
 
       const room = await getSessionRoom(auth.roomCode)
-      if (!room) { cb('room_not_found'); return }
+      if (!room) { cb({ success: false, error: 'room_not_found' }); return }
       // Kicks are a lobby-only social signal. Once the game's started the
       // Conductor has no special powers (see Conductor spec).
-      if (room.status !== 'lobby') { cb('not_in_lobby'); return }
+      if (room.status !== 'lobby') { cb({ success: false, error: 'not_in_lobby' }); return }
 
       const target = await getSessionPlayer(data.playerId)
-      if (!target || target.roomCode !== auth.roomCode) { cb('target_not_found'); return }
+      if (!target || target.roomCode !== auth.roomCode) { cb({ success: false, error: 'target_not_found' }); return }
 
       // Emit BEFORE removing — the kicked socket needs the event to navigate
       // out cleanly, and they're still in the room broadcast group right now.
@@ -135,27 +135,27 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
       cancelDisconnectTimer(target.id)
       await removeSessionPlayer(target.id)
 
-      cb()
+      cb({ success: true })
     } catch (err) {
       logger.error({ err }, 'conductor:kick handler threw')
-      cb('server_error')
+      cb({ success: false, error: 'server_error' })
     }
   })
 
   socket.on('room:reset', async (cb) => {
     try {
-      if (!roomLimiter.allow(socket.id)) { cb('rate_limited'); return }
+      if (!roomLimiter.allow(socket.id)) { cb({ success: false, error: 'rate_limited' }); return }
       const roomCode = getSocketRoomCode(socket)
-      if (!roomCode) { cb('not_in_room'); return }
+      if (!roomCode) { cb({ success: false, error: 'not_in_room' }); return }
 
       const result = await resetRoomService(roomCode, socket.id)
-      if ('error' in result) { cb(result.error); return }
+      if ('error' in result) { cb({ success: false, error: result.error }); return }
 
       io.to(roomCode).emit('game:reset', result.players)
-      cb()
+      cb({ success: true })
     } catch (err) {
       logger.error({ err }, 'room:reset handler threw')
-      cb('server_error')
+      cb({ success: false, error: 'server_error' })
     }
   })
 }

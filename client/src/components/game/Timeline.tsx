@@ -11,7 +11,7 @@ import {
   type DragEndEvent,
   type DragOverEvent,
 } from '@dnd-kit/core'
-import type { Song, TimelineEntry } from '@hitster/shared'
+import type { Song, TimelineEntry } from '@backspin-maestro/shared'
 import SongCard, { MysteryCardFace } from './SongCard'
 import socket from '../../socket'
 import { useGameStore } from '../../store/gameStore'

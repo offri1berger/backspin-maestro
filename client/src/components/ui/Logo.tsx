@@ -2,7 +2,7 @@ export const Logo = () => {
   return (
     <div className="flex items-center gap-2 font-display text-[22px] tracking-[-0.01em] text-on-bg">
       <div className="vinyl w-7 h-7" />
-      <span>Hitster</span>
+      <span>Backspin Maestro</span>
     </div>
   )
 }

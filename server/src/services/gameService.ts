@@ -2,12 +2,18 @@ import { getSessionRoom, getPlayersByRoomCode, updatePlayerTurnOrder, updateRoom
 import { getFreshPreviewUrl, getRandomSong, markSongAsUsed } from './songService.js'
 import { getGameState, setGameState } from '../lib/gameCache.js'
 import { toSong, toPlayerWithTimeline } from './mappers.js'
-import type { Player, Song, GameState } from '@hitster/shared'
+import type { Player, Song, GameState } from '@backspin-maestro/shared'
+
+export type StartGameError =
+  | 'room_not_found'
+  | 'game_already_started'
+  | 'not_host'
+  | 'not_enough_players'
 
 export const startGameService = async (
   roomCode: string,
   hostSocketId: string
-): Promise<{ players: Player[], song: Song | null, gameState: GameState } | { error: string }> => {
+): Promise<{ players: Player[], song: Song | null, gameState: GameState } | { error: StartGameError }> => {
   const room = await getSessionRoom(roomCode)
   if (!room) return { error: 'room_not_found' }
   if (room.status !== 'lobby') return { error: 'game_already_started' }

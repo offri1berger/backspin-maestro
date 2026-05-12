@@ -4,7 +4,7 @@ import { Server } from 'socket.io'
 import { createAdapter } from '@socket.io/redis-adapter'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import type { ServerToClientEvents, ClientToServerEvents } from '@hitster/shared'
+import type { ServerToClientEvents, ClientToServerEvents } from '@backspin-maestro/shared'
 import { registerRoomHandlers } from './socket/roomHandlers.js'
 import { registerGameHandlers } from './socket/gameHandlers.js'
 import { handleDisconnect } from './socket/disconnectHandler.js'
@@ -66,7 +66,7 @@ io.on('connection', (socket) => {
   })
 })
 
-const PORT = process.env.PORT ?? 3001
+const PORT = process.env.PORT ?? 8080
 const server = httpServer.listen(PORT, () => logger.info({ port: PORT }, 'server running'))
 
 const shutdown = () => {

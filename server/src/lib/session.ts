@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto'
 import { redis } from './redis.js'
 import { safeJsonParse } from './safeJson.js'
 import { config } from './config.js'
-import type { Song, TimelineEntry, DecadeFilter } from '@hitster/shared'
+import type { Song, TimelineEntry, DecadeFilter } from '@backspin-maestro/shared'
 
 const SESSION_TTL = 86_400 // 24 hours
 

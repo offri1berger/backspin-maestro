@@ -1,5 +1,5 @@
 import type { Server, Socket } from 'socket.io'
-import type { ServerToClientEvents, ClientToServerEvents } from '@hitster/shared'
+import type { ServerToClientEvents, ClientToServerEvents } from '@backspin-maestro/shared'
 import {
   getPlayerBySocketId, getSessionRoom, getPlayersByRoomCode,
   removeSessionPlayer, transferHost,

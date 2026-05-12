@@ -1,4 +1,4 @@
-# Hitster
+# Backspin Maestro
 
 A real-time multiplayer music-timeline game. Players hear a 30-second song preview and race to drop the card onto their personal timeline in the correct chronological slot. Place wrong and anyone with a token can attempt a steal. First player to fill their timeline wins the round.
 
@@ -10,7 +10,7 @@ Built as a learning ground for production-grade real-time architecture: typed en
 
 - **Real-time multiplayer over Socket.IO** with horizontal scaling via the Redis adapter
 - **Restart-durable game state** — steal/reveal timers live in BullMQ on Redis, not in-process `setTimeout`. Kill the server mid-turn and the next instance to come up resumes the game.
-- **Typed contracts end-to-end** — every client→server payload is a Zod schema in `@hitster/shared`, inferred to TypeScript and validated at the socket edge.
+- **Typed contracts end-to-end** — every client→server payload is a Zod schema in `@backspin-maestro/shared`, inferred to TypeScript and validated at the socket edge.
 - **Drag-and-drop placement** with `dnd-kit` and timeline reveal animations.
 - **Conductor role** (host) controls — start game, reset, kick players from the lobby.
 - **Production observability** — structured JSON logging (`pino`), Prometheus metrics behind a bearer token, distinct `/health` probe.
@@ -51,8 +51,8 @@ cp server/.env.example server/.env
 cp client/.env.example client/.env
 
 # 4. Run migrations + seed the songs catalog
-pnpm --filter @hitster/server migrate
-pnpm --filter @hitster/server seed
+pnpm --filter @backspin-maestro/server migrate
+pnpm --filter @backspin-maestro/server seed
 
 # 5. Run everything in watch mode
 pnpm dev
@@ -115,7 +115,7 @@ This design is what makes the server restart-safe and horizontally scalable:
 ## Project Structure
 
 ```
-hitster/
+backspin-maestro/
 ├── client/                  React SPA (Vite)
 │   └── src/
 │       ├── pages/           LobbyPage, WaitingRoomPage, GamePage, GameOverPage
@@ -145,7 +145,7 @@ hitster/
 │           ├── seed.ts        Songs catalog seed
 │           └── update-songs.ts Refresh Deezer metadata
 │
-├── shared/                  @hitster/shared — types, enums, Zod schemas, event signatures
+├── shared/                  @backspin-maestro/shared — types, enums, Zod schemas, event signatures
 │   └── src/
 │       ├── schemas.ts       Zod schemas (one per client→server payload)
 │       ├── events.ts        ClientToServerEvents / ServerToClientEvents + inferred types
@@ -166,19 +166,19 @@ Everything runs through pnpm workspaces from the repo root.
 | Task | Command |
 |---|---|
 | Start all packages in dev/watch mode | `pnpm dev` |
-| Run server only | `pnpm --filter @hitster/server dev` |
-| Run client only | `pnpm --filter @hitster/client dev` |
-| Type-check + build server | `pnpm --filter @hitster/server build` |
-| Type-check + build client | `pnpm --filter @hitster/client build` |
-| Lint client | `pnpm --filter @hitster/client exec eslint src` |
-| Run server tests | `pnpm --filter @hitster/server test` |
-| Watch server tests | `pnpm --filter @hitster/server test:watch` |
-| Run a single test file | `pnpm --filter @hitster/server test -- src/services/__tests__/gameService.test.ts` |
-| Run tests matching a name | `pnpm --filter @hitster/server test -- -t "validatePlacement"` |
-| Apply DB migrations | `pnpm --filter @hitster/server migrate` |
-| Roll back last migration | `pnpm --filter @hitster/server migrate:down` |
-| Seed songs | `pnpm --filter @hitster/server seed` |
-| Refresh song metadata from Deezer | `pnpm --filter @hitster/server update-songs` |
+| Run server only | `pnpm --filter @backspin-maestro/server dev` |
+| Run client only | `pnpm --filter @backspin-maestro/client dev` |
+| Type-check + build server | `pnpm --filter @backspin-maestro/server build` |
+| Type-check + build client | `pnpm --filter @backspin-maestro/client build` |
+| Lint client | `pnpm --filter @backspin-maestro/client exec eslint src` |
+| Run server tests | `pnpm --filter @backspin-maestro/server test` |
+| Watch server tests | `pnpm --filter @backspin-maestro/server test:watch` |
+| Run a single test file | `pnpm --filter @backspin-maestro/server test -- src/services/__tests__/gameService.test.ts` |
+| Run tests matching a name | `pnpm --filter @backspin-maestro/server test -- -t "validatePlacement"` |
+| Apply DB migrations | `pnpm --filter @backspin-maestro/server migrate` |
+| Roll back last migration | `pnpm --filter @backspin-maestro/server migrate:down` |
+| Seed songs | `pnpm --filter @backspin-maestro/server seed` |
+| Refresh song metadata from Deezer | `pnpm --filter @backspin-maestro/server update-songs` |
 
 The client has no tests yet. Only the server has a Jest suite (ESM mode via `NODE_OPTIONS=--experimental-vm-modules`).
 
@@ -190,10 +190,10 @@ The client has no tests yet. Only the server has a Jest suite (ESM mode via `NOD
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `DATABASE_URL` | `postgresql://hitster:hitster@localhost:5432/hitster` | Postgres connection |
+| `DATABASE_URL` | `postgresql://backspin_maestro:backspin_maestro@localhost:5432/backspin_maestro` | Postgres connection |
 | `REDIS_URL` | `redis://localhost:6379` | Redis (sessions + game cache + BullMQ + adapter) |
 | `CLIENT_URL` | `http://localhost:5173` | Allowed CORS origin |
-| `PORT` | `3001` | HTTP port |
+| `PORT` | `8080` | HTTP port |
 | `METRICS_TOKEN` | *(unset = disabled)* | Bearer token required to scrape `/metrics`. Fail-closed: if unset, `/metrics` returns 503. |
 | `LOG_LEVEL` | `info` | pino level: `trace` / `debug` / `info` / `warn` / `error` |
 
@@ -243,7 +243,7 @@ JSON to stdout via pino. Ship to Loki / Better Stack / Datadog / CloudWatch — 
 ## Testing
 
 ```bash
-pnpm --filter @hitster/server test
+pnpm --filter @backspin-maestro/server test
 ```
 
 Tests live in `__tests__/` directories adjacent to source (`server/src/services/__tests__/`, `server/src/socket/__tests__/`, `server/src/lib/__tests__/`). Redis is mocked via `ioredis-mock`, injected globally through Jest module mapping — so `server/src/lib/redis.ts` returns the mock automatically. Integration tests (`roomHandlers.integration.test.ts`) spin up a real Socket.IO server against the mocked Redis.
@@ -259,7 +259,7 @@ The single-host happy path: **Caddy in front of a containerized server + managed
 1. **TLS + WebSocket-aware proxy.** Caddy auto-provisions Let's Encrypt and forwards WS upgrades with zero config. nginx works but needs explicit `proxy_set_header Upgrade $http_upgrade` + `Connection "upgrade"` + a high `proxy_read_timeout`.
 2. **Managed Redis with persistence enabled.** BullMQ jobs and session state must survive restarts; pick a tier that supports AOF or RDB+AOF (Upstash, Redis Cloud, ElastiCache with the right config). The dev `docker-compose.yml` uses `redis-server --appendonly yes` as the template.
 3. **Sticky sessions on the LB** if you run >1 instance — Socket.IO's polling-to-WebSocket upgrade requires multiple HTTP requests landing on the same backend.
-4. **Run migrations as a pre-deploy step**, not in app boot. `pnpm --filter @hitster/server migrate` is idempotent.
+4. **Run migrations as a pre-deploy step**, not in app boot. `pnpm --filter @backspin-maestro/server migrate` is idempotent.
 5. **Health probes.** Hook `/health` into liveness *and* readiness for now; split into `/livez` and `/readyz` once you're large enough that DB blips would cascade.
 6. **Secrets from your platform**, not committed `.env` files. `METRICS_TOKEN`, `DATABASE_URL`, `REDIS_URL` all need to come from your secret store (Fly secrets, K8s secrets, Doppler, Vault).
 7. **Edge rate limiting and DDoS** via Cloudflare. The in-process per-socket limiter doesn't survive horizontal scale.
@@ -269,7 +269,7 @@ A minimal Caddyfile:
 ```
 yourdomain.com {
   encode gzip
-  reverse_proxy localhost:3001
+  reverse_proxy localhost:8080
 }
 ```
 
@@ -281,13 +281,13 @@ Out of the box, **Fly.io** and **Railway** handle TLS, WS upgrade, and sticky se
 
 ### "player_not_found" after a rejoin on the same machine
 
-The socket→player mapping is one-to-one: `socket:<socketId>` in Redis points to exactly one `playerId`. `updatePlayerSocketId` **deletes the old mapping before writing the new one**. So if two browser tabs share `localStorage.hitster_session` (same playerId), whichever tab rejoins *last* owns the mapping; the other tab becomes orphaned and every action returns `player_not_found`.
+The socket→player mapping is one-to-one: `socket:<socketId>` in Redis points to exactly one `playerId`. `updatePlayerSocketId` **deletes the old mapping before writing the new one**. So if two browser tabs share `localStorage.backspin_maestro_session` (same playerId), whichever tab rejoins *last* owns the mapping; the other tab becomes orphaned and every action returns `player_not_found`.
 
 **Fix:** for local multi-player testing, use different browsers, profiles, or incognito windows.
 
 ### Migrations fail with "relation does not exist"
 
-You started the server before running `pnpm --filter @hitster/server migrate`. Run migrations, then restart `pnpm dev`.
+You started the server before running `pnpm --filter @backspin-maestro/server migrate`. Run migrations, then restart `pnpm dev`.
 
 ### `bull:room-jobs:*` keys are not being created
 
@@ -321,7 +321,7 @@ Conventional Commits style (`feat:`, `fix:`, `feat(tests):`, `chore:`). See git 
 1. Branch from `main`.
 2. Add Zod schema, types, handler, listener — in that order.
 3. Add or update tests (`server/src/.../__tests__/`).
-4. `pnpm --filter @hitster/server test && pnpm --filter @hitster/client build`.
+4. `pnpm --filter @backspin-maestro/server test && pnpm --filter @backspin-maestro/client build`.
 5. Open a PR. CI runs type-check + lint + audit + Docker build (test step coming).
 
 See [`CLAUDE.md`](./CLAUDE.md) for AI-assistant-oriented notes on the codebase.

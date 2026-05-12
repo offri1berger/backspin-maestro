@@ -13,7 +13,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_GUESS_LENGTH,
   ROOM_CODE_LENGTH,
-} from '@hitster/shared'
+} from '@backspin-maestro/shared'
 
 const validUuid = '11111111-1111-4111-8111-111111111111'
 const validRoomCode = 'ABC123'

@@ -1,8 +1,8 @@
 {
-  "name": "hitster",
+  "name": "backspin-maestro",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"pnpm --filter @hitster/shared dev\" \"pnpm --filter @hitster/server dev\" \"pnpm --filter @hitster/client dev\""
+    "dev": "concurrently \"pnpm --filter @backspin-maestro/shared dev\" \"pnpm --filter @backspin-maestro/server dev\" \"pnpm --filter @backspin-maestro/client dev\""
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.59.1",

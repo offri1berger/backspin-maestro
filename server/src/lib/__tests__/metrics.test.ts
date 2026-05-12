@@ -11,9 +11,9 @@ import {
 describe('metrics registry', () => {
   it('exposes the prom-client text format', async () => {
     const body = await registry.metrics()
-    expect(body).toContain('hitster_jobs_completed_total')
-    expect(body).toContain('hitster_deezer_fetch_total')
-    expect(body).toContain('hitster_job_duration_seconds')
+    expect(body).toContain('backspin_maestro_jobs_completed_total')
+    expect(body).toContain('backspin_maestro_deezer_fetch_total')
+    expect(body).toContain('backspin_maestro_job_duration_seconds')
   })
 
   it('records counter increments by label', async () => {
@@ -22,8 +22,8 @@ describe('metrics registry', () => {
     deezerFetches.inc({ result: 'fail' })
 
     const body = await registry.metrics()
-    expect(body).toMatch(/hitster_deezer_fetch_total\{result="ok"} 2/)
-    expect(body).toMatch(/hitster_deezer_fetch_total\{result="fail"} 1/)
+    expect(body).toMatch(/backspin_maestro_deezer_fetch_total\{result="ok"} 2/)
+    expect(body).toMatch(/backspin_maestro_deezer_fetch_total\{result="fail"} 1/)
   })
 
   it('records job lifecycle counters with the job_name label', async () => {
@@ -32,9 +32,9 @@ describe('metrics registry', () => {
     jobsStalled.inc()
 
     const body = await registry.metrics()
-    expect(body).toMatch(/hitster_jobs_completed_total\{job_name="steal:fire"} 1/)
-    expect(body).toMatch(/hitster_jobs_failed_total\{job_name="card-reveal"} 1/)
-    expect(body).toMatch(/hitster_jobs_stalled_total 1/)
+    expect(body).toMatch(/backspin_maestro_jobs_completed_total\{job_name="steal:fire"} 1/)
+    expect(body).toMatch(/backspin_maestro_jobs_failed_total\{job_name="card-reveal"} 1/)
+    expect(body).toMatch(/backspin_maestro_jobs_stalled_total 1/)
   })
 
   it('records histogram observations into buckets', async () => {
@@ -43,6 +43,6 @@ describe('metrics registry', () => {
 
     const body = await registry.metrics()
     // count of observations should be reflected for that label
-    expect(body).toMatch(/hitster_job_duration_seconds_count\{job_name="card-reveal"} 2/)
+    expect(body).toMatch(/backspin_maestro_job_duration_seconds_count\{job_name="card-reveal"} 2/)
   })
 })

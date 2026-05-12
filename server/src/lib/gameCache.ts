@@ -1,6 +1,6 @@
 import { redis } from './redis.js'
 import { safeJsonParse } from './safeJson.js'
-import type { GamePhase } from '@hitster/shared'
+import type { GamePhase } from '@backspin-maestro/shared'
 
 export interface CachedGameState {
   phase: GamePhase

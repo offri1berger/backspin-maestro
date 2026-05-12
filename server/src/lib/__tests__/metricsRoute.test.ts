@@ -60,6 +60,6 @@ describe('GET /metrics', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toMatch(/text\/plain/)
     const body = await res.text()
-    expect(body).toContain('hitster_')
+    expect(body).toContain('backspin_maestro_')
   })
 })

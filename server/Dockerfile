@@ -14,8 +14,8 @@ FROM deps AS build
 COPY shared/ ./shared/
 COPY server/ ./server/
 COPY tsconfig.json ./
-RUN pnpm --filter @hitster/shared build
-RUN pnpm --filter @hitster/server build
+RUN pnpm --filter @backspin-maestro/shared build
+RUN pnpm --filter @backspin-maestro/server build
 
 # ── runtime ───────────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime
@@ -33,7 +33,7 @@ RUN addgroup -S app && adduser -S app -G app
 USER app
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -qO- http://localhost:3001/health || exit 1
+  CMD wget -qO- http://localhost:8080/health || exit 1
 
-EXPOSE 3001
+EXPOSE 8080
 ENTRYPOINT ["./entrypoint.sh"]

@@ -22,19 +22,63 @@ export type StealPayload = z.infer<typeof StealPayloadSchema>
 export type DragMovePayload = z.infer<typeof DragMovePayloadSchema>
 export type KickPayload = z.infer<typeof KickPayloadSchema>
 
+// Generic ack envelope for client→server commands. The error union narrows
+// per-event so clients can exhaustively switch on `error`.
+export type AckResult<E extends string = string> =
+  | { success: true }
+  | { success: false; error: E }
+
 export type CreateRoomResult =
   | { success: true; roomCode: string; playerId: string; timeline: TimelineEntry[] }
   | { success: false; error: 'invalid_payload' | 'rate_limited' | 'server_error' }
 
-export interface JoinRoomResult {
-  success: boolean
-  error?: 'room_not_found' | 'room_full' | 'game_already_started' | 'invalid_payload' | 'rate_limited' | 'server_error'
-  roomCode?: string
-  playerId?: string
-  players?: Player[]
-  settings?: RoomSettings
-  timeline?: TimelineEntry[]
-}
+export type JoinRoomResult =
+  | {
+      success: true
+      roomCode: string
+      playerId: string
+      players: Player[]
+      settings: RoomSettings
+      timeline: TimelineEntry[]
+    }
+  | {
+      success: false
+      error: 'room_not_found' | 'room_full' | 'game_already_started' | 'invalid_payload' | 'rate_limited' | 'server_error'
+    }
+
+export type RoomResetResult = AckResult<
+  | 'rate_limited' | 'not_in_room' | 'room_not_found' | 'not_host' | 'server_error'
+>
+
+export type GameStartResult = AckResult<
+  | 'rate_limited' | 'not_in_room' | 'room_not_found' | 'game_already_started'
+  | 'not_host' | 'not_enough_players' | 'server_error'
+>
+
+export type SongSkipResult = AckResult<
+  | 'rate_limited' | 'not_in_room' | 'game_not_found' | 'wrong_phase'
+  | 'player_not_found' | 'not_your_turn' | 'insufficient_tokens'
+  | 'no_songs_left' | 'server_error'
+>
+
+export type CardPlaceResult = AckResult<
+  | 'rate_limited' | 'invalid_payload' | 'not_in_room' | 'player_not_found'
+  | 'game_not_found' | 'wrong_phase' | 'not_your_turn' | 'no_current_song'
+  | 'invalid_position' | 'server_error'
+>
+
+export type StealAttemptResult = AckResult<
+  | 'rate_limited' | 'invalid_payload' | 'not_in_room' | 'game_not_found'
+  | 'no_current_song' | 'steal_window_closed' | 'no_pending_result'
+  | 'player_not_found' | 'target_not_found' | 'cannot_steal_from_self'
+  | 'insufficient_tokens' | 'server_error'
+>
+
+export type ConductorKickResult = AckResult<
+  | 'rate_limited' | 'invalid_payload' | 'player_not_found' | 'not_in_room'
+  | 'not_conductor' | 'cannot_kick_self' | 'room_not_found' | 'not_in_lobby'
+  | 'target_not_found' | 'server_error'
+>
 
 export interface PlacementResultPayload {
   playerId: string
@@ -92,15 +136,15 @@ export interface ClientToServerEvents {
   'room:join': (payload: JoinRoomPayload, cb: (result: JoinRoomResult) => void) => void
   'room:rejoin': (payload: RejoinPayload, cb: (result: RejoinResult) => void) => void
   'room:leave': () => void
-  'room:reset': (cb: (error?: string) => void) => void
-  'game:start': (cb: (error?: string) => void) => void
+  'room:reset': (cb: (result: RoomResetResult) => void) => void
+  'game:start': (cb: (result: GameStartResult) => void) => void
   'song:guess': (payload: GuessPayload) => void
-  'song:skip': (cb: (error?: string) => void) => void
-  'card:place': (payload: PlacePayload, cb: (error?: string) => void) => void
-  'steal:attempt': (payload: StealPayload, cb: (error?: string) => void) => void
+  'song:skip': (cb: (result: SongSkipResult) => void) => void
+  'card:place': (payload: PlacePayload, cb: (result: CardPlaceResult) => void) => void
+  'steal:attempt': (payload: StealPayload, cb: (result: StealAttemptResult) => void) => void
   'steal:initiated': () => void
   'audio:play': () => void
   'audio:pause': () => void
   'drag:move': (payload: DragMovePayload) => void
-  'conductor:kick': (payload: KickPayload, cb: (error?: string) => void) => void
+  'conductor:kick': (payload: KickPayload, cb: (result: ConductorKickResult) => void) => void
 }

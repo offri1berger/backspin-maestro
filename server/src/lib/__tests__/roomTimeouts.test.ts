@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterAll, jest } from '@jest/globals'
 import RedisMock from 'ioredis-mock'
-import type { PlacementResultPayload } from '@hitster/shared'
+import type { PlacementResultPayload } from '@backspin-maestro/shared'
 
 const redis = new RedisMock()
 

@@ -9,27 +9,27 @@ export const registry = new Registry()
 // ── Counters & histograms (recorded by the rest of the codebase) ────────────
 
 export const jobsCompleted = new Counter({
-  name: 'hitster_jobs_completed_total',
+  name: 'backspin_maestro_jobs_completed_total',
   help: 'BullMQ jobs that finished successfully',
   labelNames: ['job_name'] as const,
   registers: [registry],
 })
 
 export const jobsFailed = new Counter({
-  name: 'hitster_jobs_failed_total',
+  name: 'backspin_maestro_jobs_failed_total',
   help: 'BullMQ jobs that threw',
   labelNames: ['job_name'] as const,
   registers: [registry],
 })
 
 export const jobsStalled = new Counter({
-  name: 'hitster_jobs_stalled_total',
+  name: 'backspin_maestro_jobs_stalled_total',
   help: 'BullMQ jobs reported as stalled by the worker',
   registers: [registry],
 })
 
 export const jobDuration = new Histogram({
-  name: 'hitster_job_duration_seconds',
+  name: 'backspin_maestro_job_duration_seconds',
   help: 'BullMQ worker job processing duration',
   labelNames: ['job_name'] as const,
   buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10],
@@ -37,7 +37,7 @@ export const jobDuration = new Histogram({
 })
 
 export const deezerFetches = new Counter({
-  name: 'hitster_deezer_fetch_total',
+  name: 'backspin_maestro_deezer_fetch_total',
   help: 'Outbound calls to Deezer to refresh a song preview URL',
   labelNames: ['result'] as const, // 'ok' | 'fail'
   registers: [registry],
@@ -45,14 +45,14 @@ export const deezerFetches = new Counter({
 
 // ── Gauges (computed fresh on each scrape) ──────────────────────────────────
 
-const queueWaiting = new Gauge({ name: 'hitster_queue_waiting', help: 'BullMQ waiting count', registers: [registry] })
-const queueActive = new Gauge({ name: 'hitster_queue_active', help: 'BullMQ active count', registers: [registry] })
-const queueDelayed = new Gauge({ name: 'hitster_queue_delayed', help: 'BullMQ delayed count', registers: [registry] })
-const queueFailed = new Gauge({ name: 'hitster_queue_failed', help: 'BullMQ failed count', registers: [registry] })
-const queuePaused = new Gauge({ name: 'hitster_queue_paused', help: 'BullMQ paused count', registers: [registry] })
-const socketsConnected = new Gauge({ name: 'hitster_sockets_connected', help: 'Currently connected client sockets', registers: [registry] })
-const roomsActive = new Gauge({ name: 'hitster_rooms_active', help: 'Rooms with at least one connected socket on this instance', registers: [registry] })
-const disconnectTimers = new Gauge({ name: 'hitster_disconnect_grace_timers', help: 'Players currently in the disconnect grace window', registers: [registry] })
+const queueWaiting = new Gauge({ name: 'backspin_maestro_queue_waiting', help: 'BullMQ waiting count', registers: [registry] })
+const queueActive = new Gauge({ name: 'backspin_maestro_queue_active', help: 'BullMQ active count', registers: [registry] })
+const queueDelayed = new Gauge({ name: 'backspin_maestro_queue_delayed', help: 'BullMQ delayed count', registers: [registry] })
+const queueFailed = new Gauge({ name: 'backspin_maestro_queue_failed', help: 'BullMQ failed count', registers: [registry] })
+const queuePaused = new Gauge({ name: 'backspin_maestro_queue_paused', help: 'BullMQ paused count', registers: [registry] })
+const socketsConnected = new Gauge({ name: 'backspin_maestro_sockets_connected', help: 'Currently connected client sockets', registers: [registry] })
+const roomsActive = new Gauge({ name: 'backspin_maestro_rooms_active', help: 'Rooms with at least one connected socket on this instance', registers: [registry] })
+const disconnectTimers = new Gauge({ name: 'backspin_maestro_disconnect_grace_timers', help: 'Players currently in the disconnect grace window', registers: [registry] })
 
 // Room codes are 6 char [A-Z0-9]. Used to distinguish real rooms from each
 // socket's auto-joined personal room (which is keyed by socket id).

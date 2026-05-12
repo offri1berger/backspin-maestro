@@ -9,19 +9,19 @@ Everything runs through pnpm workspaces from the repo root.
 | Task | Command |
 |---|---|
 | Start all packages in dev/watch mode | `pnpm dev` |
-| Run server only | `pnpm --filter @hitster/server dev` |
-| Run client only | `pnpm --filter @hitster/client dev` |
-| Type-check + build server | `pnpm --filter @hitster/server build` |
-| Type-check + build client | `pnpm --filter @hitster/client build` |
-| Lint client | `pnpm --filter @hitster/client exec eslint src` |
-| Run server tests | `pnpm --filter @hitster/server test` |
-| Watch server tests | `pnpm --filter @hitster/server test:watch` |
-| Run a single test file | `pnpm --filter @hitster/server test -- src/services/__tests__/gameService.test.ts` |
-| Run tests matching a name | `pnpm --filter @hitster/server test -- -t "validatePlacement"` |
-| Apply DB migrations | `pnpm --filter @hitster/server migrate` |
-| Roll back last migration | `pnpm --filter @hitster/server migrate:down` |
-| Seed songs | `pnpm --filter @hitster/server seed` |
-| Refresh song metadata | `pnpm --filter @hitster/server update-songs` |
+| Run server only | `pnpm --filter @backspin-maestro/server dev` |
+| Run client only | `pnpm --filter @backspin-maestro/client dev` |
+| Type-check + build server | `pnpm --filter @backspin-maestro/server build` |
+| Type-check + build client | `pnpm --filter @backspin-maestro/client build` |
+| Lint client | `pnpm --filter @backspin-maestro/client exec eslint src` |
+| Run server tests | `pnpm --filter @backspin-maestro/server test` |
+| Watch server tests | `pnpm --filter @backspin-maestro/server test:watch` |
+| Run a single test file | `pnpm --filter @backspin-maestro/server test -- src/services/__tests__/gameService.test.ts` |
+| Run tests matching a name | `pnpm --filter @backspin-maestro/server test -- -t "validatePlacement"` |
+| Apply DB migrations | `pnpm --filter @backspin-maestro/server migrate` |
+| Roll back last migration | `pnpm --filter @backspin-maestro/server migrate:down` |
+| Seed songs | `pnpm --filter @backspin-maestro/server seed` |
+| Refresh song metadata | `pnpm --filter @backspin-maestro/server update-songs` |
 
 Infrastructure (Postgres + Redis) is brought up with `docker compose up -d`. Both env files must exist before `pnpm dev` (`server/.env`, `client/.env`).
 
@@ -39,8 +39,8 @@ The client has no tests. Only the server has a Jest suite (ESM mode via `NODE_OP
 
 Three packages, all TypeScript:
 
-- `shared/` — `@hitster/shared`. Types, enums, Socket.IO event signatures, and **Zod schemas** for every client→server payload. Both client and server import from here. Built to `dist/` and consumed via `workspace:*`.
-- `server/` — Express + Socket.IO. Imports from `@hitster/shared`. ESM (`"type": "module"` is implicit via tsx watch; emitted JS uses `.js` import specifiers — see `moduleNameMapper` in `jest.config.js`).
+- `shared/` — `@backspin-maestro/shared`. Types, enums, Socket.IO event signatures, and **Zod schemas** for every client→server payload. Both client and server import from here. Built to `dist/` and consumed via `workspace:*`.
+- `server/` — Express + Socket.IO. Imports from `@backspin-maestro/shared`. ESM (`"type": "module"` is implicit via tsx watch; emitted JS uses `.js` import specifiers — see `moduleNameMapper` in `jest.config.js`).
 - `client/` — React 19 SPA. Vite + Tailwind v4 + Zustand + React Router 7 + dnd-kit.
 
 ### Data + state layers (server)
@@ -55,9 +55,9 @@ If `gameState` returns null but the room still exists, the room is in lobby/fini
 
 ### Socket→player mapping (the rejoin trap)
 
-Each socket connection maps to exactly one `playerId` via Redis key `socket:<socketId>`. **`updatePlayerSocketId` deletes the old mapping before writing the new one** (`server/src/lib/session.ts`). This means: if two browser tabs share `localStorage.hitster_session` (same playerId), whichever tab rejoins *last* owns the mapping; the other tab's socket becomes orphaned and every action returns `player_not_found`. For local multi-player testing, use different browsers/profiles or incognito.
+Each socket connection maps to exactly one `playerId` via Redis key `socket:<socketId>`. **`updatePlayerSocketId` deletes the old mapping before writing the new one** (`server/src/lib/session.ts`). This means: if two browser tabs share `localStorage.backspin_maestro_session` (same playerId), whichever tab rejoins *last* owns the mapping; the other tab's socket becomes orphaned and every action returns `player_not_found`. For local multi-player testing, use different browsers/profiles or incognito.
 
-The client persists `{ roomCode, playerId }` in `localStorage.hitster_session` and the `connect` handler in `client/src/hooks/useSocket.ts` always emits `room:rejoin` on (re)connection. The rejoin callback guards against stale state by checking `store.roomCode !== saved.roomCode` before applying — needed because a stale rejoin response can otherwise clobber a freshly-created room (race between `room:create` and an in-flight `room:rejoin`).
+The client persists `{ roomCode, playerId }` in `localStorage.backspin_maestro_session` and the `connect` handler in `client/src/hooks/useSocket.ts` always emits `room:rejoin` on (re)connection. The rejoin callback guards against stale state by checking `store.roomCode !== saved.roomCode` before applying — needed because a stale rejoin response can otherwise clobber a freshly-created room (race between `room:create` and an in-flight `room:rejoin`).
 
 ### Turn timing: BullMQ, not setTimeout
 
@@ -101,10 +101,10 @@ The `useSocket()` hook (mounted once in `App.tsx`) is the **only** place that re
 
 **Metrics** — Prometheus exposition at `GET /metrics`, gated behind `Authorization: Bearer ${METRICS_TOKEN}`. Unset token → route returns 503 (fail-closed). Counters/histograms in `server/src/lib/metrics.ts`:
 
-- `hitster_jobs_completed_total{job_name}`, `hitster_jobs_failed_total{job_name}`, `hitster_jobs_stalled_total`
-- `hitster_job_duration_seconds{job_name}` (histogram, default buckets 10ms–10s)
-- `hitster_deezer_fetch_total{result="ok|fail"}`
-- Gauges refreshed on each scrape from live sources: `hitster_queue_{waiting,active,delayed,failed,paused}` (BullMQ), `hitster_sockets_connected` (socket.io), `hitster_rooms_active` (rooms with a connected socket on this instance — `[A-Z0-9]{6}` regex filters out socket-id pseudo-rooms), `hitster_disconnect_grace_timers` (in-flight reconnect timers).
+- `backspin_maestro_jobs_completed_total{job_name}`, `backspin_maestro_jobs_failed_total{job_name}`, `backspin_maestro_jobs_stalled_total`
+- `backspin_maestro_job_duration_seconds{job_name}` (histogram, default buckets 10ms–10s)
+- `backspin_maestro_deezer_fetch_total{result="ok|fail"}`
+- Gauges refreshed on each scrape from live sources: `backspin_maestro_queue_{waiting,active,delayed,failed,paused}` (BullMQ), `backspin_maestro_sockets_connected` (socket.io), `backspin_maestro_rooms_active` (rooms with a connected socket on this instance — `[A-Z0-9]{6}` regex filters out socket-id pseudo-rooms), `backspin_maestro_disconnect_grace_timers` (in-flight reconnect timers).
 
 When wiring a new background job or external call, increment the appropriate counter at the event site — gauges are computed-on-read, counters/histograms are recorded by the code path.
 

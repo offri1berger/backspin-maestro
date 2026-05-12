@@ -23,25 +23,25 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Type-check shared
-        run: pnpm --filter @hitster/shared build
+        run: pnpm --filter @backspin-maestro/shared build
 
       - name: Type-check server
-        run: pnpm --filter @hitster/server build
+        run: pnpm --filter @backspin-maestro/server build
 
       - name: Type-check + build client
-        run: pnpm --filter @hitster/client build
+        run: pnpm --filter @backspin-maestro/client build
 
       - name: Lint client
-        run: pnpm --filter @hitster/client exec eslint src
+        run: pnpm --filter @backspin-maestro/client exec eslint src
 
       - name: Lint server
-        run: pnpm --filter @hitster/server exec eslint src
+        run: pnpm --filter @backspin-maestro/server exec eslint src
 
       - name: Test server
-        run: pnpm --filter @hitster/server test
+        run: pnpm --filter @backspin-maestro/server test
 
       - name: Test client
-        run: pnpm --filter @hitster/client test
+        run: pnpm --filter @backspin-maestro/client test
 
       - name: Audit dependencies
         run: pnpm audit --audit-level=high

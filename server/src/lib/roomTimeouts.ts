@@ -1,4 +1,4 @@
-import type { PlacementResultPayload } from '@hitster/shared'
+import type { PlacementResultPayload } from '@backspin-maestro/shared'
 import { redis } from './redis.js'
 import { safeJsonParse } from './safeJson.js'
 
