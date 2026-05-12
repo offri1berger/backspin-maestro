@@ -22,8 +22,8 @@ import {
 } from '../lib/roomTimeouts.js'
 import {
   scheduleStealFire, cancelStealFire, scheduleCardReveal,
-  CARD_REVEAL_MS,
 } from '../lib/jobs.js'
+import { config } from '../lib/config.js'
 import { parsePayload } from '../lib/validate.js'
 import { logger } from '../lib/logger.js'
 import { getSocketRoomCode } from '../lib/socketRoom.js'
@@ -32,8 +32,6 @@ import { toSong } from '../services/mappers.js'
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
 
-const STEAL_WINDOW_MS = 5_000
-const STEAL_EXTENDED_MS = 10_000
 
 export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
   socket.on('card:place', async (payload, cb) => {
@@ -58,7 +56,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       }
 
       await openStealWindow(roomCode, placementPayload)
-      await scheduleStealFire({ roomCode, payload: placementPayload }, STEAL_WINDOW_MS)
+      await scheduleStealFire({ roomCode, payload: placementPayload }, config.stealWindowMs)
 
       io.to(roomCode).emit('steal:open', player.id, data.position)
       cb()
@@ -134,7 +132,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       await scheduleCardReveal({
         roomCode,
         candidateWinnerId: stealCorrect ? stealer.id : undefined,
-      }, CARD_REVEAL_MS)
+      }, config.cardRevealMs)
     } catch (err) {
       logger.error({ err }, 'steal:attempt handler threw')
       cb('server_error')
@@ -157,7 +155,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
     if (stealer.tokens < 1) return
 
     // Replace the in-flight steal-fire job with the extended-delay version.
-    await scheduleStealFire({ roomCode, payload: pending }, STEAL_EXTENDED_MS)
+    await scheduleStealFire({ roomCode, payload: pending }, config.stealExtendedMs)
 
     io.to(roomCode).emit('steal:extended', stealerId)
   })

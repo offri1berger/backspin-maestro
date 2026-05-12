@@ -17,6 +17,7 @@ import { parsePayload } from '../lib/validate.js'
 import { requireConductor } from '../lib/authz.js'
 import { logger } from '../lib/logger.js'
 import { getSocketRoomCode } from '../lib/socketRoom.js'
+import { config } from '../lib/config.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
@@ -50,7 +51,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
         id: result.playerId!,
         name: data.playerName,
         avatar: data.avatar,
-        tokens: 2,
+        tokens: config.starterTokens,
         isHost: false,
         turnOrder: 0,
         timeline: result.timeline ?? [],

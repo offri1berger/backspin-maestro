@@ -21,11 +21,10 @@ import { toPlayerWithTimeline } from '../services/mappers.js'
 import { deleteUsedSongs } from './gameCache.js'
 import { logger } from './logger.js'
 import { jobDuration, jobsCompleted, jobsFailed, jobsStalled } from './metrics.js'
+import { config } from './config.js'
 
 const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379'
 const QUEUE_NAME = 'room-jobs'
-
-export const CARD_REVEAL_MS = 3_000
 
 export interface StealFireData {
   roomCode: string
@@ -141,7 +140,7 @@ const processStealFire = async (io: IoServer, data: StealFireData): Promise<void
     }
   }
 
-  await scheduleCardReveal({ roomCode }, CARD_REVEAL_MS)
+  await scheduleCardReveal({ roomCode }, config.cardRevealMs)
 }
 
 const processCardReveal = async (io: IoServer, data: CardRevealData): Promise<void> => {

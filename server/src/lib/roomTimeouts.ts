@@ -1,6 +1,6 @@
 import type { PlacementResultPayload } from '@hitster/shared'
 import { redis } from './redis.js'
-import { logger } from './logger.js'
+import { safeJsonParse } from './safeJson.js'
 
 const PENDING_TTL_SECONDS = 60
 const RESOLVED_TTL_SECONDS = 60
@@ -34,13 +34,9 @@ export const getPending = async (
 ): Promise<PlacementResultPayload | null> => {
   const data = await redis.get(pendingKey(roomCode))
   if (!data) return null
-  try {
-    return JSON.parse(data) as PlacementResultPayload
-  } catch (err) {
-    logger.error({ err, roomCode }, 'getPending: corrupt redis payload, dropping')
-    await redis.del(pendingKey(roomCode))
-    return null
-  }
+  const parsed = safeJsonParse<PlacementResultPayload>(data, `pending:${roomCode}`)
+  if (!parsed) await redis.del(pendingKey(roomCode))
+  return parsed
 }
 
 export const clearPending = async (roomCode: string): Promise<void> => {

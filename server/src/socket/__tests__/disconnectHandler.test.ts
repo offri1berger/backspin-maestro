@@ -18,7 +18,6 @@ jest.unstable_mockModule('../../lib/jobs.js', () => ({
   cancelCardReveal: jest.fn(),
   startRoomWorker: jest.fn(),
   closeRoomQueue: jest.fn(),
-  CARD_REVEAL_MS: 3000,
 }))
 
 interface MockSong {

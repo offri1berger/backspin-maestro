@@ -44,7 +44,6 @@ jest.unstable_mockModule('../../lib/jobs.js', () => ({
   cancelRoomTimers: jest.fn(),
   startRoomWorker: jest.fn(),
   closeRoomQueue: jest.fn(),
-  CARD_REVEAL_MS: 3000,
 }))
 
 jest.unstable_mockModule('../../db/database.js', () => ({

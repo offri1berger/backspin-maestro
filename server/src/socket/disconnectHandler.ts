@@ -8,11 +8,10 @@ import { getGameState } from '../lib/gameCache.js'
 import { nextTurnService } from '../services/gameService.js'
 import { cancelRoomTimers } from '../lib/jobs.js'
 import { logger } from '../lib/logger.js'
+import { config } from '../lib/config.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
-
-const RECONNECT_GRACE_MS = 30_000
 
 const disconnectTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
@@ -67,7 +66,7 @@ export const handleDisconnect = async (io: IoServer, socket: IoSocket) => {
     finalizeDisconnect(io, player.id, roomCode).catch((err) =>
       logger.error({ err, playerId: player.id, roomCode }, 'finalizeDisconnect failed'),
     )
-  }, RECONNECT_GRACE_MS)
+  }, config.reconnectGraceMs)
 
   disconnectTimers.set(player.id, t)
 }

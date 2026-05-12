@@ -5,6 +5,7 @@ import { getGameState, deleteGameState, deleteUsedSongs } from '../lib/gameCache
 import { db } from '../db/database.js'
 import { getRandomSong, markSongAsUsed } from './songService.js'
 import { toSong, toPlayer, toPlayerWithTimeline } from './mappers.js'
+import { config } from '../lib/config.js'
 import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, RejoinResult, Player, GameState, TimelineEntry } from '@hitster/shared'
 
 type CreateRoomSuccess = { roomCode: string; playerId: string; timeline: TimelineEntry[] }
@@ -37,7 +38,7 @@ export const createRoomService = async (
     name: payload.hostName,
     avatar: payload.avatar ?? '',
     socketId,
-    tokens: 2,
+    tokens: config.starterTokens,
     isHost: true,
     turnOrder: 0,
   })
@@ -64,7 +65,7 @@ export const joinRoomService = async (
     name: payload.playerName,
     avatar: payload.avatar ?? '',
     socketId,
-    tokens: 2,
+    tokens: config.starterTokens,
     isHost: false,
     turnOrder: 0,
   })
