@@ -4,7 +4,9 @@ import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
-  PointerSensor,
+  MeasuringStrategy,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type Announcements,
@@ -73,9 +75,19 @@ const Timeline = ({
   const visualPendingPos = placementResult ? null : pendingPos
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    // Long-press on touch so vertical scroll keeps working until the user
+    // commits to a drag. Tolerance lets a slight finger wobble during the
+    // hold still count as a press, not a cancel.
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
     useSensor(KeyboardSensor),
   )
+
+  const vibrate = (pattern: number | number[]) => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(pattern)
+    }
+  }
 
   const slotCount = timeline.length + 1
   const slotDescription = (i: number): string => {
@@ -113,7 +125,10 @@ const Timeline = ({
   const handleDragOver = (event: DragOverEvent) => {
     if (!isMyTurn) return
     const slot = event.over ? Number(event.over.id) : null
-    setDragOverSlot(slot)
+    setDragOverSlot((prev) => {
+      if (slot !== prev && slot !== null) vibrate(4)
+      return slot
+    })
     emitDragSlot(slot)
   }
 
@@ -122,12 +137,27 @@ const Timeline = ({
     setDragOverSlot(null)
     const { over } = event
     if (isMyTurn) emitDragSlot(over ? Number(over.id) : null)
-    if (!over) return
+    if (!over) {
+      vibrate(6)
+      return
+    }
+    vibrate(12)
     if (autoConfirm) {
       onPlace?.(Number(over.id))
     } else {
       setPending(Number(over.id))
     }
+  }
+
+  const handleDragStart = () => {
+    setDragging(true)
+    vibrate(8)
+  }
+
+  const handleDragCancel = () => {
+    setDragging(false)
+    setDragOverSlot(null)
+    if (isMyTurn) emitDragSlot(null)
   }
 
   useEffect(() => {
@@ -166,9 +196,11 @@ const Timeline = ({
       <DndContext
         sensors={sensors}
         accessibility={{ announcements }}
-        onDragStart={() => setDragging(true)}
+        measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+        onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
         <div className="flex flex-col gap-2">
           {Array.from({ length: slots }).map((_, i) => {
@@ -182,7 +214,12 @@ const Timeline = ({
                   isPendingSlot ? (
                     <SongCard draggable isWaiting={false} fullWidth hint={hint} />
                   ) : (
-                    <VSlot id={i} label={slotLabel(i)} ariaLabel={`Slot ${i + 1} of ${slots} — ${slotDescription(i)}`} />
+                    <VSlot
+                      id={i}
+                      label={slotLabel(i)}
+                      ariaLabel={`Slot ${i + 1} of ${slots} — ${slotDescription(i)}`}
+                      armed={dragging}
+                    />
                   )
                 ) : showSpectator ? (
                   <MysteryCardFace fullWidth />
@@ -197,7 +234,7 @@ const Timeline = ({
           {isMyTurn && currentSong && !isWaiting && pendingPos === null && (
             <div className="pt-1">
               <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted text-center mb-2">
-                drag to a slot to place
+                press &amp; hold · drag to a slot
               </div>
               <SongCard draggable isWaiting={false} fullWidth />
             </div>
@@ -208,10 +245,15 @@ const Timeline = ({
           )}
         </div>
 
-        <DragOverlay>
+        <DragOverlay dropAnimation={null}>
           {dragging && (
-            <div className="scale-[1.08] origin-center">
-              <MysteryCardFace />
+            <div
+              className="w-full -rotate-2 scale-[1.04]"
+              style={{
+                filter: 'drop-shadow(0 18px 32px rgba(0,0,0,0.5)) drop-shadow(0 0 24px color-mix(in oklch, var(--color-accent) 35%, transparent))',
+              }}
+            >
+              <MysteryCardFace fullWidth />
             </div>
           )}
         </DragOverlay>
@@ -224,9 +266,11 @@ const Timeline = ({
     <DndContext
       sensors={sensors}
       accessibility={{ announcements }}
-      onDragStart={() => setDragging(true)}
+      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+      onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
       <div className="flex flex-col gap-3">
         <div

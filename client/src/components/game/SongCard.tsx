@@ -103,7 +103,15 @@ const SongCard = ({ draggable, isWaiting, fullWidth = false, hint }: Props) => {
         opacity: isDragging ? 0.3 : 1,
         cursor: draggable ? 'grab' : 'default',
         width: fullWidth ? '100%' : undefined,
+        // Stop the browser from interpreting the press as a scroll/zoom/long-tap
+        // popup so the TouchSensor's delay can promote it to a drag cleanly.
+        touchAction: draggable ? 'none' : undefined,
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+        transition: 'transform 120ms ease',
       }}
+      className={draggable && !isDragging ? 'active:scale-[0.97]' : undefined}
       {...(draggable ? { ...listeners, ...attributes } : {})}
     >
       <MysteryCardFace fullWidth={fullWidth} hint={hint} />

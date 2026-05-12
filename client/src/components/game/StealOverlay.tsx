@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
+import { useIsMobile } from '../../hooks/useMediaQuery'
 import Timeline from './Timeline'
 
 interface Props {
@@ -18,6 +19,7 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
   // closes, so it remounts fresh for each new steal cycle.
   const [pendingPosition, setPendingPosition] = useState<number | null>(stealOriginalPosition)
   const trapRef = useFocusTrap<HTMLDivElement>(true)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -37,11 +39,11 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
       role="dialog"
       aria-modal="true"
       aria-label="Steal attempt"
-      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      className="fixed inset-0 z-50 flex items-start lg:items-center justify-center p-3 lg:p-6 overflow-y-auto"
       style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(10px)' }}
     >
       <div
-        className="w-full max-w-[620px] bg-bg rounded-[32px] p-9 border border-line relative overflow-hidden"
+        className="w-full max-w-[620px] bg-bg rounded-[24px] lg:rounded-[32px] p-5 lg:p-9 border border-line relative my-auto"
         style={{ boxShadow: '0 40px 100px rgba(0,0,0,0.45)' }}
       >
         {/* background glow */}
@@ -55,12 +57,12 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
         />
 
         {/* header */}
-        <div className="flex items-start justify-between mb-6 relative z-[1]">
+        <div className="flex items-start justify-between mb-4 lg:mb-6 relative z-[1]">
           <div>
-            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-muted mb-2">
+            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-muted mb-1 lg:mb-2">
               Steal attempt
             </div>
-            <h2 className="font-display text-[38px] leading-none tracking-[-0.03em] m-0 text-on-bg">
+            <h2 className="font-display text-2xl lg:text-[38px] leading-none tracking-[-0.03em] m-0 text-on-bg">
               Steal the card
             </h2>
           </div>
@@ -73,9 +75,9 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
         </div>
 
         {/* countdown ring */}
-        <div className="flex justify-center mb-7 relative z-[1]">
+        <div className="flex justify-center mb-4 lg:mb-7 relative z-[1]">
           <div
-            className="w-[120px] h-[120px] rounded-full flex items-center justify-center"
+            className="w-20 h-20 lg:w-[120px] lg:h-[120px] rounded-full flex items-center justify-center"
             style={{
               border: `6px solid ${isDanger ? 'var(--color-bad)' : 'var(--color-accent)'}`,
               background: 'color-mix(in oklch, var(--color-surface) 80%, transparent)',
@@ -87,12 +89,12 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
           >
             <div className="flex flex-col items-center leading-none">
               <span
-                className="font-display text-[52px]"
+                className="font-display text-[34px] lg:text-[52px]"
                 style={{ color: isDanger ? 'var(--color-bad)' : 'var(--color-accent)' }}
               >
                 {countdown}
               </span>
-              <span className="mt-1 font-mono text-[9px] tracking-[0.16em] uppercase text-muted">
+              <span className="mt-0.5 lg:mt-1 font-mono text-[9px] tracking-[0.16em] uppercase text-muted">
                 seconds
               </span>
             </div>
@@ -100,7 +102,7 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
         </div>
 
         {/* description */}
-        <div className="text-center mb-7 relative z-[1]">
+        <div className="text-center mb-4 lg:mb-7 relative z-[1]">
           <p className="text-muted text-[15px] leading-relaxed m-0">
             Place the song correctly in{' '}
             <strong className="text-on-bg">{activePlayer?.name}</strong>'s timeline.
@@ -124,6 +126,7 @@ export const StealOverlay = ({ countdown, onStealAttempt, onClose }: Props) => {
             broadcastDrag={false}
             pendingPosition={pendingPosition}
             onPendingChange={setPendingPosition}
+            vertical={isMobile}
           />
         </div>
 

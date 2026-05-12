@@ -4,22 +4,37 @@ interface VSlotProps {
   id: number
   label: string
   ariaLabel?: string
+  // True while any card is being dragged — slot lights up to advertise itself
+  // as a drop target even before the finger is over it.
+  armed?: boolean
 }
 
-const VSlot = ({ id, label, ariaLabel }: VSlotProps) => {
+const VSlot = ({ id, label, ariaLabel, armed = false }: VSlotProps) => {
   const { isOver, setNodeRef } = useDroppable({ id })
+
+  const base = 'w-full flex items-center justify-center rounded-[10px] border-2 transition-all duration-150 font-mono text-[10px] tracking-[0.15em] uppercase select-none'
+  const stateClasses = isOver
+    ? 'border-accent text-accent border-solid h-14 font-bold'
+    : armed
+      ? 'border-accent/60 text-accent/80 border-dashed h-11'
+      : 'border-line border-dashed text-muted-2 h-11'
 
   return (
     <div
       ref={setNodeRef}
       role="region"
       aria-label={ariaLabel ?? `Timeline slot ${id + 1} (${label})`}
-      className={`w-full flex items-center justify-center rounded-[10px] border-2 transition-all duration-150 font-mono text-[10px] tracking-[0.15em] uppercase ${
-        isOver ? 'border-accent text-accent border-solid h-12 font-bold' : 'border-line border-dashed text-muted-2 h-9'
-      }`}
-      style={isOver
-        ? { background: 'color-mix(in oklch, var(--color-accent) 18%, transparent)', boxShadow: '0 0 16px color-mix(in oklch, var(--color-accent) 35%, transparent)' }
-        : undefined}
+      className={`${base} ${stateClasses}`}
+      style={
+        isOver
+          ? {
+              background: 'color-mix(in oklch, var(--color-accent) 22%, transparent)',
+              boxShadow: '0 0 24px color-mix(in oklch, var(--color-accent) 45%, transparent)',
+            }
+          : armed
+            ? { background: 'color-mix(in oklch, var(--color-accent) 6%, transparent)' }
+            : undefined
+      }
     >
       {label}
     </div>
