@@ -95,6 +95,19 @@ The `useSocket()` hook (mounted once in `App.tsx`) is the **only** place that re
 
 `shared/src/events.ts` declares `ClientToServerEvents` and `ServerToClientEvents`. Both client and server import these so Socket.IO types are end-to-end safe. `shared/src/schemas.ts` holds the Zod schemas; payload TypeScript types in `events.ts` are derived via `z.infer<...>`. Add a new event by: (1) defining the Zod schema in `schemas.ts`, (2) adding the typed signature to one of the event interfaces in `events.ts`, (3) registering the handler in the appropriate `server/src/socket/*Handlers.ts`, (4) wiring the client listener in `useSocket.ts`.
 
+### Observability
+
+**Logger** — `server/src/lib/logger.ts` exports a configured `pino` instance. Use it everywhere on the server (`logger.error({ err, roomCode }, 'message')`). JSON in prod, `pino-pretty` in dev. `LOG_LEVEL` env var overrides the default (`info` in prod, `debug` otherwise). Don't use `console.*` in runtime code — only the CLI scripts (`db/migrate.ts`, `db/seed.ts`) still do, intentionally.
+
+**Metrics** — Prometheus exposition at `GET /metrics`, gated behind `Authorization: Bearer ${METRICS_TOKEN}`. Unset token → route returns 503 (fail-closed). Counters/histograms in `server/src/lib/metrics.ts`:
+
+- `hitster_jobs_completed_total{job_name}`, `hitster_jobs_failed_total{job_name}`, `hitster_jobs_stalled_total`
+- `hitster_job_duration_seconds{job_name}` (histogram, default buckets 10ms–10s)
+- `hitster_deezer_fetch_total{result="ok|fail"}`
+- Gauges refreshed on each scrape from live sources: `hitster_queue_{waiting,active,delayed,failed,paused}` (BullMQ), `hitster_sockets_connected` (socket.io), `hitster_rooms_active` (rooms with a connected socket on this instance — `[A-Z0-9]{6}` regex filters out socket-id pseudo-rooms), `hitster_disconnect_grace_timers` (in-flight reconnect timers).
+
+When wiring a new background job or external call, increment the appropriate counter at the event site — gauges are computed-on-read, counters/histograms are recorded by the code path.
+
 ### Tests
 
 Jest with ts-jest in ESM mode. Tests live in `__tests__/` directories next to source. Redis is mocked via `ioredis-mock`. Integration tests (e.g. `roomHandlers.integration.test.ts`) spin up a real socket.io server against the mocked Redis.

@@ -1,5 +1,6 @@
 import type { PlacementResultPayload } from '@hitster/shared'
 import { redis } from './redis.js'
+import { logger } from './logger.js'
 
 const PENDING_TTL_SECONDS = 60
 const RESOLVED_TTL_SECONDS = 60
@@ -36,7 +37,7 @@ export const getPending = async (
   try {
     return JSON.parse(data) as PlacementResultPayload
   } catch (err) {
-    console.error('getPending: corrupt redis payload, dropping', { roomCode, err })
+    logger.error({ err, roomCode }, 'getPending: corrupt redis payload, dropping')
     await redis.del(pendingKey(roomCode))
     return null
   }

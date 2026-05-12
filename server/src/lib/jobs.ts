@@ -19,6 +19,8 @@ import {
 } from './session.js'
 import { checkWinCondition, nextTurnService } from '../services/gameService.js'
 import { deleteUsedSongs } from './gameCache.js'
+import { logger } from './logger.js'
+import { jobDuration, jobsCompleted, jobsFailed, jobsStalled } from './metrics.js'
 
 const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379'
 const QUEUE_NAME = 'room-jobs'
@@ -56,6 +58,8 @@ const getQueue = (): Queue => {
   }
   return queue
 }
+
+export const getRoomQueue = (): Queue => getQueue()
 
 // BullMQ disallows `:` in custom job IDs.
 const stealFireJobId = (roomCode: string) => `steal-fire_${roomCode}`
@@ -177,7 +181,7 @@ const processCardReveal = async (io: IoServer, data: CardRevealData): Promise<vo
       io.to(roomCode).emit('game:over', leader.id, players)
       return
     }
-    console.error('processCardReveal: nextTurnService failed', { roomCode, error: next.error })
+    logger.error({ roomCode, err: next.error }, 'processCardReveal: nextTurnService failed')
     return
   }
   io.to(roomCode).emit('phase:changed', 'song_phase', new Date().toISOString(), next.nextPlayerId)
@@ -199,8 +203,23 @@ export const startRoomWorker = (io: IoServer): Worker => {
     { connection: getConnection() },
   )
 
+  worker.on('completed', (job) => {
+    const name = job.name
+    jobsCompleted.inc({ job_name: name })
+    if (job.processedOn && job.finishedOn) {
+      jobDuration.observe({ job_name: name }, (job.finishedOn - job.processedOn) / 1000)
+    }
+    logger.debug({ jobName: name, jobId: job.id, roomCode: (job.data as { roomCode?: string })?.roomCode }, 'job completed')
+  })
+
   worker.on('failed', (job, err) => {
-    console.error('room-jobs worker job failed', { name: job?.name, id: job?.id, err })
+    jobsFailed.inc({ job_name: job?.name ?? 'unknown' })
+    logger.error({ err, jobName: job?.name, jobId: job?.id, roomCode: (job?.data as { roomCode?: string })?.roomCode }, 'job failed')
+  })
+
+  worker.on('stalled', (jobId) => {
+    jobsStalled.inc()
+    logger.warn({ jobId }, 'job stalled')
   })
 
   return worker

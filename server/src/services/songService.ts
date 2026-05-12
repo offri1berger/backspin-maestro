@@ -1,6 +1,8 @@
 import { db } from '../db/database.js'
 import { addUsedSong, getUsedSongIds } from '../lib/gameCache.js'
 import { getSessionRoom } from '../lib/session.js'
+import { deezerFetches } from '../lib/metrics.js'
+import { logger } from '../lib/logger.js'
 
 export const getRandomSong = async (roomCode: string) => {
   const [usedIds, room] = await Promise.all([
@@ -34,10 +36,17 @@ export const getFreshPreviewUrl = async (deezerId: string): Promise<string | nul
     const timeout = setTimeout(() => controller.abort(), 4_000)
     const res = await fetch(`https://api.deezer.com/track/${deezerId}`, { signal: controller.signal })
     clearTimeout(timeout)
-    if (!res.ok) return null
+    if (!res.ok) {
+      deezerFetches.inc({ result: 'fail' })
+      logger.warn({ deezerId, status: res.status }, 'deezer preview fetch non-2xx')
+      return null
+    }
     const data = (await res.json()) as { preview?: string | null }
+    deezerFetches.inc({ result: 'ok' })
     return data.preview ?? null
-  } catch {
+  } catch (err) {
+    deezerFetches.inc({ result: 'fail' })
+    logger.warn({ err, deezerId }, 'deezer preview fetch threw')
     return null
   }
 }

@@ -15,6 +15,7 @@ import {
 import { roomLimiter } from '../lib/rateLimit.js'
 import { parsePayload } from '../lib/validate.js'
 import { requireConductor } from '../lib/authz.js'
+import { logger } from '../lib/logger.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
@@ -29,7 +30,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
       socket.join(result.roomCode)
       cb({ success: true, ...result })
     } catch (err) {
-      console.error('room:create error', err)
+      logger.error({ err }, 'room:create handler threw')
       cb({ success: false, error: 'server_error' })
     }
   })
@@ -55,7 +56,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
       })
       cb(result)
     } catch (err) {
-      console.error('room:join error', err)
+      logger.error({ err }, 'room:join handler threw')
       cb({ success: false, error: 'server_error' })
     }
   })
@@ -73,7 +74,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
       }
       cb(result)
     } catch (err) {
-      console.error('room:rejoin error', err)
+      logger.error({ err }, 'room:rejoin handler threw')
       cb({ success: false, error: 'room_not_found' })
     }
   })
@@ -92,7 +93,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
       if (result.song) io.to(roomCode).emit('song:new', result.song)
       cb()
     } catch (err) {
-      console.error('game:start error', err)
+      logger.error({ err }, 'game:start handler threw')
       cb('server_error')
     }
   })
@@ -135,7 +136,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
 
       cb()
     } catch (err) {
-      console.error('conductor:kick error', err)
+      logger.error({ err }, 'conductor:kick handler threw')
       cb('server_error')
     }
   })
@@ -153,7 +154,7 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
       io.to(roomCode).emit('game:reset', result.players)
       cb()
     } catch (err) {
-      console.error('room:reset error', err)
+      logger.error({ err }, 'room:reset handler threw')
       cb('server_error')
     }
   })

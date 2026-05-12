@@ -25,6 +25,7 @@ import {
   CARD_REVEAL_MS,
 } from '../lib/jobs.js'
 import { parsePayload } from '../lib/validate.js'
+import { logger } from '../lib/logger.js'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>
@@ -61,7 +62,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       io.to(roomCode).emit('steal:open', player.id, data.position)
       cb()
     } catch (err) {
-      console.error('card:place error', err)
+      logger.error({ err }, 'card:place handler threw')
       cb('server_error')
     }
   })
@@ -138,7 +139,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
         candidateWinnerId: stealCorrect ? stealer.id : undefined,
       }, CARD_REVEAL_MS)
     } catch (err) {
-      console.error('steal:attempt error', err)
+      logger.error({ err }, 'steal:attempt handler threw')
       cb('server_error')
     }
   })
@@ -198,7 +199,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
 
       cb()
     } catch (err) {
-      console.error('song:skip error', err)
+      logger.error({ err }, 'song:skip handler threw')
       cb('server_error')
     }
   })
@@ -213,13 +214,13 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
       if (!roomCode) return
 
       const result = await handleGuessService(roomCode, socket.id, data.artist, data.title)
-      if ('error' in result) { console.error('guess error:', result.error); return }
+      if ('error' in result) { logger.warn({ err: result.error }, 'song:guess service returned error'); return }
 
       if (result.correct) {
         io.to(roomCode).emit('token:earned', result.playerId, result.tokens)
       }
     } catch (err) {
-      console.error('song:guess error', err)
+      logger.error({ err }, 'song:guess handler threw')
     }
   })
 

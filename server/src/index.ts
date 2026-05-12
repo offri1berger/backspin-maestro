@@ -11,7 +11,9 @@ import { handleDisconnect } from './socket/disconnectHandler.js'
 import { clearAllLimits } from './lib/rateLimit.js'
 import { db } from './db/database.js'
 import { redis, pubClient, subClient } from './lib/redis.js'
-import { startRoomWorker, closeRoomQueue } from './lib/jobs.js'
+import { startRoomWorker, closeRoomQueue, getRoomQueue } from './lib/jobs.js'
+import { logger } from './lib/logger.js'
+import { collectMetrics, setMetricsSources } from './lib/metrics.js'
 
 dotenv.config()
 
@@ -32,28 +34,40 @@ app.get('/health', async (_req, res) => {
     await redis.ping()
     res.json({ ok: true })
   } catch (err) {
-    console.error('health check failed', err)
+    logger.error({ err }, 'health check failed')
     res.status(503).json({ ok: false })
   }
 })
 
+// Prometheus scrape endpoint. Fail-closed: if METRICS_TOKEN is unset the route
+// returns 503, so an unconfigured deploy never accidentally exposes internals.
+app.get('/metrics', async (req, res) => {
+  const token = process.env.METRICS_TOKEN
+  if (!token) { res.status(503).type('text/plain').send('metrics disabled'); return }
+  const header = req.headers.authorization
+  if (header !== `Bearer ${token}`) { res.status(401).type('text/plain').send('unauthorized'); return }
+  const { contentType, body } = await collectMetrics()
+  res.set('Content-Type', contentType).send(body)
+})
+
 startRoomWorker(io)
+setMetricsSources({ io, queue: getRoomQueue() })
 
 io.on('connection', (socket) => {
-  console.log('client connected:', socket.id)
+  logger.debug({ socketId: socket.id }, 'client connected')
 
   registerRoomHandlers(io, socket)
   registerGameHandlers(io, socket)
 
   socket.on('disconnect', async () => {
-    console.log('client disconnected:', socket.id)
+    logger.debug({ socketId: socket.id }, 'client disconnected')
     clearAllLimits(socket.id)
-    try { await handleDisconnect(io, socket) } catch (err) { console.error('disconnect error', err) }
+    try { await handleDisconnect(io, socket) } catch (err) { logger.error({ err, socketId: socket.id }, 'disconnect handler failed') }
   })
 })
 
 const PORT = process.env.PORT ?? 3001
-const server = httpServer.listen(PORT, () => console.log(`server running on port ${PORT}`))
+const server = httpServer.listen(PORT, () => logger.info({ port: PORT }, 'server running'))
 
 const shutdown = () => {
   server.close(async () => {
