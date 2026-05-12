@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Player } from '@hitster/shared'
 import { useGameStore } from '../../store/gameStore'
 import { ArrowIcon, Logo } from '../ui/Logo'
@@ -8,10 +8,12 @@ function PlayerRow({
   player,
   offline,
   canKick,
+  isNew,
 }: {
   player: Player
   offline: boolean
   canKick: boolean
+  isNew: boolean
 }) {
   const handleKick = () => {
     if (!window.confirm(`Remove ${player.name} from the room?`)) return
@@ -21,14 +23,19 @@ function PlayerRow({
   }
 
   return (
-    <div className={`flex items-center gap-3.5 px-[18px] py-3.5 rounded-2xl border border-line transition-opacity ${offline ? 'opacity-40' : ''}`}>
+    <div
+      className={`flex items-center gap-3.5 px-[18px] py-3.5 rounded-2xl border transition-all ${
+        offline ? 'opacity-40' : ''
+      } ${isNew ? 'border-accent player-joined-glow' : 'border-line'}`}
+    >
       {player.avatar
         ? <img src={player.avatar} alt={player.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
         : <div className="w-9 h-9 rounded-full bg-line flex items-center justify-center font-display text-[20px] text-on-bg shrink-0">{player.name.charAt(0).toUpperCase()}</div>
       }
       <span className="flex-1 text-base font-semibold text-on-bg">{player.name}</span>
-      {offline && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">reconnecting…</span>}
-      {!offline && player.isHost && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">conductor</span>}
+      {isNew && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-accent">joined</span>}
+      {!isNew && offline && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">reconnecting…</span>}
+      {!isNew && !offline && player.isHost && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">conductor</span>}
       {canKick && (
         <button
           onClick={handleKick}
@@ -53,6 +60,34 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
   const disconnectedPlayerIds = useGameStore((s) => s.disconnectedPlayerIds)
   const playerId = useGameStore((s) => s.playerId)
   const isHost = players.find((p) => p.id === playerId)?.isHost ?? false
+
+  // Highlight rows of players who joined since this client mounted.
+  // Local-mounted players (including yourself) are seeded into `seenIds` on
+  // first render so they don't flash on initial paint.
+  const seenIdsRef = useRef<Set<string>>(new Set(players.map((p) => p.id)))
+  const [recentlyJoined, setRecentlyJoined] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    const newcomers = players.filter((p) => !seenIdsRef.current.has(p.id))
+    if (newcomers.length === 0) return
+    newcomers.forEach((p) => seenIdsRef.current.add(p.id))
+    setRecentlyJoined((prev) => {
+      const next = new Set(prev)
+      newcomers.forEach((p) => next.add(p.id))
+      return next
+    })
+    const timers = newcomers.map((p) =>
+      setTimeout(() => {
+        setRecentlyJoined((prev) => {
+          if (!prev.has(p.id)) return prev
+          const next = new Set(prev)
+          next.delete(p.id)
+          return next
+        })
+      }, 2500),
+    )
+    return () => { timers.forEach(clearTimeout) }
+  }, [players])
   const ready = players.length >= 2
   const [copied, setCopied] = useState(false)
 
@@ -113,6 +148,7 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
                 player={p}
                 offline={disconnectedPlayerIds.includes(p.id)}
                 canKick={isHost && p.id !== playerId}
+                isNew={recentlyJoined.has(p.id)}
               />
             ))}
             {Array.from({ length: Math.max(0, 6 - players.length) }).map((_, i) => (

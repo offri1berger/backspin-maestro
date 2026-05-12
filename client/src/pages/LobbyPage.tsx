@@ -36,7 +36,10 @@ const LobbyPage = () => {
     else navigate('/lobby', { replace: true })
   }, [storeRoomCode, phase, navigate])
 
-  useEffect(() => { setError(null) }, [tab, name, roomCode])
+  useEffect(() => {
+    const t = setTimeout(() => setError(null), 0)
+    return () => clearTimeout(t)
+  }, [tab, name, roomCode])
 
   const handleCreate = () => {
     if (!name.trim() || submitting) return

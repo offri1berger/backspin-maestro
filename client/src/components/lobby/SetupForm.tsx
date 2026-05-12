@@ -123,7 +123,7 @@ export const SetupForm = ({
             <label className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Room code</label>
             <input
               value={roomCode}
-              onChange={(e) => onRoomCodeChange(e.target.value.toUpperCase())}
+              onChange={(e) => onRoomCodeChange(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
               placeholder="VINYL"
               maxLength={6}
               style={{ fontSize: 20 }}

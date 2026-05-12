@@ -1,14 +1,25 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { MiniYearCard } from '../../components/game/Timeline'
 import { PLAYER_COLORS } from '../../components/game/constants'
 
 const MobilePlayerBar: React.FC = () => {
   const { players, currentPlayerId, disconnectedPlayerIds, playerId } = useGameStore()
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const trapRef = useFocusTrap<HTMLDivElement>(expandedId !== null)
 
   const expanded = expandedId ? players.find((p) => p.id === expandedId) : null
   const expandedIdx = expanded ? players.indexOf(expanded) : -1
+
+  useEffect(() => {
+    if (!expandedId) return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setExpandedId(null)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [expandedId])
 
   return (
     <>
@@ -53,7 +64,11 @@ const MobilePlayerBar: React.FC = () => {
           onClick={(e) => { if (e.target === e.currentTarget) setExpandedId(null) }}
         >
           <div
-            className="w-full max-w-[480px] bg-bg-2 rounded-t-[24px] border-t border-line p-5 max-h-[70vh] overflow-y-auto"
+            ref={trapRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${expanded.name}'s details`}
+            className="sheet-slide-up w-full max-w-[480px] bg-bg-2 rounded-t-[24px] border-t border-line p-5 max-h-[70vh] overflow-y-auto"
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
           >
             <div className="flex items-center gap-3 mb-4">

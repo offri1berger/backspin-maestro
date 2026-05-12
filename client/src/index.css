@@ -110,6 +110,15 @@ html, body {
 }
 .sheet-slide-up { animation: sheet-slide-up 280ms cubic-bezier(0.2, 0.85, 0.35, 1) both; }
 
+/* ── Player joined celebration ── */
+@keyframes player-joined-glow {
+  0%   { transform: scale(0.98); box-shadow: 0 0 0 rgba(0,0,0,0); }
+  18%  { transform: scale(1.01); box-shadow: 0 0 24px color-mix(in oklch, var(--color-accent) 45%, transparent); }
+  60%  { box-shadow: 0 0 18px color-mix(in oklch, var(--color-accent) 30%, transparent); }
+  100% { transform: scale(1); box-shadow: 0 0 0 rgba(0,0,0,0); }
+}
+.player-joined-glow { animation: player-joined-glow 2200ms ease-out both; }
+
 /* ── Scrollbar utilities ── */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
