@@ -31,6 +31,8 @@ The client has no tests. Only the server has a Jest suite (ESM mode via `NODE_OP
 
 **Always use arrow functions, never `function` declarations.** This applies to top-level functions, exported helpers, React components, and callbacks. The codebase is consistent on this — match it.
 
+**Prefer Tailwind utility classes over inline `style={{ ... }}`.** The project is Tailwind v4 — reach for `className` first. Reserve inline styles for values that have to be computed at runtime (e.g. progress widths, conditional colors via interpolation) or CSS features Tailwind can't express cleanly. A static inline style is a smell — convert it.
+
 ## Architecture
 
 ### Workspace shape
