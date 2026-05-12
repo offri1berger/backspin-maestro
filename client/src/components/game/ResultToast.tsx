@@ -12,8 +12,8 @@ export const ResultToast = () => {
 
     const isGoodForMe = iAmStealer ? success : iAmTarget ? targetWasCorrect : success
 
-    let headline = ''
-    let subline = ''
+    let headline: string
+    let subline: string
     if (success) {
       headline = iAmStealer ? 'You stole it!'
         : iAmTarget ? `${stealerName} stole your card!`
