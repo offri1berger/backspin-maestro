@@ -105,12 +105,15 @@ export const GameStage = ({
       {otherPlayers.length > 0 && (
         <div className="mt-2">
           <SectionMark>Timelines · live</SectionMark>
-          <div className="mt-3.5 flex flex-col gap-4">
+          <div className="mt-3.5 flex flex-col gap-3">
             {otherPlayers.map((p) => (
-              <div key={p.id}>
-                <div className="flex items-center gap-2.5 mb-1.5">
+              <div
+                key={p.id}
+                className="rounded-2xl border border-line bg-bg-2 p-3"
+              >
+                <div className="flex items-center gap-2.5 mb-2">
                   <div
-                    className="w-6 h-6 rounded-full shrink-0 overflow-hidden flex items-center justify-center font-display text-[13px] text-[#1a1612]"
+                    className="w-7 h-7 rounded-full shrink-0 overflow-hidden flex items-center justify-center font-display text-[14px] text-[#1a1612]"
                     style={{ background: PLAYER_COLORS[players.indexOf(p) % PLAYER_COLORS.length] }}
                   >
                     {p.avatar
@@ -119,13 +122,13 @@ export const GameStage = ({
                     }
                   </div>
                   <span className="text-[13px] font-semibold text-on-bg">{p.name}</span>
-                  <span className="font-mono text-[9px] tracking-[0.1em] text-muted">
+                  <span className="font-mono text-[9px] tracking-[0.1em] text-muted ml-auto">
                     {p.timeline.length} cards · {p.tokens}★
                   </span>
                 </div>
                 <div className="flex gap-1.5 overflow-x-auto">
                   {p.timeline.length === 0
-                    ? <span className="text-[11px] text-muted italic">no cards yet</span>
+                    ? <span className="text-[11px] text-muted italic">Waiting for {p.name} to place their first card…</span>
                     : p.timeline.map((entry, j) => <MiniYearCard key={j} entry={entry} />)
                   }
                 </div>

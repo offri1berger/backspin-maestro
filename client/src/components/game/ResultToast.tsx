@@ -66,38 +66,31 @@ export const ResultToast = () => {
     )
   }
 
-  if (placementResult?.correct) {
+  if (placementResult) {
+    const correct = placementResult.correct
+    const song = placementResult.song
+    const headline = correct ? (placementResult.message ?? 'Correct!') : 'Wrong placement'
     return (
       <div
-        className="fixed top-6 left-1/2 z-40 px-6 py-3 rounded-full bg-good text-white font-bold text-base"
-        role="status"
-        aria-live="polite"
-        style={{ transform: 'translateX(-50%)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}
-      >
-        <span className="sr-only">Correct: </span>
-        {placementResult.message ?? '✓ Correct!'}
-      </div>
-    )
-  }
-
-  if (placementResult && !placementResult.correct && placementResult.song) {
-    return (
-      <div
-        className="fixed top-6 left-1/2 z-40 min-w-[280px] rounded-[20px] overflow-hidden"
-        role="alert"
-        aria-live="assertive"
+        className="fixed top-6 left-1/2 z-40 w-[320px] rounded-[20px] overflow-hidden"
+        role={correct ? 'status' : 'alert'}
+        aria-live={correct ? 'polite' : 'assertive'}
         style={{ transform: 'translateX(-50%)', boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}
       >
-        <div className="bg-bad px-5 py-2.5 text-center text-white font-bold">
-          <span aria-hidden>✗ </span>Wrong placement
+        <div className={`${correct ? 'bg-good' : 'bg-bad'} px-5 py-2.5 text-center text-white font-bold`}>
+          <span aria-hidden>{correct ? '✓ ' : '✗ '}</span>
+          <span className="sr-only">{correct ? 'Correct: ' : 'Incorrect: '}</span>
+          {headline}
         </div>
-        <div className="bg-surface px-5 py-3 flex justify-between items-center">
-          <div>
-            <div className="font-semibold text-sm text-on-surface">{placementResult.song.title}</div>
-            <div className="font-mono text-[11px] text-muted mt-0.5">{placementResult.song.artist}</div>
+        {song && (
+          <div className="bg-surface px-5 py-3 flex justify-between items-center gap-3">
+            <div className="min-w-0">
+              <div className="font-semibold text-sm text-on-surface truncate">{song.title}</div>
+              <div className="font-mono text-[11px] text-muted mt-0.5 truncate">{song.artist}</div>
+            </div>
+            <div className="font-display text-[28px] text-accent leading-none shrink-0">{song.year}</div>
           </div>
-          <div className="font-display text-[28px] text-accent leading-none">{placementResult.song.year}</div>
-        </div>
+        )}
       </div>
     )
   }

@@ -115,6 +115,17 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
                 canKick={isHost && p.id !== playerId}
               />
             ))}
+            {Array.from({ length: Math.max(0, 6 - players.length) }).map((_, i) => (
+              <div
+                key={`empty-${i}`}
+                className="flex items-center gap-3.5 px-[18px] py-3.5 rounded-2xl border border-dashed border-line opacity-50"
+              >
+                <div className="w-9 h-9 rounded-full border border-dashed border-line shrink-0" />
+                <span className="flex-1 font-mono text-[11px] tracking-[0.15em] uppercase text-muted">
+                  waiting for player…
+                </span>
+              </div>
+            ))}
           </div>
 
           {isHost ? (

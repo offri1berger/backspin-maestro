@@ -29,7 +29,8 @@ export const GuessRail = ({ guess, onGuessChange, isMyTurn, isWaiting }: Props) 
             value={guess[field]}
             onChange={(e) => onGuessChange(field, e.target.value)}
             disabled={disabled}
-            className={`h-11 rounded-xl border border-line bg-transparent text-on-bg px-3.5 text-sm font-body outline-none ${disabled ? 'opacity-40' : 'opacity-100'}`}
+            title={disabled ? "Not your turn — bonus guesses are only for the active player" : undefined}
+            className={`h-11 rounded-xl border border-line bg-transparent text-on-bg px-3.5 text-sm font-body outline-none ${disabled ? 'opacity-40 cursor-not-allowed' : 'opacity-100'}`}
           />
         ))}
       </div>

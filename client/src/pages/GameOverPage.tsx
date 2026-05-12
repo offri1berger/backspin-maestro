@@ -75,10 +75,10 @@ const GameOverPage = () => {
           {ranked.map((p, i) => (
             <div
               key={p.id}
-              className={`flex flex-col rounded-2xl overflow-hidden ${
+              className={`flex flex-col rounded-2xl overflow-hidden transition-colors ${
                 i === 0
-                  ? 'border-[1.5px] border-accent bg-accent/8'
-                  : 'border border-line'
+                  ? 'border-[1.5px] border-accent bg-accent/8 hover:bg-accent/12'
+                  : 'border border-line hover:bg-on-bg/4'
               }`}
             >
               <div className="flex items-center gap-4 px-5 py-4">

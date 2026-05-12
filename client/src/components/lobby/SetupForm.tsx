@@ -179,7 +179,8 @@ export const SetupForm = ({
       <button
         onClick={onSubmit}
         disabled={disabled}
-        className="mt-6 lg:mt-7 w-full h-[56px] lg:h-[60px] rounded-full bg-accent text-accent-ink border-none cursor-pointer font-body font-semibold text-[17px] flex items-center justify-center gap-2.5 transition-opacity duration-150 disabled:opacity-40"
+        title={disabled && !submitting ? (isCreate ? 'Enter a name first' : 'Enter a name and room code') : undefined}
+        className="mt-6 lg:mt-7 w-full h-[56px] lg:h-[60px] rounded-full bg-accent text-accent-ink border-none cursor-pointer font-body font-semibold text-[17px] flex items-center justify-center gap-2.5 transition-opacity duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {submitting ? (
           <>
