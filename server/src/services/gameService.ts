@@ -78,16 +78,20 @@ export const nextTurnService = async (
   if (!gameState) return { error: 'game_not_found' }
 
   const players = await getPlayersByRoomCode(roomCode)
+  if (players.length === 0) return { error: 'no_players' }
   const sorted = players.sort((a, b) => a.turnOrder - b.turnOrder)
 
-  const currentIndex = sorted.findIndex((p) => p.id === gameState.currentPlayerId)
-  const nextPlayer = sorted[(currentIndex + 1) % sorted.length]
+  const currentIndex = sorted.findIndex((p) => p.id === gameState.currentPlayerId);
+  const nextPlayer =
+    currentIndex === -1
+      ? sorted[gameState.roundNumber % sorted.length]
+      : sorted[(currentIndex + 1) % sorted.length];
 
-  const song = await getRandomSong(roomCode)
-  if (!song) return { error: 'no_songs_left' }
+  const song = await getRandomSong(roomCode);
+  if (!song) return { error: 'no_songs_left' };
 
-  await markSongAsUsed(roomCode, song.id)
-  const freshPreviewUrl = await getFreshPreviewUrl(song.deezer_id)
+  await markSongAsUsed(roomCode, song.id);
+  const freshPreviewUrl = await getFreshPreviewUrl(song.deezer_id);
 
   await setGameState(roomCode, {
     phase: 'song_phase',

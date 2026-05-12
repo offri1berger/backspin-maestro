@@ -10,6 +10,7 @@ export const validatePlacement = async (
 ): Promise<{ correct: boolean; correctPosition: number; song: Song } | { error: string }> => {
   const gameState = await getGameState(roomCode)
   if (!gameState) return { error: 'game_not_found' }
+  if (gameState.phase !== 'song_phase') return { error: 'wrong_phase' }
   if (gameState.currentPlayerId !== playerId) return { error: 'not_your_turn' }
   if (!gameState.currentSongId) return { error: 'no_current_song' }
 

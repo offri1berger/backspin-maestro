@@ -35,13 +35,18 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
   }, [song.id])
 
   useEffect(() => {
-    socket.on('audio:play', () => {
+    const onRemotePlay = () => {
       if (!audioRef.current || !song.previewUrl) return
       audioRef.current.play().catch(() => setPlaying(false))
       setPlaying(true)
-    })
-    socket.on('audio:pause', () => { audioRef.current?.pause(); setPlaying(false) })
-    return () => { socket.off('audio:play'); socket.off('audio:pause') }
+    }
+    const onRemotePause = () => { audioRef.current?.pause(); setPlaying(false) }
+    socket.on('audio:play', onRemotePlay)
+    socket.on('audio:pause', onRemotePause)
+    return () => {
+      socket.off('audio:play', onRemotePlay)
+      socket.off('audio:pause', onRemotePause)
+    }
   }, [song.previewUrl])
 
   const toggle = () => {

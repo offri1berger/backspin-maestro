@@ -241,7 +241,7 @@ const Timeline = ({
               const isActive = showHover || showSpectator
 
               return (
-                <>
+                <Fragment key={i}>
                   {isMyTurn ? (
                     isPendingSlot ? (
                       <div className="shrink-0 h-[90px] w-24 flex items-center justify-center">
@@ -263,7 +263,7 @@ const Timeline = ({
                     </div>
                   )}
                   {timeline[i] && <MiniYearCard entry={timeline[i]} />}
-                </>
+                </Fragment>
               )
             })}
           </div>

@@ -140,12 +140,14 @@ const processStealFire = async (io: IoServer, data: StealFireData): Promise<void
 
   if (payload.correct) {
     const room = await getSessionRoom(roomCode)
-    if (room) {
-      const won = await checkWinCondition(payload.playerId, room.songsPerPlayer)
-      if (won) {
-        await finishGame(io, roomCode, payload.playerId)
-        return
-      }
+    if (!room) {
+      logger.error({ roomCode }, 'processStealFire: room missing, cannot check win')
+      return
+    }
+    const won = await checkWinCondition(payload.playerId, room.songsPerPlayer)
+    if (won) {
+      await finishGame(io, roomCode, payload.playerId)
+      return
     }
   }
 
@@ -167,21 +169,20 @@ const processCardReveal = async (io: IoServer, data: CardRevealData): Promise<vo
   await clearPending(roomCode)
   const next = await nextTurnService(roomCode)
   if ('error' in next) {
-    if (next.error === 'no_songs_left') {
-      const players = await buildGameOverPlayers(roomCode)
-      if (players.length === 0) return
-      const leader = [...players].sort((a, b) =>
-        b.timeline.length - a.timeline.length
-        || b.tokens - a.tokens
-        || a.turnOrder - b.turnOrder
-      )[0]
-      await updateRoomStatus(roomCode, 'finished')
-      await deleteUsedSongs(roomCode)
-      await cleanupRoomState(roomCode)
-      io.to(roomCode).emit('game:over', leader.id, players)
-      return
-    }
-    logger.error({ roomCode, err: next.error }, 'processCardReveal: nextTurnService failed')
+    // Any failure (no songs, expired game state, etc.) ends the game gracefully
+    // rather than leaving clients stuck on the placement-result toast.
+    logger.error({ roomCode, err: next.error }, 'processCardReveal: nextTurnService failed, ending game')
+    const players = await buildGameOverPlayers(roomCode)
+    if (players.length === 0) return
+    const leader = [...players].sort((a, b) =>
+      b.timeline.length - a.timeline.length
+      || b.tokens - a.tokens
+      || a.turnOrder - b.turnOrder
+    )[0]
+    await updateRoomStatus(roomCode, 'finished')
+    await deleteUsedSongs(roomCode)
+    await cleanupRoomState(roomCode)
+    io.to(roomCode).emit('game:over', leader.id, players)
     return
   }
   io.to(roomCode).emit('phase:changed', 'song_phase', new Date().toISOString(), next.nextPlayerId)
