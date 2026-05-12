@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { Decade } from '@hitster/shared'
+import type { DecadeFilter } from '@hitster/shared'
 import socket from '../socket'
 import { useGameStore } from '../store/gameStore'
 import { HeroPanel } from '../components/lobby/HeroPanel'
@@ -21,7 +21,7 @@ const LobbyPage = () => {
   const [name, setName] = useState('')
   const [roomCode, setRoomCode] = useState('')
   const [tab, setTab] = useState<'create' | 'join'>('create')
-  const [decade, setDecade] = useState<Decade>('all')
+  const [decadeFilter, setDecadeFilter] = useState<DecadeFilter>('all')
   const [songsPerPlayer, setSongsPerPlayer] = useState(10)
   const [avatar, setAvatar] = useState<string | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
@@ -50,7 +50,7 @@ const LobbyPage = () => {
     socket.emit('room:create', {
       hostName: name,
       avatar,
-      settings: { songsPerPlayer, decadeFilter: decade },
+      settings: { songsPerPlayer, decadeFilter },
     }, (result) => {
       setSubmitting(false)
       if ('error' in result) {
@@ -99,7 +99,7 @@ const LobbyPage = () => {
         tab={tab}                     onTabChange={setTab}
         name={name}                   onNameChange={setName}
         roomCode={roomCode}           onRoomCodeChange={setRoomCode}
-        decade={decade}               onDecadeChange={setDecade}
+        decadeFilter={decadeFilter}   onDecadeChange={setDecadeFilter}
         songsPerPlayer={songsPerPlayer} onSongsPerPlayerChange={setSongsPerPlayer}
         avatar={avatar}               onAvatarChange={setAvatar}
         onSubmit={tab === 'create' ? handleCreate : handleJoin}

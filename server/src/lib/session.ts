@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { redis } from './redis.js'
 import { safeJsonParse } from './safeJson.js'
-import type { Song, TimelineEntry, Decade } from '@hitster/shared'
+import type { Song, TimelineEntry, DecadeFilter } from '@hitster/shared'
 
 const SESSION_TTL = 86_400 // 24 hours
 
@@ -16,7 +16,7 @@ export interface SessionRoom {
   status: 'lobby' | 'playing' | 'finished'
   hostId: string
   songsPerPlayer: number
-  decadeFilter: Decade
+  decadeFilter: DecadeFilter
 }
 
 export interface SessionPlayer {

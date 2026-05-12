@@ -1,4 +1,4 @@
-import type { GamePhase, Decade } from './enums.js'
+import type { GamePhase, DecadeFilter } from './enums.js'
 
 export interface Song {
   id: string
@@ -26,7 +26,7 @@ export interface Player {
 
 export interface RoomSettings {
   songsPerPlayer: number
-  decadeFilter: Decade
+  decadeFilter: DecadeFilter
 }
 
 export interface GameState {

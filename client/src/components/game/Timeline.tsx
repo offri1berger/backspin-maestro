@@ -1,4 +1,5 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import React from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -176,7 +177,7 @@ const Timeline = ({
             const hint = isPendingSlot ? buildHint(timeline, i) : undefined
 
             return (
-              <Fragment key={i}>
+              <React.Fragment key={i}>
                 {isMyTurn ? (
                   isPendingSlot ? (
                     <SongCard draggable isWaiting={false} fullWidth hint={hint} />
@@ -189,7 +190,7 @@ const Timeline = ({
                   <div className="h-9 rounded-[10px] border border-dashed border-line" />
                 )}
                 {timeline[i] && <VerticalYearCard entry={timeline[i]} />}
-              </Fragment>
+              </React.Fragment>
             )
           })}
 
@@ -241,7 +242,7 @@ const Timeline = ({
               const isActive = showHover || showSpectator
 
               return (
-                <Fragment key={i}>
+                <React.Fragment key={i}>
                   {isMyTurn ? (
                     isPendingSlot ? (
                       <div className="shrink-0 h-[90px] w-24 flex items-center justify-center">
@@ -263,7 +264,7 @@ const Timeline = ({
                     </div>
                   )}
                   {timeline[i] && <MiniYearCard entry={timeline[i]} />}
-                </Fragment>
+                </React.Fragment>
               )
             })}
           </div>

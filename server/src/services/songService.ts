@@ -10,10 +10,13 @@ export const getRandomSong = async (roomCode: string) => {
     getSessionRoom(roomCode),
   ])
   const decadeFilter = room?.decadeFilter ?? 'all'
+  const decadesIn: string[] | null = decadeFilter === 'all'
+    ? null
+    : Array.isArray(decadeFilter) ? decadeFilter : [decadeFilter]
 
   let countQuery = db.selectFrom('songs').select((eb) => eb.fn.countAll<number>().as('count'))
   if (usedIds.length > 0) countQuery = countQuery.where('id', 'not in', usedIds)
-  if (decadeFilter !== 'all') countQuery = countQuery.where('decade', '=', decadeFilter)
+  if (decadesIn) countQuery = countQuery.where('decade', 'in', decadesIn)
 
   const { count } = await countQuery.executeTakeFirstOrThrow()
   const total = Number(count)
@@ -21,7 +24,7 @@ export const getRandomSong = async (roomCode: string) => {
 
   let songQuery = db.selectFrom('songs').selectAll().limit(1).offset(Math.floor(Math.random() * total))
   if (usedIds.length > 0) songQuery = songQuery.where('id', 'not in', usedIds)
-  if (decadeFilter !== 'all') songQuery = songQuery.where('decade', '=', decadeFilter)
+  if (decadesIn) songQuery = songQuery.where('decade', 'in', decadesIn)
 
   return (await songQuery.executeTakeFirst()) ?? null
 }

@@ -20,7 +20,21 @@ const PlayerIdSchema = z.string().uuid()
 
 const PositionSchema = z.number().int().min(0)
 
-const DecadeSchema = z.enum(['all', '60s', '70s', '80s', '90s', '00s', '10s'])
+const SpecificDecadeSchema = z.enum(['60s', '70s', '80s', '90s', '00s', '10s']);
+const SPECIFIC_DECADES_ORDER = ['60s', '70s', '80s', '90s', '00s', '10s'] as const;
+const DecadeFilterSchema = z.preprocess(
+  (val) => (typeof val === 'string' && val !== 'all' ? [val] : val),
+  z.union([
+    z.literal('all'),
+    z.array(SpecificDecadeSchema)
+      .min(1)
+      .refine((arr) => {
+        const indices = Array.from(new Set(arr)).map((d) => SPECIFIC_DECADES_ORDER.indexOf(d))
+        indices.sort((a, b) => a - b)
+        return indices.length === indices[indices.length - 1] - indices[0] + 1
+      }, { message: 'Decades must be contiguous' }),
+  ]),
+)
 
 const AvatarSchema = z.string().max(MAX_AVATAR_LENGTH).optional()
 
@@ -30,7 +44,7 @@ export const RoomSettingsSchema = z.object({
     .int()
     .min(MIN_SONGS_PER_PLAYER)
     .max(MAX_SONGS_PER_PLAYER),
-  decadeFilter: DecadeSchema,
+  decadeFilter: DecadeFilterSchema,
 })
 
 export const CreateRoomPayloadSchema = z.object({
