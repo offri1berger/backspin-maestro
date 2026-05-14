@@ -82,7 +82,7 @@ const MobileBottomSheet: React.FC<Props> = ({
         </div>
       )}
 
-      {currentSong && !isPending && (
+      {currentSong && (
         <AudioPlayer key={currentSong.id} song={currentSong} isMyTurn={isMyTurn} compact />
       )}
 

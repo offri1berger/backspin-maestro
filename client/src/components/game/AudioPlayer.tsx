@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Song } from '@backspin-maestro/shared'
 import socket from '../../socket'
+import { useGameStore } from '../../store/gameStore'
 import LedDisplay from '../boombox/LedDisplay'
 import Sticker from '../boombox/Sticker'
 
@@ -74,6 +75,10 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
   const [currentTime, setCurrentTime] = useState(0)
   const hasPreview = !!song.previewUrl
 
+  const placementResult = useGameStore((s) => s.placementResult)
+  const stealResult = useGameStore((s) => s.stealResult)
+  const revealed = stealResult?.song ?? placementResult?.song ?? null
+
   useEffect(() => {
     if (audioRef.current) audioRef.current.load()
   }, [song.id])
@@ -115,6 +120,8 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
   }
 
   const fmt = (s: number) => `0:${String(Math.floor(s)).padStart(2, '0')}`
+  
+  const canControlPlayback = hasPreview
 
   if (compact) {
     return (
@@ -128,18 +135,36 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
       >
         <Reel size={44} spinning={playing} />
 
-        {hasPreview && isMyTurn ? (
+        {canControlPlayback ? (
           <PlayBtn playing={playing} onClick={toggle} size={40} />
         ) : (
           <PlayBtn playing={playing} size={40} />
         )}
 
         <div className="flex-1 min-w-0">
-          <div className="font-display text-[9px] tracking-[0.08em]" style={{ color: 'var(--color-cyan)' }}>
-            {!hasPreview
-              ? '· NO PREVIEW ·'
-              : isMyTurn ? '▸ DROP ON SHELF' : '· WAITING ·'}
+          <div className="font-display text-[10px] tracking-[0.08em]" style={{ color: revealed ? 'var(--color-accent)' : 'var(--color-cyan)' }}>
+            {revealed
+              ? `▸ ${revealed.year} · REVEALED`
+              : !hasPreview
+                ? '· NO PREVIEW ·'
+                : isMyTurn ? '▸ DROP ON SHELF' : '· WAITING ·'}
           </div>
+          {revealed ? (
+            <>
+              <div
+                className="font-display truncate"
+                style={{ fontSize: 13, color: 'var(--color-cream)', marginTop: 2 }}
+              >
+                {revealed.title}
+              </div>
+              <div
+                className="font-mono truncate"
+                style={{ fontSize: 13, color: 'var(--color-muted)' }}
+              >
+                {revealed.artist}
+              </div>
+            </>
+          ) : null}
           <div className="mt-1.5 h-1 rounded-sm relative overflow-hidden" style={{ background: 'rgba(255,255,255,.08)' }}>
             <div
               className="absolute inset-0"
@@ -184,17 +209,17 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
       }}
     >
       <Sticker
-        color="red"
+        color={revealed ? 'green' : 'red'}
         rotate={-5}
         size="sm"
         style={{ position: 'absolute', top: -12, left: 18, zIndex: 1 }}
       >
-        ● NOW PLAYING
+        {revealed ? '★ REVEALED' : '● NOW PLAYING'}
       </Sticker>
 
       <div className="flex items-center gap-3 shrink-0">
         <Reel size={68} spinning={playing} />
-        {hasPreview && isMyTurn ? (
+        {canControlPlayback ? (
           <PlayBtn playing={playing} onClick={toggle} size={62} />
         ) : (
           <PlayBtn playing={playing} size={62} />
@@ -203,14 +228,16 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="font-display text-[10px] tracking-[0.1em]" style={{ color: 'var(--color-cyan)' }}>
-          {hasPreview ? `NOW PLAYING · MYSTERY HIT · ${fmt(currentTime)} / 0:30` : 'NO PREVIEW AVAILABLE'}
+        <div className="font-display text-[10px] tracking-[0.1em]" style={{ color: revealed ? 'var(--color-accent)' : 'var(--color-cyan)' }}>
+          {revealed
+            ? `★ ${revealed.year} · ${revealed.artist.toUpperCase()}`
+            : hasPreview ? `NOW PLAYING · MYSTERY HIT · ${fmt(currentTime)} / 0:30` : 'NO PREVIEW AVAILABLE'}
         </div>
         <h2
-          className="font-display mt-1.5 leading-none"
-          style={{ fontSize: 34, color: 'var(--color-cream)', textShadow: '3px 3px 0 var(--color-hot), 6px 6px 0 var(--color-accent-ink)' }}
+          className="font-display mt-1.5 leading-none truncate"
+          style={{ fontSize: revealed ? 28 : 34, color: 'var(--color-cream)', textShadow: '3px 3px 0 var(--color-hot), 6px 6px 0 var(--color-accent-ink)' }}
         >
-          ?????
+          {revealed ? revealed.title.toUpperCase() : '?????'}
         </h2>
         <div className="mt-3 flex items-center gap-3">
           <LedDisplay color="green" style={{ fontSize: 14, padding: '4px 10px' }}>{fmt(currentTime)}</LedDisplay>
