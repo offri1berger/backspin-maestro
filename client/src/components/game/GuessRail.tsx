@@ -53,7 +53,7 @@ export const GuessRail = ({ guess, onGuessChange, isMyTurn, isWaiting }: Props) 
         {(['artist', 'title'] as const).map((field) => (
           <input
             key={field}
-            placeholder={field === 'artist' ? 'Cyndi Lauper…' : 'Time After Time…'}
+            placeholder={field === 'artist' ? 'Artist Guess…' : 'Title Guess…'}
             value={guess[field]}
             onChange={(e) => onGuessChange(field, e.target.value)}
             disabled={disabled}

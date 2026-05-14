@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { Player } from '@backspin-maestro/shared'
 import AudioPlayer from '../../components/game/AudioPlayer'
 import { useGameStore } from '../../store/gameStore'
@@ -22,13 +22,12 @@ interface Props {
 }
 
 const MobileBottomSheet: React.FC<Props> = ({
-  isMyTurn, canSteal, mobilePending, mobileConfirmed, guess, myPlayer,
-  stealerName, countdown, onStealInitiate, onSkip, onGuessChange, onConfirm,
+  isMyTurn, canSteal, mobilePending, mobileConfirmed, myPlayer,
+  stealerName, countdown, onStealInitiate, onSkip, onConfirm,
   onHeightChange,
 }) => {
   const { isStealWindowOpen, currentSong, isWaitingForNextTurn } = useGameStore()
   const ref = useRef<HTMLDivElement>(null)
-  const [guessOpen, setGuessOpen] = useState(false)
 
   useEffect(() => {
     if (!onHeightChange) return
@@ -42,8 +41,6 @@ const MobileBottomSheet: React.FC<Props> = ({
     return () => ro.disconnect()
   }, [onHeightChange])
 
-  const hasGuess = guess.artist.length > 0 || guess.title.length > 0
-  const showInputs = guessOpen || hasGuess
   const isPending = mobilePending !== null && !mobileConfirmed
   const showSecondary = isMyTurn && !isWaitingForNextTurn && !mobileConfirmed && !isPending
 
@@ -96,61 +93,20 @@ const MobileBottomSheet: React.FC<Props> = ({
         </PlasticButton>
       )}
 
-      {showSecondary && (
-        <>
-          {!showInputs ? (
-            <button
-              onClick={() => setGuessOpen(true)}
-              className="w-full h-9 rounded-[8px] cursor-pointer flex items-center justify-center gap-2 font-display"
-              style={{
-                background: 'transparent',
-                border: '2px dashed var(--color-muted-2)',
-                color: 'var(--color-muted)',
-                fontSize: 11, letterSpacing: '.05em',
-              }}
-            >
-              + ADD BONUS GUESS · ARTIST OR TITLE
-            </button>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {(['artist', 'title'] as const).map((field) => (
-                <input
-                  key={field}
-                  placeholder={`${field === 'artist' ? 'Artist' : 'Title'} (optional bonus)`}
-                  value={guess[field]}
-                  onChange={(e) => onGuessChange(field, e.target.value)}
-                  style={{
-                    height: 44,
-                    background: 'var(--color-cream)',
-                    color: 'var(--color-accent-ink)',
-                    border: '2px solid #000',
-                    borderRadius: 6,
-                    padding: '0 14px',
-                    fontFamily: 'var(--font-code)', fontSize: 15,
-                    outline: 'none',
-                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,.2)',
-                  }}
-                />
-              ))}
-            </div>
-          )}
-
-          {mobilePending === null && (myPlayer?.tokens ?? 0) >= 1 && (
-            <button
-              onClick={onSkip}
-              className="w-full h-9 rounded-[8px] cursor-pointer font-display"
-              style={{
-                background: '#1a1a1c',
-                border: '2px solid #000',
-                color: 'var(--color-cream)',
-                fontSize: 11, letterSpacing: '.05em',
-                boxShadow: '0 2px 0 #000',
-              }}
-            >
-              SKIP · SPEND 1 ★
-            </button>
-          )}
-        </>
+      {showSecondary && mobilePending === null && (myPlayer?.tokens ?? 0) >= 1 && (
+        <button
+          onClick={onSkip}
+          className="w-full h-9 rounded-[8px] cursor-pointer font-display"
+          style={{
+            background: '#1a1a1c',
+            border: '2px solid #000',
+            color: 'var(--color-cream)',
+            fontSize: 11, letterSpacing: '.05em',
+            boxShadow: '0 2px 0 #000',
+          }}
+        >
+          SKIP · SPEND 1 ★
+        </button>
       )}
 
       {isPending && (

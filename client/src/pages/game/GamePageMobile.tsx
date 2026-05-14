@@ -5,15 +5,19 @@ import { Logo } from '../../components/ui/Logo'
 import MobilePlayerBar from './MobilePlayerBar'
 import MobileBottomSheet from './MobileBottomSheet'
 import LedDisplay from '../../components/boombox/LedDisplay'
+import { useGameStore } from '../../store/gameStore'
 
 const GamePageMobile = (p: GamePageProps) => {
   const [mobilePending, _setMobilePending] = useState<number | null>(null)
   const [mobileConfirmed, setMobileConfirmed] = useState(false)
   const [sheetHeight, setSheetHeight] = useState(320)
+  const isWaitingForNextTurn = useGameStore((s) => s.isWaitingForNextTurn)
   const setMobilePending = (val: number | null) => {
     _setMobilePending(val)
     if (val === null) setMobileConfirmed(false)
   }
+
+  const showGuessBar = p.isMyTurn && !isWaitingForNextTurn && !mobileConfirmed
 
   return (
     <div className="flex flex-col lg:hidden min-h-dvh boombox-bg">
@@ -41,6 +45,34 @@ const GamePageMobile = (p: GamePageProps) => {
       </div>
 
       <MobilePlayerBar songsToWin={p.songsToWin} />
+
+      {showGuessBar && (
+        <div
+          className="px-3 py-2 flex gap-2 shrink-0"
+          style={{ background: '#111113', borderBottom: '2px solid #000' }}
+        >
+          {(['artist', 'title'] as const).map((field) => (
+            <input
+              key={field}
+              placeholder={field === 'artist' ? 'Artist guess…' : 'Title guess…'}
+              value={p.guess[field]}
+              onChange={(e) => p.onGuessChange(field, e.target.value)}
+              style={{
+                flex: 1, minWidth: 0,
+                height: 38,
+                background: 'var(--color-cream)',
+                color: 'var(--color-accent-ink)',
+                border: '2px solid #000',
+                borderRadius: 6,
+                padding: '0 10px',
+                fontFamily: 'var(--font-code)', fontSize: 13,
+                outline: 'none',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,.2)',
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       <div
         className="flex-1 overflow-y-auto px-4 pt-4"
