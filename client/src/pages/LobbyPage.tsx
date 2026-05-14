@@ -87,14 +87,17 @@ const LobbyPage = () => {
   }
 
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden bg-bg lg:grid lg:grid-rows-[auto_1fr] lg:grid-cols-[1.1fr_1fr]">
-      {/* Full-width top nav — desktop only */}
-      <div className="hidden lg:flex col-span-2 px-16 py-5 border-b border-line items-center justify-between">
+    <div className="min-h-dvh boombox-bg-soft text-on-bg lg:h-dvh lg:overflow-hidden lg:grid lg:grid-rows-[auto_1fr] lg:grid-cols-[1.1fr_minmax(380px,_440px)]">
+      {/* Top nav — desktop only */}
+      <div className="hidden lg:flex col-span-2 px-12 py-5 items-center justify-between border-b-2 border-line bg-surface">
         <Logo />
+        <span className="font-display text-[11px] tracking-[0.2em] text-cyan-300" style={{ color: 'var(--color-cyan)' }}>
+          ◆ SIDE A · INSERT TAPE
+        </span>
       </div>
 
       {/* Two-column content */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block min-h-0 overflow-y-auto">
         <HeroPanel />
       </div>
       <SetupForm

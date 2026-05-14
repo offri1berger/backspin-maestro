@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Song } from '@backspin-maestro/shared'
 import socket from '../../socket'
+import LedDisplay from '../boombox/LedDisplay'
+import Sticker from '../boombox/Sticker'
 
 interface Props {
   song: Song
@@ -8,19 +10,62 @@ interface Props {
   compact?: boolean
 }
 
-function WaveIcon() {
-  return (
-    <div className="flex items-center h-5" style={{ gap: 2 }}>
-      {[0, 1, 2, 3, 4].map((i) => (
-        <span
-          key={i}
-          className="wave-bar"
-          style={{ animationDelay: `${i * 0.12}s`, height: '100%' }}
-        />
-      ))}
-    </div>
-  )
-}
+const Reel = ({ size, spinning }: { size: number; spinning: boolean }) => (
+  <div
+    style={{
+      width: size, height: size, borderRadius: '50%',
+      background: `radial-gradient(circle at 50% 50%, #1a1414 0 18%, #3a2818 18.5% 70%, #2a1f15 71% 100%)`,
+      position: 'relative',
+      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.08), 0 4px 12px rgba(0,0,0,.5)',
+      animation: spinning ? 'vinyl-rotate 1.2s linear infinite' : undefined,
+    }}
+  >
+    {Array.from({ length: 6 }).map((_, i) => (
+      <div
+        key={i}
+        style={{
+          position: 'absolute', left: '50%', top: '50%',
+          width: 2, height: size * 0.34,
+          background: 'rgba(255,255,255,.18)',
+          transform: `translate(-50%, -100%) rotate(${(i / 6) * 360}deg)`,
+          transformOrigin: '50% 100%',
+        }}
+      />
+    ))}
+    <div
+      style={{
+        position: 'absolute', left: '50%', top: '50%',
+        width: size * 0.18, height: size * 0.18,
+        transform: 'translate(-50%, -50%)',
+        borderRadius: '50%', background: '#0a0808',
+        boxShadow: 'inset 0 0 0 2px rgba(255,255,255,.25)',
+      }}
+    />
+  </div>
+)
+
+const PlayBtn = ({
+  playing, onClick, size,
+}: { playing: boolean; onClick?: () => void; size: number }) => (
+  <button
+    onClick={onClick}
+    disabled={!onClick}
+    aria-label={playing ? 'Pause' : 'Play'}
+    className="knob-btn"
+    style={{
+      width: size, height: size,
+      background: playing
+        ? 'radial-gradient(circle at 30% 25%, var(--color-bad), color-mix(in srgb, var(--color-bad) 50%, #000))'
+        : 'radial-gradient(circle at 30% 25%, var(--color-good), color-mix(in srgb, var(--color-good) 50%, #000))',
+      boxShadow: `inset 0 -3px 6px rgba(0,0,0,.4), inset 0 2px 4px rgba(255,255,255,.4), 0 4px 0 ${playing ? 'color-mix(in srgb, var(--color-bad) 40%, #000)' : 'color-mix(in srgb, var(--color-good) 40%, #000)'}, 0 0 16px color-mix(in srgb, ${playing ? 'var(--color-bad)' : 'var(--color-good)'} 40%, transparent)`,
+      color: playing ? '#fff' : 'var(--color-accent-ink)',
+      fontSize: size * 0.4,
+      border: 0, cursor: onClick ? 'pointer' : 'default',
+    }}
+  >
+    {playing ? '■' : '▶'}
+  </button>
+)
 
 const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -29,7 +74,6 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
   const [currentTime, setCurrentTime] = useState(0)
   const hasPreview = !!song.previewUrl
 
-  // Reset playback state via the audio element's own loadstart event (not synchronously in effect)
   useEffect(() => {
     if (audioRef.current) audioRef.current.load()
   }, [song.id])
@@ -74,68 +118,42 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
 
   if (compact) {
     return (
-      <div className="flex items-center gap-3 bg-surface text-on-surface rounded-[16px] p-3 relative overflow-hidden">
-        {/* Small vinyl + play button */}
-        <div className="w-[52px] h-[52px] shrink-0 relative">
-          <div
-            className={`vinyl${playing ? ' vinyl-spin' : ''}`}
-            style={{ width: '100%', height: '100%' }}
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            {!hasPreview ? (
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                aria-label="No audio preview available"
-                style={{ background: 'rgba(255,255,255,0.08)' }}
-              >
-                <svg width="12" height="12" viewBox="0 0 16 16" style={{ opacity: 0.4 }}>
-                  <path d="M2 2l12 12M2 14L14 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                </svg>
-              </div>
-            ) : isMyTurn ? (
-              <button
-                onClick={toggle}
-                className="w-8 h-8 rounded-full bg-accent text-accent-ink cursor-pointer flex items-center justify-center"
-                style={{ border: '3px solid var(--color-surface)' }}
-              >
-                {playing
-                  ? <WaveIcon />
-                  : <svg width="10" height="12" viewBox="0 0 16 18"><path d="M2 1l13 8-13 8z" fill="currentColor" /></svg>
-                }
-              </button>
-            ) : (
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.1)' }}
-              >
-                {playing
-                  ? <WaveIcon />
-                  : <svg width="10" height="12" viewBox="0 0 16 18" style={{ opacity: 0.35 }}><path d="M2 1l13 8-13 8z" fill="currentColor" /></svg>
-                }
-              </div>
-            )}
-          </div>
-        </div>
+      <div
+        className="relative brushed-darker p-3 flex items-center gap-3"
+        style={{
+          borderRadius: 12,
+          border: '2px solid #0a0a0a',
+          boxShadow: '0 8px 18px rgba(0,0,0,.5), inset 0 -3px 8px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.05)',
+        }}
+      >
+        <Reel size={44} spinning={playing} />
 
-        {/* Track info + progress */}
+        {hasPreview && isMyTurn ? (
+          <PlayBtn playing={playing} onClick={toggle} size={40} />
+        ) : (
+          <PlayBtn playing={playing} size={40} />
+        )}
+
         <div className="flex-1 min-w-0">
-          <div className="font-mono tracking-[0.15em] uppercase text-accent" style={{ fontSize: 9 }}>
+          <div className="font-display text-[9px] tracking-[0.08em]" style={{ color: 'var(--color-cyan)' }}>
             {!hasPreview
-              ? 'No preview available'
-              : `${isMyTurn ? 'Drop it on your timeline' : 'Waiting…'} · ${fmt(currentTime)} / 0:30`}
+              ? '· NO PREVIEW ·'
+              : isMyTurn ? '▸ DROP ON SHELF' : '· WAITING ·'}
           </div>
-          <div
-            className="mt-2 h-1 rounded-sm relative overflow-hidden"
-            style={{ background: 'rgba(255,255,255,0.12)' }}
-          >
+          <div className="mt-1.5 h-1 rounded-sm relative overflow-hidden" style={{ background: 'rgba(255,255,255,.08)' }}>
             <div
-              className="absolute inset-0 bg-accent"
-              style={{ width: `${progress}%`, transition: 'width 0.5s linear' }}
+              className="absolute inset-0"
+              style={{
+                width: `${progress}%`,
+                background: 'linear-gradient(90deg, var(--color-hot), var(--color-accent))',
+                boxShadow: '0 0 8px var(--color-hot)',
+                transition: 'width 0.5s linear',
+              }}
             />
           </div>
           <div
-            className="mt-1.5 flex justify-between font-mono tracking-[0.1em] uppercase"
-            style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)' }}
+            className="mt-1 flex justify-between font-mono text-[12px] tracking-[0.1em]"
+            style={{ color: 'var(--color-muted)' }}
           >
             <span>{fmt(currentTime)}</span>
             <span>0:30</span>
@@ -154,91 +172,61 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
   }
 
   return (
-    <div className="bg-surface text-on-surface rounded-[28px] p-7 flex items-center gap-7 relative overflow-hidden h-[160px]">
-      {/* Spinning vinyl */}
-      <div className="w-[140px] h-[140px] shrink-0 relative">
-        <div
-          className={`vinyl${playing ? ' vinyl-spin' : ''}`}
-          style={{ width: '100%', height: '100%' }}
-        />
-        <div className="absolute inset-0 flex items-center justify-center">
-          {!hasPreview ? (
-            <div
-              className="w-[52px] h-[52px] rounded-full flex items-center justify-center"
-              aria-label="No audio preview available"
-              style={{ background: 'rgba(255,255,255,0.08)' }}
-            >
-              <svg width="18" height="18" viewBox="0 0 16 16" style={{ opacity: 0.4 }}>
-                <path d="M2 2l12 12M2 14L14 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            </div>
-          ) : isMyTurn ? (
-            <button
-              onClick={toggle}
-              className="w-[52px] h-[52px] rounded-full bg-accent text-accent-ink cursor-pointer flex items-center justify-center"
-              style={{ border: '4px solid var(--color-surface)' }}
-            >
-              {playing ? (
-                <WaveIcon />
-              ) : (
-                <svg width="15" height="17" viewBox="0 0 16 18">
-                  <path d="M2 1l13 8-13 8z" fill="currentColor" />
-                </svg>
-              )}
-            </button>
-          ) : (
-            <div
-              className="w-[52px] h-[52px] rounded-full flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.1)' }}
-            >
-              {playing
-                ? <WaveIcon />
-                : <svg width="15" height="17" viewBox="0 0 16 18" style={{ opacity: 0.35 }}><path d="M2 1l13 8-13 8z" fill="currentColor" /></svg>
-              }
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Track meta */}
-      <div className="flex-1 min-w-0">
-        <div className="font-mono text-[8px] tracking-[0.2em] uppercase text-accent">
-          {hasPreview ? `Now playing · ${fmt(currentTime)} / 0:30` : 'No preview available'}
-        </div>
-
-        <h2 className="font-display text-[34px] mt-1.5 leading-[0.95] tracking-[-0.02em] text-on-surface" style={{ margin: '6px 0 0' }}>
-          Mystery hit
-          <br />
-          <em className="not-italic text-accent" style={{ opacity: 0.85, fontSize: 30 }}>
-            {!hasPreview ? 'use the year hints' : isMyTurn ? 'drop it on your timeline' : 'waiting…'}
-          </em>
-        </h2>
-
-        {/* Progress bar */}
-        <div
-          className="mt-[18px] h-1 rounded-sm relative overflow-hidden"
-          style={{ background: 'rgba(255,255,255,0.12)' }}
-        >
-          <div
-            className="absolute inset-0 bg-accent"
-            style={{ width: `${progress}%`, transition: 'width 0.5s linear' }}
-          />
-        </div>
-        <div
-          className="mt-2 flex justify-between font-mono text-[10px] tracking-[0.12em] uppercase"
-          style={{ color: 'rgba(255,255,255,0.4)' }}
-        >
-          <span>{fmt(currentTime)}</span>
-          <span>0:30</span>
-        </div>
-      </div>
-
-      {/* Corner label */}
-      <div
-        className="absolute top-4 right-5 font-mono text-[10px] tracking-[0.2em]"
-        style={{ color: 'rgba(255,255,255,0.35)' }}
+    <div
+      className="relative brushed-darker flex items-center gap-5"
+      style={{
+        borderRadius: 16,
+        border: '2px solid #0a0a0a',
+        padding: '22px 18px 18px',
+        marginTop: 12,
+        boxShadow: '0 18px 40px rgba(0,0,0,.55), inset 0 -4px 10px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.06)',
+        minHeight: 140,
+      }}
+    >
+      <Sticker
+        color="red"
+        rotate={-5}
+        size="sm"
+        style={{ position: 'absolute', top: -12, left: 18, zIndex: 1 }}
       >
-        33⅓ RPM
+        ● NOW PLAYING
+      </Sticker>
+
+      <div className="flex items-center gap-3 shrink-0">
+        <Reel size={68} spinning={playing} />
+        {hasPreview && isMyTurn ? (
+          <PlayBtn playing={playing} onClick={toggle} size={62} />
+        ) : (
+          <PlayBtn playing={playing} size={62} />
+        )}
+        <Reel size={68} spinning={playing} />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="font-display text-[10px] tracking-[0.1em]" style={{ color: 'var(--color-cyan)' }}>
+          {hasPreview ? `NOW PLAYING · MYSTERY HIT · ${fmt(currentTime)} / 0:30` : 'NO PREVIEW AVAILABLE'}
+        </div>
+        <h2
+          className="font-display mt-1.5 leading-none"
+          style={{ fontSize: 34, color: 'var(--color-cream)', textShadow: '3px 3px 0 var(--color-hot), 6px 6px 0 var(--color-accent-ink)' }}
+        >
+          ?????
+        </h2>
+        <div className="mt-3 flex items-center gap-3">
+          <LedDisplay color="green" style={{ fontSize: 14, padding: '4px 10px' }}>{fmt(currentTime)}</LedDisplay>
+          <div className="flex-1 h-1.5 rounded-sm relative overflow-hidden" style={{ background: 'rgba(255,255,255,.08)' }}>
+            <div
+              className="absolute inset-0"
+              style={{
+                width: `${progress}%`,
+                background: 'linear-gradient(90deg, var(--color-hot), var(--color-accent))',
+                boxShadow: '0 0 10px var(--color-hot)',
+                transition: 'width 0.5s linear',
+              }}
+            />
+          </div>
+          <LedDisplay color="red" style={{ fontSize: 14, padding: '4px 10px' }}>0:30</LedDisplay>
+        </div>
       </div>
 
       <audio

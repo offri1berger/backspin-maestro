@@ -4,6 +4,7 @@ import { GameStage } from '../../components/game/GameStage'
 import { Logo } from '../../components/ui/Logo'
 import MobilePlayerBar from './MobilePlayerBar'
 import MobileBottomSheet from './MobileBottomSheet'
+import LedDisplay from '../../components/boombox/LedDisplay'
 
 const GamePageMobile = (p: GamePageProps) => {
   const [mobilePending, _setMobilePending] = useState<number | null>(null)
@@ -15,19 +16,21 @@ const GamePageMobile = (p: GamePageProps) => {
   }
 
   return (
-    <div className="flex flex-col lg:hidden min-h-dvh">
-      <div className="px-4 py-2 border-b border-line flex items-center justify-between bg-bg shrink-0">
-        <div className="flex items-center gap-2.5">
-          <Logo />
-          <span className="font-mono text-[10px] tracking-[0.16em] text-accent font-semibold">
-            · {p.roomCode}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
+    <div className="flex flex-col lg:hidden min-h-dvh boombox-bg">
+      <div
+        className="px-4 py-2.5 flex items-center justify-between shrink-0"
+        style={{ background: 'linear-gradient(180deg, #1a1a1c, #0a0a0a)', borderBottom: '2px solid #000' }}
+      >
+        <Logo variant="compact" />
+        <div className="flex items-center gap-2">
+          <LedDisplay color="green" style={{ fontSize: 12, padding: '3px 8px' }}>
+            {p.roomCode}
+          </LedDisplay>
           <button
             onClick={p.handleLeave}
             aria-label="Leave room"
-            className="w-9 h-9 flex items-center justify-center text-muted hover:text-on-bg cursor-pointer border-0 bg-transparent transition-colors"
+            className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer"
+            style={{ color: 'var(--color-cream)' }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />

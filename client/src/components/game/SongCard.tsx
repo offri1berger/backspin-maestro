@@ -2,60 +2,54 @@ import { useDraggable } from '@dnd-kit/core'
 
 interface MysteryCardFaceProps {
   fullWidth?: boolean
-  hint?: string  // e.g. "between '83 and '92" — shown on the full-width vertical card
+  hint?: string
 }
 
 export const MysteryCardFace = ({ fullWidth = false, hint }: MysteryCardFaceProps) => {
   if (fullWidth) {
     return (
       <div
+        className="relative overflow-hidden select-none flex items-center gap-3 px-4 py-3"
         style={{
-          position: 'relative',
-          borderRadius: 18,
-          background: 'var(--color-surface)',
-          color: 'var(--color-on-surface)',
-          padding: '18px 18px',
-          overflow: 'hidden',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 14,
+          borderRadius: 12,
+          background: 'linear-gradient(180deg, #28282b, #1a1a1c)',
+          color: 'var(--color-cream)',
+          border: '3px solid #000',
+          boxShadow: '0 8px 22px rgba(0,0,0,.5), 0 0 22px color-mix(in srgb, var(--color-hot) 35%, transparent), inset 0 1px 0 rgba(255,255,255,.06)',
           minHeight: 68,
-          userSelect: 'none',
         }}
       >
-        {/* diagonal stripe texture */}
         <div
           style={{
             position: 'absolute', inset: 0, pointerEvents: 'none',
-            background: 'repeating-linear-gradient(135deg, transparent 0 18px, rgba(255,255,255,0.025) 18px 36px)',
+            background: 'repeating-linear-gradient(135deg, transparent 0 18px, rgba(255,43,142,0.04) 18px 36px)',
           }}
         />
-        <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+        <div className="relative">
           <div
             style={{
-              fontFamily: 'var(--font-mono)', fontSize: 10,
-              letterSpacing: '0.2em', textTransform: 'uppercase',
-              color: 'var(--color-accent)',
+              fontFamily: 'var(--font-display)', fontSize: 10,
+              letterSpacing: '0.1em', color: 'var(--color-hot)',
             }}
           >
-            Mystery card
+            ● MYSTERY HIT
           </div>
           <div
             style={{
               fontFamily: 'var(--font-display)', fontSize: 18,
               lineHeight: 1.1, marginTop: 4,
-              color: 'var(--color-on-surface)',
+              color: 'var(--color-cream)',
             }}
           >
-            {hint ? hint : 'Drag to place'}
+            {hint ? hint : 'DRAG ONTO SHELF'}
           </div>
         </div>
         <div
+          className="ml-auto"
           style={{
-            fontFamily: 'var(--font-display)', fontSize: 48,
-            lineHeight: 1, color: 'var(--color-accent)',
-            flexShrink: 0, position: 'relative',
+            fontFamily: 'var(--font-display)', fontSize: 48, lineHeight: 1,
+            color: 'var(--color-accent)',
+            textShadow: '3px 3px 0 var(--color-hot), 6px 6px 0 var(--color-accent-ink)',
           }}
         >
           ?
@@ -66,15 +60,36 @@ export const MysteryCardFace = ({ fullWidth = false, hint }: MysteryCardFaceProp
 
   // Small card — used in desktop HSlot, DragOverlay, spectator preview
   return (
-    <div className="shrink-0 w-[82px] p-[8px_8px_10px] rounded-[10px] bg-accent select-none">
-      <div className="font-display text-[26px] leading-none text-accent-ink tracking-[-0.02em] opacity-70">
+    <div
+      className="shrink-0 select-none"
+      style={{
+        width: 90,
+        background: 'linear-gradient(180deg, var(--color-hot), color-mix(in srgb, var(--color-hot) 60%, #000))',
+        borderRadius: 6,
+        border: '3px solid #000',
+        boxShadow: '0 4px 10px rgba(0,0,0,.5), 0 0 18px color-mix(in srgb, var(--color-hot) 40%, transparent)',
+        padding: 5,
+      }}
+    >
+      <div
+        className="flex items-center justify-center"
+        style={{
+          height: 40,
+          background: 'var(--color-cream)',
+          borderRadius: 2,
+          fontFamily: 'var(--font-display)',
+          fontSize: 22, color: 'var(--color-accent-ink)', lineHeight: 1,
+        }}
+      >
         ?
       </div>
-      <div className="text-[9px] font-semibold mt-1.5 whitespace-nowrap overflow-hidden text-ellipsis text-accent-ink">
-        mystery
-      </div>
-      <div className="font-mono text-[8px] text-accent-ink tracking-[0.05em] whitespace-nowrap overflow-hidden text-ellipsis mt-px opacity-65">
-        song
+      <div
+        className="mt-1 font-display text-center"
+        style={{
+          fontSize: 9, color: '#fff', letterSpacing: '.05em',
+        }}
+      >
+        MYSTERY
       </div>
     </div>
   )
@@ -103,8 +118,6 @@ const SongCard = ({ draggable, isWaiting, fullWidth = false, hint }: Props) => {
         opacity: isDragging ? 0.3 : 1,
         cursor: draggable ? 'grab' : 'default',
         width: fullWidth ? '100%' : undefined,
-        // Stop the browser from interpreting the press as a scroll/zoom/long-tap
-        // popup so the TouchSensor's delay can promote it to a drag cleanly.
         touchAction: draggable ? 'none' : undefined,
         WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none',

@@ -1,30 +1,42 @@
 @import "tailwindcss";
 
 @theme {
-  /* Colors */
-  --color-bg:          #efe8d9;
-  --color-bg-2:        #e6dec9;
-  --color-surface:     #1a1612;
-  --color-surface-2:   #2a221b;
-  --color-on-surface:  #f3ecdb;
-  --color-on-bg:       #1a1612;
-  --color-muted:       #6b5f4d;
-  --color-muted-2:     #8a7d68;
-  --color-line:        #c9bfa6;
-  --color-accent:      oklch(0.62 0.15 40);
-  --color-accent-ink:  #1a1612;
-  --color-accent-soft: oklch(0.92 0.05 40);
-  --color-good:        oklch(0.58 0.13 145);
-  --color-bad:         oklch(0.55 0.18 25);
+  /* Boombox Arcade — Direction C palette */
+  --color-bg:          #1a1a1c;   /* deep matte black panel */
+  --color-bg-2:        #222226;   /* slightly lighter panel */
+  --color-surface:     #0a0a0a;   /* black plastic / LED bezel */
+  --color-surface-2:   #2a2a2c;   /* dark plastic */
+  --color-on-surface:  #f5ecd6;   /* cream label */
+  --color-on-bg:       #f5ecd6;   /* cream ink */
+  --color-muted:       #9a9aa0;   /* desaturated chrome */
+  --color-muted-2:     #6d6d72;
+  --color-line:        #0a0a0a;   /* hard black hairlines around panels */
+
+  /* Neon arcade accents — yellow primary, hot pink secondary, cyan tertiary */
+  --color-accent:      #ffd400;   /* hot yellow plastic */
+  --color-accent-ink:  #1a1410;   /* dark text on yellow */
+  --color-accent-soft: #fff3a8;
+  --color-hot:         #ff2b8e;   /* magenta */
+  --color-cyan:        #14d3ff;   /* cyan */
+  --color-orange:      #ff5722;
+  --color-good:        #34c759;
+  --color-bad:         #ff3838;
+  --color-cream:       #f5ecd6;
+  --color-metal-1:     #3a3a3e;
+  --color-metal-2:     #5a5a60;
+  --color-plastic:     #2a2a2c;
 
   /* Fonts */
-  --font-display: 'Instrument Serif', Georgia, serif;
-  --font-body:    'Geist', system-ui, sans-serif;
-  --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+  --font-display: 'Bowlby One', 'Black Ops One', sans-serif;
+  --font-body:    'Space Grotesk', system-ui, sans-serif;
+  --font-mono:    'VT323', 'Press Start 2P', monospace;
+  --font-marker:  'Permanent Marker', 'Bowlby One', sans-serif;
+  --font-code:    'Space Mono', monospace;
 }
 
-/* vinyl colour not needed as a Tailwind utility */
-:root { --vinyl: #0c0a08; }
+:root {
+  --vinyl: #0c0a08;
+}
 
 html, body {
   margin: 0; padding: 0;
@@ -33,7 +45,175 @@ html, body {
   font-family: var(--font-body);
 }
 
-/* ── Vinyl record ── */
+/* ── Boombox tactile surfaces ─────────────────────────────── */
+
+/* Brushed metal — repeating vertical lines + top-to-bottom gradient */
+.brushed {
+  background-image:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 2px),
+    linear-gradient(180deg, #5a5a60 0%, #3a3a3e 100%);
+}
+.brushed-dark {
+  background-image:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 2px),
+    linear-gradient(180deg, #34343a 0%, #1f1f22 100%);
+}
+.brushed-darker {
+  background-image:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 2px),
+    linear-gradient(180deg, #2a2a2e 0%, #1c1c1f 100%);
+}
+
+/* Hard plastic corner panel — used for control decks. Black 2px border + drop + inset highlight */
+.panel-hardware {
+  border: 2px solid #0a0a0a;
+  border-radius: 14px;
+  box-shadow:
+    0 16px 36px rgba(0,0,0,.55),
+    inset 0 -4px 12px rgba(0,0,0,.4),
+    inset 0 2px 0 rgba(255,255,255,.07);
+}
+
+/* Arcade screw — 4 corners on hardware panels */
+.screw {
+  position: absolute;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: radial-gradient(circle, #5a5a60, #1a1a1a);
+  box-shadow: inset 0 0 0 1px #0a0a0a, 0 1px 1px rgba(255,255,255,.08);
+}
+
+/* LED dot-matrix readout (used everywhere — room codes, timers) */
+.led {
+  font-family: var(--font-mono);
+  background: #0a0a0a;
+  color: var(--color-good);
+  border: 2px solid #1a1a1a;
+  border-radius: 6px;
+  padding: 10px 16px;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 8px currentColor, 0 0 16px color-mix(in srgb, currentColor 50%, transparent);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.8), inset 0 0 0 1px rgba(255,255,255,.05);
+  background-image: radial-gradient(circle at 50% 50%, transparent 0%, transparent 70%, rgba(0,0,0,.5) 100%);
+}
+.led-yellow  { color: var(--color-accent); }
+.led-cyan    { color: var(--color-cyan); }
+.led-hot     { color: var(--color-hot); }
+.led-red     { color: var(--color-bad); }
+.led-green   { color: var(--color-good); }
+
+/* Sticker — rotated text patch like a tour patch / sticker on a flight case */
+.sticker {
+  display: inline-block;
+  padding: 6px 14px;
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  box-shadow: 0 3px 0 rgba(0,0,0,.25), 0 6px 12px rgba(0,0,0,.3), inset 0 0 0 2px rgba(0,0,0,.15);
+}
+.sticker-sm  { padding: 3px 8px; font-size: 10px; }
+
+/* Big plastic arcade button look applied to <button> via class */
+.plastic-btn {
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
+  border: 2px solid #0a0a0a;
+  border-radius: 10px;
+  color: var(--color-accent-ink);
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 75%, #000));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--color-accent) 55%, #000), 0 8px 18px rgba(0,0,0,.4);
+  transition: transform 100ms ease, box-shadow 100ms ease;
+}
+.plastic-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--color-accent) 55%, #000), 0 4px 10px rgba(0,0,0,.4);
+}
+.plastic-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.plastic-btn-pink {
+  background: linear-gradient(180deg, var(--color-hot), color-mix(in srgb, var(--color-hot) 75%, #000));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--color-hot) 55%, #000), 0 0 18px color-mix(in srgb, var(--color-hot) 25%, transparent);
+  color: #fff;
+}
+.plastic-btn-pink:active:not(:disabled) {
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--color-hot) 55%, #000);
+  transform: translateY(2px);
+}
+.plastic-btn-green {
+  background: linear-gradient(180deg, var(--color-good), color-mix(in srgb, var(--color-good) 70%, #000));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--color-good) 50%, #000), 0 0 22px color-mix(in srgb, var(--color-good) 30%, transparent);
+  color: var(--color-accent-ink);
+}
+.plastic-btn-green:active:not(:disabled) {
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--color-good) 50%, #000);
+  transform: translateY(2px);
+}
+.plastic-btn-dark {
+  background: linear-gradient(180deg, #2a2a2c, #1a1a1c);
+  box-shadow: 0 3px 0 #000, 0 6px 14px rgba(0,0,0,.4);
+  color: var(--color-cream);
+}
+.plastic-btn-dark:active:not(:disabled) {
+  box-shadow: 0 1px 0 #000;
+  transform: translateY(2px);
+}
+
+/* Round plastic knob/button for transport controls */
+.knob-btn {
+  border-radius: 50%;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  color: var(--color-accent-ink);
+  cursor: pointer;
+}
+
+/* Speckled background for game pages — repeating diagonal hatching plus radial pink/cyan glow */
+.boombox-bg {
+  background-color: #222;
+  background-image:
+    radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--color-hot) 18%, transparent) 0%, transparent 40%),
+    radial-gradient(circle at 80% 100%, color-mix(in srgb, var(--color-cyan) 15%, transparent) 0%, transparent 40%),
+    repeating-linear-gradient(45deg, transparent 0 12px, rgba(255,255,255,.012) 12px 13px);
+}
+.boombox-bg-soft {
+  background-color: #1a1a1c;
+  background-image:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-hot) 18%, transparent) 0%, transparent 50%),
+    repeating-linear-gradient(45deg, transparent 0 12px, rgba(255,255,255,.012) 12px 13px);
+}
+
+/* Polaroid avatar frame — cream paper with shadow + tape strip */
+.polaroid {
+  background: var(--color-cream);
+  padding: 7px 7px 22px;
+  border-radius: 2px;
+  box-shadow: 0 6px 14px rgba(0,0,0,.4), inset 0 0 0 1px rgba(0,0,0,.1);
+  position: relative;
+}
+.polaroid::before {
+  content: '';
+  position: absolute;
+  top: -4px; left: 50%;
+  transform: translateX(-50%) rotate(-3deg);
+  width: 28px; height: 14px;
+  background: rgba(255,255,255,.6);
+  background-image: repeating-linear-gradient(45deg, transparent 0 4px, rgba(0,0,0,.04) 4px 8px);
+  box-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
+.polaroid-active {
+  box-shadow: 0 0 0 3px var(--color-hot), 0 0 24px color-mix(in srgb, var(--color-hot) 55%, transparent), 0 8px 20px rgba(0,0,0,.5);
+}
+
+/* ── Animations ───────────────────────────────────────────── */
+
+/* Vinyl record kept around for AudioPlayer (still rendered as a cassette reel) */
 .vinyl {
   position: relative;
   border-radius: 50%;
@@ -49,7 +229,7 @@ html, body {
       var(--vinyl)        57% 70%,
       #14110d             70% 71%,
       var(--vinyl)        71% 100%);
-  box-shadow: 0 30px 60px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.05);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.05);
 }
 .vinyl::after {
   content: '';
@@ -57,18 +237,18 @@ html, body {
   border-radius: 50%;
   background: conic-gradient(from 35deg,
     rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0.06) 8%,
+    rgba(255,255,255,0.08) 8%,
     rgba(255,255,255,0) 18%,
     rgba(255,255,255,0) 60%,
-    rgba(255,255,255,0.04) 70%,
+    rgba(255,255,255,0.05) 70%,
     rgba(255,255,255,0) 80%);
   mix-blend-mode: screen;
   pointer-events: none;
 }
-.vinyl-spin { animation: vinyl-rotate 8s linear infinite; }
+.vinyl-spin { animation: vinyl-rotate 1.6s linear infinite; }
 @keyframes vinyl-rotate { to { transform: rotate(360deg); } }
 
-/* ── Waveform bars ── */
+/* Waveform bars (legacy + audio player) */
 .wave-bar {
   display: block;
   width: 3px;
@@ -81,16 +261,16 @@ html, body {
   50%       { height: 100%; }
 }
 
-/* ── Card placement animation ── */
+/* Card placement — punchier bounce */
 @keyframes card-place-in {
-  0%   { transform: translateY(-14px) scale(0.82) rotate(-3deg); opacity: 0; }
-  55%  { transform: translateY(3px) scale(1.05) rotate(0.5deg); opacity: 1; }
-  80%  { transform: translateY(-1px) scale(0.99); }
-  100% { transform: translateY(0) scale(1) rotate(0); }
+  0%   { transform: translateY(-14px) scale(0.78) rotate(-4deg); opacity: 0; }
+  55%  { transform: translateY(4px) scale(1.08) rotate(0.6deg); opacity: 1; }
+  80%  { transform: translateY(-1px) scale(0.98); }
+  100% { transform: translateY(0) scale(1) rotate(-1deg); }
 }
-.card-place-in { animation: card-place-in 420ms cubic-bezier(0.2, 0.85, 0.3, 1.18) both; }
+.card-place-in { animation: card-place-in 480ms cubic-bezier(0.2, 0.85, 0.3, 1.18) both; }
 
-/* ── Winner reveal animation ── */
+/* Winner */
 @keyframes winner-rise {
   0%   { transform: translateY(28px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }
@@ -103,31 +283,71 @@ html, body {
 }
 .winner-fade { animation: winner-fade 800ms ease-out both; }
 
-/* ── Mobile bottom sheet slide-up ── */
+/* Sheet slide */
 @keyframes sheet-slide-up {
   0%   { transform: translateY(100%); }
   100% { transform: translateY(0); }
 }
 .sheet-slide-up { animation: sheet-slide-up 280ms cubic-bezier(0.2, 0.85, 0.35, 1) both; }
 
-/* ── Player joined celebration ── */
+/* Player joined */
 @keyframes player-joined-glow {
   0%   { transform: scale(0.98); box-shadow: 0 0 0 rgba(0,0,0,0); }
-  18%  { transform: scale(1.01); box-shadow: 0 0 24px color-mix(in oklch, var(--color-accent) 45%, transparent); }
-  60%  { box-shadow: 0 0 18px color-mix(in oklch, var(--color-accent) 30%, transparent); }
+  18%  { transform: scale(1.02); box-shadow: 0 0 24px color-mix(in srgb, var(--color-hot) 55%, transparent); }
+  60%  { box-shadow: 0 0 18px color-mix(in srgb, var(--color-hot) 35%, transparent); }
   100% { transform: scale(1); box-shadow: 0 0 0 rgba(0,0,0,0); }
 }
 .player-joined-glow { animation: player-joined-glow 2200ms ease-out both; }
 
-/* ── Scrollbar utilities ── */
+/* Shake — used on steal alert bars */
+@keyframes shake {
+  0%,100%{ transform: translateX(0); }
+  25%    { transform: translateX(-3px); }
+  75%    { transform: translateX(3px); }
+}
+.shake-x { animation: shake 0.12s ease-out 2; }
+
+/* Pop in for sticker confetti */
+@keyframes pop {
+  from { transform: scale(.2); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  to   { transform: scale(1); }
+}
+.pop-in { animation: pop 0.5s ease-out both; }
+
+/* Soft pulse for active elements */
+@keyframes neon-pulse {
+  0%,100% { filter: drop-shadow(0 0 0px currentColor); }
+  50%     { filter: drop-shadow(0 0 12px currentColor); }
+}
+
+/* Scrollbars utility */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── Reusable helpers ── */
+/* Reusable text helper */
 .eyebrow {
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: 10px;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--color-muted);
+  color: var(--color-cyan);
+}
+
+/* Big chunky title with magenta + black drop shadow — used on lobby + game over */
+.boombox-title {
+  font-family: var(--font-display);
+  color: var(--color-cream);
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+  text-shadow: 4px 4px 0 var(--color-hot), 8px 8px 0 var(--color-accent-ink);
+}
+.boombox-title-yellow {
+  color: var(--color-accent);
+  text-shadow: 4px 4px 0 var(--color-accent-ink);
+}
+
+/* Background hatching utility for soft accents */
+.hatched {
+  background-image: repeating-linear-gradient(-45deg, var(--color-accent) 0 14px, #0a0a0a 14px 28px);
 }

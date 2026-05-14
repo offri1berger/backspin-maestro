@@ -1,35 +1,116 @@
+import Sticker from '../boombox/Sticker'
+import Speaker from '../boombox/Speaker'
+import { LedDisplay } from '../boombox/LedDisplay'
+
 const STATS = [
-  { val: '200,000+', label: 'tracks' },
-  { val: '8',        label: 'decades' },
-  { val: '∞',        label: 'good times' },
-]
+  { val: '200K',  label: 'TRACKS',  color: 'var(--color-accent)' },
+  { val: '8',     label: 'DECADES', color: 'var(--color-cyan)' },
+  { val: '2-6',   label: 'PLAYERS', color: 'var(--color-hot)' },
+] as const
 
 export function HeroPanel() {
   return (
-    <div className="h-full px-16 py-14 flex flex-col relative overflow-hidden bg-gradient-to-br from-accent/10 to-accent/20">
-      <div className="vinyl vinyl-spin absolute left-[-220px] bottom-[-220px] w-[480px] h-[400px] opacity-[0.85]" />
+    <div className="relative h-full min-h-0 px-8 xl:px-14 py-6 xl:py-10 flex flex-col gap-4 xl:gap-6 boombox-bg overflow-y-auto">
+      {/* Boombox hardware visualization */}
+      <div className="flex justify-center shrink-0">
+        <div
+          className="relative panel-hardware brushed-dark w-full max-w-[400px] xl:max-w-[460px] aspect-[7/4] p-3 xl:p-5"
+        >
+          {/* handle */}
+          <div
+            className="absolute left-1/2 -top-2 -translate-x-1/2 w-32 xl:w-40 h-3.5 rounded-[10px]"
+            style={{ background: 'linear-gradient(180deg, #5a5a60, #2a2a2c)', boxShadow: '0 3px 6px rgba(0,0,0,.5)' }}
+          />
+          {/* speakers — scale with viewport */}
+          <div className="absolute left-3 top-3 xl:left-4 xl:top-4">
+            <Speaker size={92} color="hot" />
+          </div>
+          <div className="absolute right-3 top-3 xl:right-4 xl:top-4">
+            <Speaker size={92} color="cyan" />
+          </div>
 
-      <div className="relative flex-1 flex flex-col justify-start pt-16">
-        <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-accent">
-          Side A · 2–6 players · No app needed
-        </p>
-        <h1 className="font-display text-[130px] leading-[0.88] mt-3.5 mb-0 tracking-[-0.02em] text-on-bg">
-          Name<br />
-          <em className="italic text-accent">that</em><br />
-          tune.
+          {/* center deck */}
+          <div
+            className="absolute left-[32%] right-[32%] top-4 rounded-[8px] p-2"
+            style={{
+              background: '#0a0a0a',
+              border: '2px solid #1a1a1a',
+              boxShadow: 'inset 0 2px 6px rgba(0,0,0,.8)',
+              height: 64,
+            }}
+          >
+            <div className="font-mono text-[12px] tracking-[0.1em]" style={{ color: 'var(--color-good)', textShadow: '0 0 6px var(--color-good)' }}>
+              ● REC ▸ 30s
+            </div>
+            <div className="mt-1.5 flex items-end gap-[3px] h-[28px]">
+              {Array.from({ length: 14 }).map((_, i) => (
+                <span
+                  key={i}
+                  className="wave-bar"
+                  style={{
+                    height: `${30 + (i % 4) * 18}%`,
+                    background: 'var(--color-accent)',
+                    boxShadow: '0 0 6px var(--color-accent)',
+                    animationDelay: `${i * 70}ms`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* tuner knobs */}
+          <div className="absolute left-[32%] bottom-2 flex gap-1.5">
+            {(['hot','cyan','yellow'] as const).map((col, i) => {
+              const c = col === 'hot' ? 'var(--color-hot)' : col === 'cyan' ? 'var(--color-cyan)' : 'var(--color-accent)'
+              return (
+                <div
+                  key={i}
+                  className="relative"
+                  style={{
+                    width: 22, height: 22, borderRadius: '50%',
+                    background: `conic-gradient(${c}, color-mix(in srgb, ${c} 60%, #000))`,
+                    boxShadow: 'inset 0 -2px 4px rgba(0,0,0,.4), 0 2px 4px rgba(0,0,0,.5)',
+                  }}
+                >
+                  <div className="absolute left-1/2 -translate-x-1/2 top-0.5 w-0.5 h-1.5 bg-white" />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Big title with stickers */}
+      <div className="relative shrink-0">
+        <Sticker color="cyan" rotate={-5} className="absolute -top-3 left-0">SIDE A</Sticker>
+        <h1 className="boombox-title" style={{ fontSize: 'clamp(48px, 6vw, 80px)' }}>
+          CRANK IT,<br />
+          <span className="boombox-title-yellow">NAME IT.</span>
         </h1>
-        <p className="mt-7 text-[17px] leading-[1.55] text-muted max-w-[440px]">
-          A music timeline party. Drag mystery hits onto your chronicle.
-          First to ten correctly placed cards wins the night.
+        <Sticker color="hot" rotate={4} className="absolute -bottom-1 right-4 xl:left-72 xl:right-auto">★ HOT ★</Sticker>
+        <p className="mt-5 max-w-[440px] text-[13px] leading-[1.5]" style={{ color: 'var(--color-muted)' }}>
+          Hear a hit. Drop the cassette on the right year. Steal your friends' picks. Loudest deck wins.
         </p>
       </div>
 
-      <div className="relative flex gap-9 font-mono text-[11px] tracking-[0.1em] text-muted">
-        {STATS.map(({ val, label }) => (
+      {/* Stats row */}
+      <div className="flex items-end gap-5 xl:gap-7 flex-wrap shrink-0">
+        {STATS.map(({ val, label, color }) => (
           <div key={label}>
-            <span className="text-accent">{val}</span> {label}
+            <div
+              className="font-display"
+              style={{ fontSize: 24, lineHeight: 1, color, textShadow: '2px 2px 0 var(--color-accent-ink)' }}
+            >
+              {val}
+            </div>
+            <div className="font-display text-[9px] tracking-[0.2em] mt-1" style={{ color: 'var(--color-muted)' }}>
+              {label}
+            </div>
           </div>
         ))}
+        <div className="ml-auto">
+          <LedDisplay color="green" style={{ fontSize: 13, padding: '5px 9px' }}>● ONLINE</LedDisplay>
+        </div>
       </div>
     </div>
   )

@@ -17,10 +17,21 @@ const KickNotice = () => {
     <div
       role="status"
       aria-live="polite"
-      className="fixed top-3 left-1/2 -translate-x-1/2 z-[101] px-4 py-2 rounded-full border border-line bg-surface text-on-surface"
-      style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}
+      className="fixed top-3 left-1/2 -translate-x-1/2 z-[101] px-4 py-2 pop-in"
+      style={{
+        background: '#1a1a1c',
+        color: 'var(--color-cream)',
+        border: '2px solid #000',
+        borderRadius: 8,
+        boxShadow: '0 10px 30px rgba(0,0,0,0.5), 0 3px 0 #000',
+      }}
     >
-      <span className="font-mono text-[11px] tracking-[0.14em] uppercase">{notice.message}</span>
+      <span
+        className="font-display"
+        style={{ fontSize: 11, letterSpacing: '.12em' }}
+      >
+        {notice.message.toUpperCase()}
+      </span>
     </div>
   )
 }

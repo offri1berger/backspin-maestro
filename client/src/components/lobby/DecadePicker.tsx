@@ -41,35 +41,59 @@ export const DecadePicker = ({ decadeFilter, onChange, disabled = false }: Props
   }
 
   const chip = (active: boolean) =>
-    `h-9 lg:h-10 rounded-[10px] font-mono text-[10px] tracking-[0.08em] font-semibold transition-colors duration-150 ${
-      disabled ? 'cursor-default opacity-80' : 'cursor-pointer'
-    } ${
-      active ? 'bg-accent text-accent-ink border-none' : 'bg-transparent text-on-bg border border-line'
-    }`
+    [
+      'h-9 rounded-[6px] font-display text-[11px] tracking-[0.05em] transition-all duration-150',
+      'border-2 border-[#0a0a0a]',
+      disabled ? 'cursor-default opacity-80' : 'cursor-pointer',
+      active
+        ? 'text-[var(--color-accent-ink)]'
+        : 'text-[var(--color-cream)] bg-[#0a0a0a]',
+    ].join(' ')
 
   return (
     <div>
-      <label className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Decade</label>
-      <div className="grid grid-cols-4 lg:grid-cols-7 gap-1.5 mt-2">
+      <div className="font-display text-[10px] tracking-[0.1em] uppercase mb-2" style={{ color: 'var(--color-cyan)' }}>
+        DECADE
+      </div>
+      <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
         <button
           type="button"
           onClick={() => !disabled && onChange('all')}
           disabled={disabled}
           className={chip(isAll)}
+          style={isAll
+            ? {
+                background: 'linear-gradient(180deg, var(--color-hot), color-mix(in srgb, var(--color-hot) 70%, #000))',
+                color: '#fff',
+                boxShadow: '0 2px 0 #000, 0 0 10px color-mix(in srgb, var(--color-hot) 50%, transparent)',
+              }
+            : { boxShadow: 'inset 0 2px 4px rgba(0,0,0,.6)' }
+          }
         >
-          All
+          ALL
         </button>
-        {SPECIFIC_DECADES.map((d) => (
-          <button
-            key={d.value}
-            type="button"
-            onClick={() => handleChip(d.value)}
-            disabled={disabled}
-            className={chip(selected.has(d.value))}
-          >
-            {d.label}
-          </button>
-        ))}
+        {SPECIFIC_DECADES.map((d) => {
+          const active = selected.has(d.value)
+          return (
+            <button
+              key={d.value}
+              type="button"
+              onClick={() => handleChip(d.value)}
+              disabled={disabled}
+              className={chip(active)}
+              style={active
+                ? {
+                    background: 'linear-gradient(180deg, var(--color-hot), color-mix(in srgb, var(--color-hot) 70%, #000))',
+                    color: '#fff',
+                    boxShadow: '0 2px 0 #000, 0 0 10px color-mix(in srgb, var(--color-hot) 50%, transparent)',
+                  }
+                : { boxShadow: 'inset 0 2px 4px rgba(0,0,0,.6)' }
+              }
+            >
+              {d.label.toUpperCase()}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

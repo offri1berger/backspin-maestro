@@ -10,31 +10,43 @@ interface VSlotProps {
 const VSlot = ({ id, label, ariaLabel, armed = false }: VSlotProps) => {
   const { isOver, setNodeRef } = useDroppable({ id })
 
-  const base = 'w-full flex items-center justify-center rounded-[10px] border-2 transition-all duration-150 font-mono text-[10px] tracking-[0.15em] uppercase select-none'
-  const stateClasses = isOver
-    ? 'border-accent text-accent border-solid h-14 font-bold'
-    : armed
-      ? 'border-accent/60 text-accent/80 border-dashed h-11'
-      : 'border-line border-dashed text-muted-2 h-11'
+  const base =
+    'w-full flex items-center justify-center rounded-[8px] border-2 transition-all duration-150 font-display text-[11px] tracking-[0.05em] uppercase select-none'
+
+  const styles =
+    isOver
+      ? {
+          height: 56,
+          background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-good) 30%, transparent), transparent)',
+          borderColor: 'var(--color-good)',
+          color: 'var(--color-good)',
+          boxShadow: '0 0 20px color-mix(in srgb, var(--color-good) 55%, transparent), inset 0 0 0 1px rgba(0,0,0,.3)',
+        }
+      : armed
+        ? {
+            height: 44,
+            background: 'transparent',
+            borderColor: 'var(--color-accent)',
+            borderStyle: 'dashed' as const,
+            color: 'var(--color-accent)',
+          }
+        : {
+            height: 44,
+            background: 'transparent',
+            borderColor: 'var(--color-muted-2)',
+            borderStyle: 'dashed' as const,
+            color: 'var(--color-muted)',
+          }
 
   return (
     <div
       ref={setNodeRef}
       role="region"
       aria-label={ariaLabel ?? `Timeline slot ${id + 1} (${label})`}
-      className={`${base} ${stateClasses}`}
-      style={
-        isOver
-          ? {
-              background: 'color-mix(in oklch, var(--color-accent) 22%, transparent)',
-              boxShadow: '0 0 24px color-mix(in oklch, var(--color-accent) 45%, transparent)',
-            }
-          : armed
-            ? { background: 'color-mix(in oklch, var(--color-accent) 6%, transparent)' }
-            : undefined
-      }
+      className={base}
+      style={styles}
     >
-      {label}
+      {isOver ? `▼ DROP IT! ▼` : `· ${label} ·`}
     </div>
   )
 }

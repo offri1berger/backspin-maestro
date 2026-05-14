@@ -2,18 +2,26 @@ import { useEffect, useRef, useState } from 'react'
 import type { Player, DecadeFilter, RoomSettings, UpdateRoomSettingsResult } from '@backspin-maestro/shared'
 import { MIN_SONGS_PER_PLAYER, MAX_SONGS_PER_PLAYER } from '@backspin-maestro/shared'
 import { useGameStore } from '../../store/gameStore'
-import { ArrowIcon, Logo } from '../ui/Logo'
+import { Logo } from '../ui/Logo'
 import MuteToggle from '../ui/MuteToggle'
 import { DecadePicker } from './DecadePicker'
 import socket from '../../socket'
+import Sticker from '../boombox/Sticker'
+import LedDisplay from '../boombox/LedDisplay'
+import PolaroidAvatar from '../boombox/PolaroidAvatar'
+import PlasticButton from '../boombox/PlasticButton'
 
-function PlayerRow({
+const POLAROID_ROTATIONS = [-6, 4, -3, 5, -4, 6]
+
+function PlayerPolaroid({
   player,
+  index,
   offline,
   canKick,
   isNew,
 }: {
   player: Player
+  index: number
   offline: boolean
   canKick: boolean
   isNew: boolean
@@ -25,27 +33,65 @@ function PlayerRow({
     })
   }
 
+  const rot = POLAROID_ROTATIONS[index % POLAROID_ROTATIONS.length]
+
   return (
     <div
-      className={`flex items-center gap-3.5 px-[18px] py-3.5 rounded-2xl border transition-all ${
-        offline ? 'opacity-40' : ''
-      } ${isNew ? 'border-accent player-joined-glow' : 'border-line'}`}
+      className={`relative ${isNew ? 'player-joined-glow' : ''}`}
+      style={{ opacity: offline ? 0.4 : 1, transition: 'opacity .15s' }}
     >
-      {player.avatar
-        ? <img src={player.avatar} alt={player.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
-        : <div className="w-9 h-9 rounded-full bg-line flex items-center justify-center font-display text-[20px] text-on-bg shrink-0">{player.name.charAt(0).toUpperCase()}</div>
-      }
-      <span className="flex-1 text-base font-semibold text-on-bg">{player.name}</span>
-      {isNew && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-accent">joined</span>}
-      {!isNew && offline && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">reconnecting…</span>}
-      {!isNew && !offline && player.isHost && <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">conductor</span>}
+      <PolaroidAvatar
+        src={player.avatar}
+        fallback={player.name.charAt(0)}
+        size={86}
+        rotate={rot}
+        active={isNew}
+        name={player.name.toUpperCase()}
+      />
+      {player.isHost && (
+        <Sticker
+          color="yellow"
+          rotate={index % 2 ? -8 : 8}
+          size="sm"
+          style={{ position: 'absolute', top: -10, right: -10 }}
+        >
+          HOST
+        </Sticker>
+      )}
+      {isNew && (
+        <Sticker
+          color="cyan"
+          rotate={-6}
+          size="sm"
+          style={{ position: 'absolute', bottom: -2, left: -8 }}
+        >
+          JOINED
+        </Sticker>
+      )}
+      {!isNew && offline && (
+        <Sticker
+          color="red"
+          rotate={3}
+          size="sm"
+          style={{ position: 'absolute', bottom: 4, left: -8 }}
+        >
+          OFFLINE
+        </Sticker>
+      )}
       {canKick && (
         <button
           onClick={handleKick}
           aria-label={`Remove ${player.name}`}
-          className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted hover:text-bad transition-colors cursor-pointer bg-transparent border-0 p-0"
+          className="absolute -top-2 -right-2 w-7 h-7 rounded-full cursor-pointer flex items-center justify-center"
+          style={{
+            background: '#0a0a0a',
+            color: 'var(--color-bad)',
+            border: '2px solid var(--color-bad)',
+            boxShadow: '0 2px 0 #000',
+            fontSize: 14, lineHeight: 1, fontWeight: 700,
+          }}
         >
-          remove
+          ✕
         </button>
       )}
     </div>
@@ -69,8 +115,6 @@ const SettingsPanel = ({
   const setSettings = useGameStore((s) => s.setSettings)
 
   const emitChange = (next: RoomSettings) => {
-    // Optimistic — broadcast will confirm. On error we log; the next valid
-    // broadcast (or page reload) reconciles.
     setSettings(next)
     socket.emit('room:updateSettings', next, (result: UpdateRoomSettingsResult) => {
       if ('error' in result) {
@@ -92,46 +136,63 @@ const SettingsPanel = ({
   }
 
   return (
-    <div className="mb-6 rounded-2xl border border-line p-4 lg:p-5 bg-bg-2/40">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-accent inline-block" />
-          <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Settings</span>
-        </div>
-        <span className="font-mono text-[9px] tracking-[0.15em] uppercase text-muted">
-          {editable ? 'you can edit' : 'conductor controls'}
+    <div className="relative panel-hardware brushed-dark p-4 lg:p-5 flex flex-col gap-3.5">
+      <span className="screw" style={{ top: 6, left: 6 }} />
+      <span className="screw" style={{ top: 6, right: 6 }} />
+      <span className="screw" style={{ bottom: 6, left: 6 }} />
+      <span className="screw" style={{ bottom: 6, right: 6 }} />
+
+      <div className="flex items-center justify-between">
+        <Sticker color="yellow" rotate={-3} size="sm">MIX RULES</Sticker>
+        <span className="font-display text-[9px] tracking-[0.1em]" style={{ color: 'var(--color-muted)' }}>
+          {editable ? 'YOU CONTROL THE DECK' : 'CONDUCTOR CONTROLS'}
         </span>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <DecadePicker
-          decadeFilter={settings.decadeFilter}
-          onChange={handleDecade}
-          disabled={!editable}
-        />
+      <DecadePicker
+        decadeFilter={settings.decadeFilter}
+        onChange={handleDecade}
+        disabled={!editable}
+      />
 
-        <div>
-          <label className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Songs to win</label>
-          <div className="mt-2 px-2 py-2 border border-line rounded-[14px] flex items-center justify-between bg-bg">
-            <button
-              type="button"
-              onClick={() => handleSongs(-1)}
-              disabled={!editable || settings.songsPerPlayer <= MIN_SONGS_PER_PLAYER}
-              aria-label="Fewer songs"
-              className="w-9 h-9 flex items-center justify-center font-mono text-[20px] text-muted enabled:hover:text-on-bg enabled:cursor-pointer bg-transparent border-none rounded-[8px] enabled:hover:bg-on-bg/5 transition-colors leading-none disabled:opacity-40 disabled:cursor-not-allowed"
-            >−</button>
-            <div className="flex flex-col items-center">
-              <span className="font-display text-[26px] text-accent leading-none">{settings.songsPerPlayer}</span>
-              <span className="font-mono text-[9px] tracking-[0.1em] uppercase text-muted mt-0.5">≈{Math.round(settings.songsPerPlayer * 2.5)} min</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleSongs(1)}
-              disabled={!editable || settings.songsPerPlayer >= MAX_SONGS_PER_PLAYER}
-              aria-label="More songs"
-              className="w-9 h-9 flex items-center justify-center font-mono text-[20px] text-muted enabled:hover:text-on-bg enabled:cursor-pointer bg-transparent border-none rounded-[8px] enabled:hover:bg-on-bg/5 transition-colors leading-none disabled:opacity-40 disabled:cursor-not-allowed"
-            >+</button>
-          </div>
+      <div>
+        <div className="font-display text-[10px] tracking-[0.1em] mb-1.5" style={{ color: 'var(--color-cyan)' }}>
+          FIRST TO {settings.songsPerPlayer}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => handleSongs(-1)}
+            disabled={!editable || settings.songsPerPlayer <= MIN_SONGS_PER_PLAYER}
+            aria-label="Fewer songs"
+            className="knob-btn shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              width: 36, height: 36,
+              background: 'radial-gradient(circle at 30% 25%, var(--color-bad), color-mix(in srgb, var(--color-bad) 50%, #000))',
+              boxShadow: 'inset 0 -3px 6px rgba(0,0,0,.4), inset 0 2px 4px rgba(255,255,255,.4), 0 3px 0 color-mix(in srgb, var(--color-bad) 40%, #000)',
+              color: '#fff', fontSize: 16,
+            }}
+          >−</button>
+          <LedDisplay
+            color="yellow"
+            className="flex-1 text-center"
+            style={{ fontSize: 14, padding: '6px 10px' }}
+          >
+            {settings.songsPerPlayer}·{Math.round(settings.songsPerPlayer * 2.5)}M
+          </LedDisplay>
+          <button
+            type="button"
+            onClick={() => handleSongs(1)}
+            disabled={!editable || settings.songsPerPlayer >= MAX_SONGS_PER_PLAYER}
+            aria-label="More songs"
+            className="knob-btn shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              width: 36, height: 36,
+              background: 'radial-gradient(circle at 30% 25%, var(--color-good), color-mix(in srgb, var(--color-good) 50%, #000))',
+              boxShadow: 'inset 0 -3px 6px rgba(0,0,0,.4), inset 0 2px 4px rgba(255,255,255,.4), 0 3px 0 color-mix(in srgb, var(--color-good) 40%, #000)',
+              color: 'var(--color-accent-ink)', fontSize: 16,
+            }}
+          >+</button>
         </div>
       </div>
     </div>
@@ -144,9 +205,6 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
   const settings = useGameStore((s) => s.settings)
   const isHost = players.find((p) => p.id === playerId)?.isHost ?? false
 
-  // Highlight rows of players who joined since this client mounted.
-  // Local-mounted players (including yourself) are seeded into `seenIds` on
-  // first render so they don't flash on initial paint.
   const seenIdsRef = useRef<Set<string>>(new Set(players.map((p) => p.id)))
   const [recentlyJoined, setRecentlyJoined] = useState<Set<string>>(new Set())
 
@@ -184,99 +242,157 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
     }
   }
 
+  const emptySlots = Math.max(0, 6 - players.length)
+
   return (
-    <div className="min-h-screen bg-bg flex flex-col">
-      <div className="px-5 lg:px-10 py-5 border-b border-line flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="min-h-dvh boombox-bg-soft text-on-bg flex flex-col">
+      {/* Top bar */}
+      <div className="px-4 sm:px-6 lg:px-10 py-4 border-b-2 border-line bg-surface flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={onLeave}
-            className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.15em] uppercase text-muted hover:text-on-bg transition-colors cursor-pointer bg-transparent border-none p-0"
+            aria-label="Leave"
+            className="font-display text-[10px] tracking-[0.1em] cursor-pointer bg-transparent border-0 p-0 hidden sm:flex items-center gap-1.5"
+            style={{ color: 'var(--color-cream)' }}
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Leave
+            EJECT
           </button>
-          <div className="w-px h-4 bg-line" />
           <Logo />
         </div>
-        <div className="flex items-center gap-4">
-          <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted hidden sm:inline">Room</span>
-          <button
-            onClick={handleCopyCode}
-            aria-label={copied ? 'Room code copied' : 'Copy room code'}
-            className="group flex items-center gap-2 bg-transparent border-none p-0 cursor-pointer"
-          >
-            <span className="font-mono text-[20px] tracking-[0.18em] text-accent font-semibold group-hover:opacity-80 transition-opacity">{roomCode}</span>
-            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted group-hover:text-on-bg transition-colors">
-              {copied ? 'copied!' : 'copy'}
-            </span>
-          </button>
-          <div className="w-px h-4 bg-line" />
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--color-bad)', boxShadow: '0 0 10px var(--color-bad)' }} />
+            <span className="font-display text-[10px] tracking-[0.1em]" style={{ color: 'var(--color-bad)' }}>REC</span>
+          </div>
+          <div className="hidden sm:block w-px h-4 bg-[#0a0a0a]" />
           <MuteToggle />
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-5 lg:p-10">
-        <div className="w-full max-w-[480px]">
-          {settings && <SettingsPanel settings={settings} editable={isHost} />}
-
-          <div className="flex items-center gap-2 mb-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent inline-block" />
-            <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">
-              Players ({players.length}/6)
-            </span>
+      <div className="flex-1 px-4 sm:px-6 lg:px-10 py-5 lg:py-7 flex flex-col gap-4 max-w-[1200px] w-full mx-auto">
+        {/* Room code + Settings — stacks on mobile */}
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+          {/* Room code card */}
+          <div className="relative panel-hardware brushed-dark p-4 lg:p-5 flex flex-col sm:flex-row items-center gap-4">
+            <Sticker color="cyan" rotate={-4} size="sm" className="absolute -top-2 left-4">ROOM CODE</Sticker>
+            <LedDisplay color="cyan" className="text-center w-full sm:w-auto" style={{ fontSize: 36, letterSpacing: '.3em', padding: '14px 22px' }}>
+              {roomCode}
+            </LedDisplay>
+            <PlasticButton
+              onClick={handleCopyCode}
+              color="dark"
+              className="h-11 px-4 text-[11px] flex items-center gap-2 ml-auto"
+              aria-label={copied ? 'Room code copied' : 'Copy room code'}
+            >
+              <span>⎘ {copied ? 'COPIED!' : 'COPY'}</span>
+            </PlasticButton>
           </div>
 
-          <div className="flex flex-col gap-2 mb-8">
-            {players.map((p) => (
-              <PlayerRow
+          {settings ? (
+            <SettingsPanel settings={settings} editable={isHost} />
+          ) : (
+            <div className="relative panel-hardware brushed-dark p-4 lg:p-5 flex items-center justify-center" style={{ minHeight: 120 }}>
+              <span className="font-display text-[11px] tracking-[0.1em]" style={{ color: 'var(--color-muted)' }}>
+                LOADING SETTINGS…
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Player polaroid corkboard */}
+        <div
+          className="relative panel-hardware brushed-darker p-4 lg:p-6"
+          style={{ minHeight: 240 }}
+        >
+          {/* cork pin */}
+          <div
+            className="absolute top-2.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full"
+            style={{
+              background: 'radial-gradient(circle at 35% 30%, #ff5050, #a01010)',
+              boxShadow: '0 2px 3px rgba(0,0,0,.5), inset 0 -2px 3px rgba(0,0,0,.3)',
+            }}
+          />
+          <Sticker
+            color="hot"
+            rotate={-3}
+            size="sm"
+            className="absolute top-4 left-5"
+          >
+            ★ THE CREW · {players.length}/6
+          </Sticker>
+
+          <div className="mt-9 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 justify-items-center items-center">
+            {players.map((p, i) => (
+              <PlayerPolaroid
                 key={p.id}
                 player={p}
+                index={i}
                 offline={disconnectedPlayerIds.includes(p.id)}
                 canKick={isHost && p.id !== playerId}
                 isNew={recentlyJoined.has(p.id)}
               />
             ))}
-            {Array.from({ length: Math.max(0, 6 - players.length) }).map((_, i) => (
+            {Array.from({ length: emptySlots }).map((_, i) => (
               <div
                 key={`empty-${i}`}
-                className="flex items-center gap-3.5 px-[18px] py-3.5 rounded-2xl border border-dashed border-line opacity-50"
+                className="flex items-center justify-center font-display text-[10px] tracking-[0.1em]"
+                style={{
+                  width: 100, height: 124, padding: 7,
+                  background: 'rgba(0,0,0,.3)',
+                  border: '2px dashed var(--color-muted)',
+                  borderRadius: 4,
+                  color: 'var(--color-muted)',
+                  transform: `rotate(${i % 2 ? 4 : -4}deg)`,
+                }}
               >
-                <div className="w-9 h-9 rounded-full border border-dashed border-line shrink-0" />
-                <span className="flex-1 font-mono text-[11px] tracking-[0.15em] uppercase text-muted">
-                  waiting for player…
-                </span>
+                EMPTY SLOT
               </div>
             ))}
           </div>
+        </div>
 
+        {/* Start row */}
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
           {isHost ? (
             <>
-              <button
+              <PlasticButton
                 onClick={onStart}
                 disabled={!ready}
-                className={`w-full h-[60px] rounded-full border-none flex items-center justify-center gap-2.5 font-body font-semibold text-[17px] transition-colors duration-150 ${
-                  ready
-                    ? 'bg-accent text-accent-ink cursor-pointer'
-                    : 'bg-line text-muted cursor-not-allowed'
-                }`}
+                color="green"
+                className="flex-1 h-[60px] text-[16px] flex items-center justify-center gap-2"
               >
-                Cut the deck
-                <ArrowIcon />
-              </button>
-              {!ready && (
-                <p className="text-center mt-3 font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
-                  waiting for more players…
-                </p>
-              )}
+                ▶ HIT PLAY · START THE SHOW
+              </PlasticButton>
+              <PlasticButton
+                onClick={onLeave}
+                color="dark"
+                className="h-[60px] px-6 text-[11px]"
+              >
+                EJECT
+              </PlasticButton>
             </>
           ) : (
-            <p className="text-center font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
-              {ready ? 'waiting for the conductor to start…' : 'waiting for more players…'}
-            </p>
+            <div
+              className="flex-1 h-[60px] flex items-center justify-center font-display text-[12px] tracking-[0.1em] rounded-[10px]"
+              style={{
+                background: '#0a0a0a',
+                border: '2px solid var(--color-muted-2)',
+                color: 'var(--color-muted)',
+              }}
+            >
+              {ready ? 'WAITING FOR THE CONDUCTOR…' : 'WAITING FOR MORE PLAYERS…'}
+            </div>
           )}
         </div>
+
+        {isHost && !ready && (
+          <p className="text-center font-display text-[10px] tracking-[0.1em]" style={{ color: 'var(--color-muted)' }}>
+            WAITING FOR MORE PLAYERS…
+          </p>
+        )}
       </div>
     </div>
   )

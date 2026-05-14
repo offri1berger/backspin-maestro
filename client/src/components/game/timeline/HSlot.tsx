@@ -14,18 +14,26 @@ const HSlot = ({ id, isActive, label }: HSlotProps) => {
       ref={setNodeRef}
       role="region"
       aria-label={label ?? `Timeline slot ${id + 1}`}
-      className="shrink-0 h-[90px] flex items-center justify-center transition-[width] duration-[180ms] ease-in-out"
-      style={{ width: isActive ? 96 : isOver ? 40 : 28 }}
+      className="shrink-0 flex items-center justify-center transition-[width] duration-150"
+      style={{ width: isActive ? 100 : isOver ? 46 : 24, height: 96 }}
     >
       {isActive ? (
         <MysteryCardFace />
       ) : isOver ? (
         <div
-          className="w-1 h-20 rounded-full bg-accent"
-          style={{ boxShadow: '0 0 12px var(--color-accent)' }}
+          style={{
+            width: 6, height: 80, borderRadius: 2,
+            background: 'var(--color-good)',
+            boxShadow: '0 0 20px var(--color-good), inset 0 0 0 2px rgba(0,0,0,.3)',
+          }}
         />
       ) : (
-        <div className="w-px h-16 border-l-[1.5px] border-dashed border-line transition-colors duration-150" />
+        <div
+          style={{
+            width: 2, height: 60,
+            borderLeft: '2px dashed var(--color-muted-2)',
+          }}
+        />
       )}
     </div>
   )

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { Player } from '@backspin-maestro/shared'
 import AudioPlayer from '../../components/game/AudioPlayer'
 import { useGameStore } from '../../store/gameStore'
+import LedDisplay from '../../components/boombox/LedDisplay'
+import PlasticButton from '../../components/boombox/PlasticButton'
 
 interface Props {
   isMyTurn: boolean
@@ -48,17 +50,35 @@ const MobileBottomSheet: React.FC<Props> = ({
   return (
     <div
       ref={ref}
-      className="sheet-slide-up fixed bottom-0 left-0 right-0 bg-bg/95 backdrop-blur-md border-t border-line z-20 px-4 pt-3 flex flex-col gap-2"
-      style={{ paddingBottom: 'max(14px, env(safe-area-inset-bottom, 14px))' }}
+      className="sheet-slide-up fixed bottom-0 left-0 right-0 z-20 px-3 pt-3 flex flex-col gap-2.5"
+      style={{
+        background: 'rgba(26,26,28,.95)',
+        backdropFilter: 'blur(10px)',
+        borderTop: '2px solid #000',
+        paddingBottom: 'max(14px, env(safe-area-inset-bottom, 14px))',
+      }}
     >
       {isStealWindowOpen && (
-        <div className={`flex items-center justify-between px-4 py-2 rounded-full bg-surface border ${stealerName ? 'border-accent' : 'border-line'}`}>
-          <span className={`font-mono text-[10px] tracking-[0.1em] uppercase ${stealerName ? 'text-accent' : 'text-muted'}`}>
-            {stealerName ? `⚡ ${stealerName} is stealing…` : 'steal window open'}
+        <div
+          className="flex items-center justify-between px-3.5 py-2 rounded-[8px] gap-2"
+          style={{
+            background: '#0a0a0a',
+            border: `2px solid ${stealerName ? 'var(--color-hot)' : 'var(--color-muted-2)'}`,
+            boxShadow: stealerName ? '0 0 12px color-mix(in srgb, var(--color-hot) 50%, transparent)' : 'none',
+          }}
+        >
+          <span
+            className="font-display"
+            style={{ fontSize: 11, color: stealerName ? 'var(--color-hot)' : 'var(--color-muted)', letterSpacing: '.05em' }}
+          >
+            {stealerName ? `⚡ ${stealerName.toUpperCase()} IS STEALING…` : 'STEAL WINDOW OPEN'}
           </span>
-          <span className={`font-display text-[22px] leading-none ${countdown <= 3 ? 'text-bad' : 'text-accent'}`}>
-            {countdown}
-          </span>
+          <LedDisplay
+            color={countdown <= 3 ? 'red' : 'yellow'}
+            style={{ fontSize: 18, padding: '4px 10px' }}
+          >
+            {countdown}s
+          </LedDisplay>
         </div>
       )}
 
@@ -67,12 +87,13 @@ const MobileBottomSheet: React.FC<Props> = ({
       )}
 
       {canSteal && (
-        <button
+        <PlasticButton
           onClick={onStealInitiate}
-          className="w-full h-12 text-[15px] rounded-full bg-accent text-accent-ink border-0 cursor-pointer font-body font-bold flex items-center justify-center"
+          color="pink"
+          className="w-full h-12 text-[14px] flex items-center justify-center"
         >
-          Steal! · 1 ★
-        </button>
+          ★ STEAL! · 1 ★
+        </PlasticButton>
       )}
 
       {showSecondary && (
@@ -80,20 +101,35 @@ const MobileBottomSheet: React.FC<Props> = ({
           {!showInputs ? (
             <button
               onClick={() => setGuessOpen(true)}
-              className="w-full h-9 rounded-full bg-transparent border border-dashed border-line text-muted text-[11px] font-mono tracking-[0.12em] uppercase cursor-pointer flex items-center justify-center gap-2 hover:text-on-bg hover:border-line transition-colors"
+              className="w-full h-9 rounded-[8px] cursor-pointer flex items-center justify-center gap-2 font-display"
+              style={{
+                background: 'transparent',
+                border: '2px dashed var(--color-muted-2)',
+                color: 'var(--color-muted)',
+                fontSize: 11, letterSpacing: '.05em',
+              }}
             >
-              <span>+ add guess</span>
-              <span className="text-[9px] opacity-70">artist or title</span>
+              + ADD BONUS GUESS · ARTIST OR TITLE
             </button>
           ) : (
             <div className="flex flex-col gap-2">
               {(['artist', 'title'] as const).map((field) => (
                 <input
                   key={field}
-                  placeholder={`${field.charAt(0).toUpperCase() + field.slice(1)} (optional bonus)`}
+                  placeholder={`${field === 'artist' ? 'Artist' : 'Title'} (optional bonus)`}
                   value={guess[field]}
                   onChange={(e) => onGuessChange(field, e.target.value)}
-                  className="h-11 rounded-xl border border-line bg-transparent text-base text-on-bg px-4 font-body outline-none w-full focus:border-accent transition-colors"
+                  style={{
+                    height: 44,
+                    background: 'var(--color-cream)',
+                    color: 'var(--color-accent-ink)',
+                    border: '2px solid #000',
+                    borderRadius: 6,
+                    padding: '0 14px',
+                    fontFamily: 'var(--font-code)', fontSize: 15,
+                    outline: 'none',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,.2)',
+                  }}
                 />
               ))}
             </div>
@@ -102,24 +138,29 @@ const MobileBottomSheet: React.FC<Props> = ({
           {mobilePending === null && (myPlayer?.tokens ?? 0) >= 1 && (
             <button
               onClick={onSkip}
-              className="w-full h-9 text-[11px] rounded-full bg-transparent border border-line font-mono tracking-[0.12em] uppercase text-muted cursor-pointer hover:text-on-bg transition-colors"
+              className="w-full h-9 rounded-[8px] cursor-pointer font-display"
+              style={{
+                background: '#1a1a1c',
+                border: '2px solid #000',
+                color: 'var(--color-cream)',
+                fontSize: 11, letterSpacing: '.05em',
+                boxShadow: '0 2px 0 #000',
+              }}
             >
-              Skip · spend 1 ★
+              SKIP · SPEND 1 ★
             </button>
           )}
         </>
       )}
 
       {isPending && (
-        <button
+        <PlasticButton
           onClick={onConfirm}
-          className="w-full h-14 text-[17px] rounded-full bg-accent text-accent-ink border-0 cursor-pointer font-body font-bold flex items-center justify-center gap-2 shadow-[0_8px_24px_color-mix(in_oklch,_var(--color-accent)_45%,_transparent)]"
+          color="green"
+          className="w-full h-14 text-[17px] flex items-center justify-center gap-2"
         >
-          Lock it in
-          <svg width="16" height="16" viewBox="0 0 14 14">
-            <path d="M3 7l3 3 5-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+          ★ LOCK IT IN ★
+        </PlasticButton>
       )}
     </div>
   )

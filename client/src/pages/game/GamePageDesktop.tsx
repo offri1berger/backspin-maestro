@@ -4,23 +4,34 @@ import { GuessRail } from '../../components/game/GuessRail'
 import { GameStage } from '../../components/game/GameStage'
 import { Logo } from '../../components/ui/Logo'
 import StealPill from './StealPill'
+import LedDisplay from '../../components/boombox/LedDisplay'
 
 const GamePageDesktop = (p: GamePageProps) => (
-  <div className="hidden lg:flex flex-col flex-1 min-h-0">
-    <div className="px-7 py-4 border-b border-line flex items-center justify-between bg-bg shrink-0">
-      <div className="flex items-center gap-6">
+  <div className="hidden lg:flex flex-col flex-1 min-h-0 boombox-bg">
+    {/* Top bar */}
+    <div
+      className="px-6 py-3 flex items-center justify-between shrink-0"
+      style={{ background: 'linear-gradient(180deg, #1a1a1c, #0a0a0a)', borderBottom: '2px solid #000', boxShadow: '0 2px 8px rgba(0,0,0,.5)' }}
+    >
+      <div className="flex items-center gap-4">
         <Logo />
-        <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Room</span>
-        <span className="font-mono text-base tracking-[0.18em] text-accent font-semibold">{p.roomCode}</span>
-        <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">{p.players.length} players</span>
+        <LedDisplay color="green" style={{ fontSize: 14, padding: '4px 10px' }}>
+          {p.roomCode} · {p.players.length} PLAYERS
+        </LedDisplay>
       </div>
-      <div className="flex items-center gap-6">
-        <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">First to {p.songsToWin} cards wins</span>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full" style={{ background: 'var(--color-bad)', boxShadow: '0 0 8px var(--color-bad)' }} />
+          <span className="font-display text-[10px] tracking-[0.1em]" style={{ color: 'var(--color-bad)' }}>REC</span>
+        </div>
+        <span className="font-display text-[10px] tracking-[0.1em]" style={{ color: 'var(--color-cream)' }}>
+          FIRST TO {p.songsToWin}
+        </span>
         <button
           onClick={p.handleLeave}
-          className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted hover:text-on-bg cursor-pointer border-0 bg-transparent p-0 transition-colors"
+          className="plastic-btn plastic-btn-dark h-9 px-3.5 text-[10px]"
         >
-          Leave
+          EJECT
         </button>
       </div>
     </div>
@@ -41,9 +52,9 @@ const GamePageDesktop = (p: GamePageProps) => (
     {p.canSteal && (
       <button
         onClick={p.handleStealInitiate}
-        className="fixed bottom-6 right-6 z-30 px-5 py-3 rounded-full bg-accent text-accent-ink border-0 cursor-pointer font-body font-bold text-sm shadow-[0_8px_24px_rgba(0,0,0,0.2)]"
+        className="plastic-btn plastic-btn-pink fixed bottom-6 right-6 z-30 h-12 px-5 text-[14px]"
       >
-        Steal! · 1 ★
+        ★ STEAL · 1 ★
       </button>
     )}
   </div>
