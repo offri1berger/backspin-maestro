@@ -3,7 +3,6 @@ import { PlayerRail } from '../../components/game/PlayerRail'
 import { GuessRail } from '../../components/game/GuessRail'
 import { GameStage } from '../../components/game/GameStage'
 import { Logo } from '../../components/ui/Logo'
-import MuteToggle from '../../components/ui/MuteToggle'
 import StealPill from './StealPill'
 
 const GamePageDesktop = (p: GamePageProps) => (
@@ -17,7 +16,6 @@ const GamePageDesktop = (p: GamePageProps) => (
       </div>
       <div className="flex items-center gap-6">
         <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">First to {p.songsToWin} cards wins</span>
-        <MuteToggle />
         <button
           onClick={p.handleLeave}
           className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted hover:text-on-bg cursor-pointer border-0 bg-transparent p-0 transition-colors"

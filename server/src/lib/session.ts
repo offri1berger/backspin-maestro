@@ -53,6 +53,15 @@ export const updateRoomStatus = async (code: string, status: SessionRoom['status
   await redis.set(roomKey(code), JSON.stringify({ ...room, status }), 'EX', SESSION_TTL)
 }
 
+export const updateRoomSettings = async (
+  code: string,
+  settings: Pick<SessionRoom, 'songsPerPlayer' | 'decadeFilter'>,
+) => {
+  const room = await getSessionRoom(code)
+  if (!room) return
+  await redis.set(roomKey(code), JSON.stringify({ ...room, ...settings }), 'EX', SESSION_TTL)
+}
+
 // ── Player ───────────────────────────────────────────────────────────────────
 
 export const createSessionPlayer = async (

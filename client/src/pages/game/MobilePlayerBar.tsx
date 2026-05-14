@@ -4,7 +4,11 @@ import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { MiniYearCard } from '../../components/game/Timeline'
 import { PLAYER_COLORS } from '../../components/game/constants'
 
-const MobilePlayerBar: React.FC = () => {
+interface Props {
+  songsToWin: number
+}
+
+const MobilePlayerBar: React.FC<Props> = ({ songsToWin }) => {
   const { players, currentPlayerId, disconnectedPlayerIds, playerId } = useGameStore()
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const trapRef = useFocusTrap<HTMLDivElement>(expandedId !== null)
@@ -23,34 +27,52 @@ const MobilePlayerBar: React.FC = () => {
 
   return (
     <>
-      <div className="flex gap-2 px-3 py-2.5 border-b border-line bg-bg shrink-0">
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-line bg-bg shrink-0 overflow-x-auto">
         {players.map((p, i) => {
           const active = p.id === currentPlayerId
           const offline = disconnectedPlayerIds.includes(p.id)
+          const isMe = p.id === playerId
           const color = PLAYER_COLORS[i % PLAYER_COLORS.length]
+          const progress = Math.min(p.timeline.length / songsToWin, 1)
           return (
             <button
               key={p.id}
               onClick={() => setExpandedId(p.id)}
               aria-label={`View ${p.name}'s details`}
-              className={`flex-1 min-w-0 rounded-[14px] px-1.5 pt-1.5 pb-1.5 text-center transition-opacity bg-transparent border cursor-pointer ${
+              className={`shrink-0 flex items-center gap-2 rounded-full pl-1 pr-3 py-1 transition-all border cursor-pointer ${
                 offline ? 'opacity-40' : ''
-              } ${active ? 'bg-accent text-accent-ink border-accent' : 'text-on-bg border-line'}`}
+              } ${
+                active
+                  ? 'bg-accent text-accent-ink border-accent shadow-[0_2px_12px_color-mix(in_oklch,_var(--color-accent)_40%,_transparent)]'
+                  : 'text-on-bg border-line bg-bg-2'
+              }`}
             >
-              <div
-                className="w-7 h-7 mx-auto rounded-full overflow-hidden flex items-center justify-center font-display text-[14px] text-[#1a1612] shrink-0"
-                style={{ background: color }}
-              >
-                {p.avatar
-                  ? <img src={p.avatar} alt="" className="w-full h-full object-cover" />
-                  : p.name.charAt(0).toUpperCase()
-                }
+              <div className="relative w-7 h-7 shrink-0">
+                <svg viewBox="0 0 28 28" className="absolute inset-0 -rotate-90">
+                  <circle cx="14" cy="14" r="12" fill="none" stroke={active ? 'rgba(0,0,0,0.18)' : 'var(--color-line)'} strokeWidth="2" />
+                  <circle
+                    cx="14" cy="14" r="12" fill="none"
+                    stroke={active ? 'currentColor' : 'var(--color-accent)'} strokeWidth="2" strokeLinecap="round"
+                    strokeDasharray={`${progress * 75.4} 75.4`}
+                  />
+                </svg>
+                <div
+                  className="absolute inset-[3px] rounded-full overflow-hidden flex items-center justify-center font-display text-[11px] text-[#1a1612]"
+                  style={{ background: color }}
+                >
+                  {p.avatar
+                    ? <img src={p.avatar} alt="" className="w-full h-full object-cover" />
+                    : p.name.charAt(0).toUpperCase()
+                  }
+                </div>
               </div>
-              <div className="text-[12px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis mt-1">
-                {p.name}
-              </div>
-              <div className="font-mono text-[9px] tracking-[0.08em] mt-0.5 opacity-80">
-                {p.timeline.length}/10 · {p.tokens}★
+              <div className="flex flex-col leading-none">
+                <span className="text-[12px] font-semibold whitespace-nowrap">
+                  {p.name}{isMe ? ' (you)' : ''}
+                </span>
+                <span className={`font-mono text-[9px] tracking-[0.08em] mt-0.5 ${active ? 'opacity-80' : 'text-muted'}`}>
+                  {p.timeline.length}/{songsToWin} · {p.tokens}★
+                </span>
               </div>
             </button>
           )
@@ -86,7 +108,7 @@ const MobilePlayerBar: React.FC = () => {
                   {expanded.name}{expanded.id === playerId ? ' (you)' : ''}
                 </div>
                 <div className="font-mono text-[10px] tracking-[0.12em] uppercase text-muted mt-0.5">
-                  {expanded.timeline.length}/10 cards · {expanded.tokens}★
+                  {expanded.timeline.length}/{songsToWin} cards · {expanded.tokens}★
                   {expanded.id === currentPlayerId && ' · their turn'}
                 </div>
               </div>

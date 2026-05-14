@@ -108,6 +108,18 @@ The `useSocket()` hook (mounted once in `App.tsx`) is the **only** place that re
 
 When wiring a new background job or external call, increment the appropriate counter at the event site — gauges are computed-on-read, counters/histograms are recorded by the code path.
 
+### Deployment
+
+The project is deployed in production. See `DEPLOYMENT.md` at the repo root for the full runbook (URLs, secrets, deploy commands, rollback, custom domains). High-level layout: server on Fly (`backspin-maestro-snowy-starlight-1230.fly.dev`), client on Cloudflare Pages (`backspin-maestro.pages.dev`), Postgres on Supabase, Redis on Upstash, avatar images on Cloudflare R2.
+
+Three deploy-related files that look unrelated but aren't:
+
+- **`server/src/index.ts` starts with `import 'dotenv/config'` (side-effect import), not `import dotenv` + `dotenv.config()`.** This is load-bearing: in ESM, all imports are hoisted, so `database.ts` and other modules that read `process.env` at import time would run *before* a deferred `dotenv.config()` call. The Pool would then be initialized with the hardcoded fallback DSN. Don't "clean this up" by switching back to the deferred form.
+- **`client/.env.production`** holds the production `VITE_SERVER_URL` and `VITE_R2_BASE_URL`. Vite reads it only during `vite build`, leaving `vite dev` to use `client/.env`. Build-time env vars get baked into the bundle — changing them requires a rebuild + `wrangler pages deploy`, not just a Fly restart.
+- **`client/public/_redirects`** (`/*  /index.html  200`) is the SPA fallback for Cloudflare Pages. Without it, React Router routes 404 on hard reload.
+
+Production env vars live as Fly secrets (`fly secrets set ...`), not in any committed file. `server/.env` is local-only.
+
 ### Tests
 
 Jest with ts-jest in ESM mode. Tests live in `__tests__/` directories next to source. Redis is mocked via `ioredis-mock`. Integration tests (e.g. `roomHandlers.integration.test.ts`) spin up a real socket.io server against the mocked Redis.

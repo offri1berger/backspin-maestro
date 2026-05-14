@@ -27,7 +27,7 @@ const LobbyPage = () => {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const { setRoom, setPlayers, roomCode: storeRoomCode, phase, leaveRoom } = useGameStore()
+  const { setRoom, setPlayers, setSettings, roomCode: storeRoomCode, phase, leaveRoom } = useGameStore()
 
   useEffect(() => {
     if (!storeRoomCode) return
@@ -59,6 +59,7 @@ const LobbyPage = () => {
       }
       setRoom(result.roomCode, result.playerId)
       setPlayers([{ id: result.playerId, name, avatar, tokens: 2, isHost: true, turnOrder: 0, timeline: result.timeline }])
+      setSettings({ songsPerPlayer, decadeFilter })
       navigate('/lobby')
     })
   }
@@ -80,6 +81,7 @@ const LobbyPage = () => {
         ...result.players,
         { id: result.playerId, name, avatar, tokens: 2, isHost: false, turnOrder: 0, timeline: result.timeline },
       ])
+      setSettings(result.settings)
       navigate('/lobby')
     })
   }

@@ -1,12 +1,13 @@
 import { randomUUID } from 'crypto'
 import { generateRoomCode } from '../lib/roomCode.js'
-import { createSessionRoom, createSessionPlayer, getSessionRoom, getPlayersByRoomCode, getSessionPlayer, updatePlayerSocketId, getTimeline, resetSessionPlayer, updateRoomStatus, addToTimeline } from '../lib/session.js'
+import { createSessionRoom, createSessionPlayer, getSessionRoom, getPlayersByRoomCode, getSessionPlayer, updatePlayerSocketId, getTimeline, resetSessionPlayer, updateRoomStatus, updateRoomSettings, addToTimeline } from '../lib/session.js'
 import { getGameState, deleteGameState, deleteUsedSongs } from '../lib/gameCache.js'
 import { db } from '../db/database.js'
 import { getRandomSong, markSongAsUsed } from './songService.js'
 import { toSong, toPlayer, toPlayerWithTimeline } from './mappers.js'
 import { config } from '../lib/config.js'
-import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, RejoinResult, Player, GameState, TimelineEntry } from '@backspin-maestro/shared'
+import { requireConductor } from '../lib/authz.js'
+import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, RejoinResult, Player, GameState, RoomSettings, TimelineEntry } from '@backspin-maestro/shared'
 
 type CreateRoomSuccess = { roomCode: string; playerId: string; timeline: TimelineEntry[] }
 
@@ -133,6 +134,25 @@ export const rejoinRoomService = async (
     settings: { songsPerPlayer: room.songsPerPlayer, decadeFilter: room.decadeFilter },
     gameState,
   }
+}
+
+export type UpdateRoomSettingsError =
+  | 'player_not_found' | 'not_in_room' | 'not_conductor'
+  | 'room_not_found' | 'not_in_lobby'
+
+export const updateRoomSettingsService = async (
+  socketId: string,
+  settings: RoomSettings,
+): Promise<{ roomCode: string } | { error: UpdateRoomSettingsError }> => {
+  const auth = await requireConductor(socketId)
+  if (!auth.ok) return { error: auth.error }
+
+  const room = await getSessionRoom(auth.roomCode)
+  if (!room) return { error: 'room_not_found' }
+  if (room.status !== 'lobby') return { error: 'not_in_lobby' }
+
+  await updateRoomSettings(auth.roomCode, settings)
+  return { roomCode: auth.roomCode }
 }
 
 export type ResetRoomError = 'room_not_found' | 'not_host'

@@ -36,42 +36,71 @@ export const GameStage = ({
   const otherPlayers = players.filter((p) => p.id !== currentPlayerId)
 
   return (
-    <main className={`flex flex-col gap-[18px] ${vertical ? 'px-0 py-0' : 'px-8 py-6 overflow-y-auto'}`}>
+    <main className={`flex flex-col ${vertical ? 'gap-3 px-0 py-0' : 'gap-[18px] px-8 py-6 overflow-y-auto'}`}>
       {showAudioPlayer && currentSong && (
         <AudioPlayer key={currentSong.id} song={currentSong} isMyTurn={isMyTurn} />
       )}
 
       {currentSong && (
         <>
-          <div className="flex justify-between items-baseline">
-            <div>
-              <SectionMark>
-                {isMyTurn ? `Your timeline · ${myPlayer?.name}` : `${activePlayer?.name}'s timeline`}
-              </SectionMark>
-              {isMyTurn && activeTimeline.length > 0 && (
-                <h2 className={`font-display mt-1.5 tracking-[-0.02em] text-on-bg ${vertical ? 'text-xl' : 'text-2xl'}`}>
-                  Place between{' '}
-                  <em className="italic text-accent">
-                    {activeTimeline[0]?.song.year ?? '?'}
-                  </em>
-                  {' '}and{' '}
-                  <em className="italic text-accent">
-                    {activeTimeline[activeTimeline.length - 1]?.song.year ?? '?'}
-                  </em>.
+          {vertical ? (
+            // Mobile: punchy single-line prompt, no "your timeline" subtitle
+            isMyTurn ? (
+              activeTimeline.length > 0 ? (
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="font-display text-[22px] leading-none tracking-[-0.02em] text-on-bg">Place between</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="font-mono text-[11px] px-2 py-1 rounded-md bg-accent/15 text-accent font-bold tracking-[0.04em]">
+                      {activeTimeline[0]?.song.year ?? '?'}
+                    </span>
+                    <span className="text-muted text-[12px]">&amp;</span>
+                    <span className="font-mono text-[11px] px-2 py-1 rounded-md bg-accent/15 text-accent font-bold tracking-[0.04em]">
+                      {activeTimeline[activeTimeline.length - 1]?.song.year ?? '?'}
+                    </span>
+                  </span>
+                </div>
+              ) : (
+                <h2 className="font-display text-[22px] leading-none tracking-[-0.02em] text-on-bg">
+                  Place your <em className="italic text-accent">first card</em>
                 </h2>
-              )}
-              {!isMyTurn && (
-                <p className="mt-1.5 text-sm text-muted">
-                  Watching <strong className="text-on-bg">{activePlayer?.name}</strong>'s turn
-                </p>
-              )}
-            </div>
-            {!vertical && (
+              )
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                <span className="text-[13px] text-muted">
+                  <strong className="text-on-bg font-semibold">{activePlayer?.name}</strong> is placing…
+                </span>
+              </div>
+            )
+          ) : (
+            <div className="flex justify-between items-baseline">
+              <div>
+                <SectionMark>
+                  {isMyTurn ? `Your timeline · ${myPlayer?.name}` : `${activePlayer?.name}'s timeline`}
+                </SectionMark>
+                {isMyTurn && activeTimeline.length > 0 && (
+                  <h2 className="font-display mt-1.5 tracking-[-0.02em] text-on-bg text-2xl">
+                    Place between{' '}
+                    <em className="italic text-accent">
+                      {activeTimeline[0]?.song.year ?? '?'}
+                    </em>
+                    {' '}and{' '}
+                    <em className="italic text-accent">
+                      {activeTimeline[activeTimeline.length - 1]?.song.year ?? '?'}
+                    </em>.
+                  </h2>
+                )}
+                {!isMyTurn && (
+                  <p className="mt-1.5 text-sm text-muted">
+                    Watching <strong className="text-on-bg">{activePlayer?.name}</strong>'s turn
+                  </p>
+                )}
+              </div>
               <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
                 drag · or click slot
               </span>
-            )}
-          </div>
+            </div>
+          )}
 
           <Timeline
             timeline={activeTimeline}
@@ -102,7 +131,7 @@ export const GameStage = ({
         </>
       )}
 
-      {otherPlayers.length > 0 && (
+      {!vertical && otherPlayers.length > 0 && (
         <div className="mt-2">
           <SectionMark>Timelines · live</SectionMark>
           <div className="mt-3.5 flex flex-col gap-3">

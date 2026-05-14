@@ -251,6 +251,10 @@ export const useSocket = () => {
           }
         }
       },
+
+      'room:settingsUpdated': (settings) => {
+        useGameStore.getState().setSettings(settings)
+      },
     }
 
     const eventNames = Object.keys(handlers) as Array<keyof ServerToClientEvents>

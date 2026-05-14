@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Player } from '@backspin-maestro/shared'
+import type { Player, DecadeFilter, RoomSettings, UpdateRoomSettingsResult } from '@backspin-maestro/shared'
+import { MIN_SONGS_PER_PLAYER, MAX_SONGS_PER_PLAYER } from '@backspin-maestro/shared'
 import { useGameStore } from '../../store/gameStore'
 import { ArrowIcon, Logo } from '../ui/Logo'
+import MuteToggle from '../ui/MuteToggle'
+import { DecadePicker } from './DecadePicker'
 import socket from '../../socket'
 
 function PlayerRow({
@@ -56,9 +59,90 @@ interface Props {
   onLeave: () => void
 }
 
+const SettingsPanel = ({
+  settings,
+  editable,
+}: {
+  settings: RoomSettings
+  editable: boolean
+}) => {
+  const setSettings = useGameStore((s) => s.setSettings)
+
+  const emitChange = (next: RoomSettings) => {
+    // Optimistic — broadcast will confirm. On error we log; the next valid
+    // broadcast (or page reload) reconciles.
+    setSettings(next)
+    socket.emit('room:updateSettings', next, (result: UpdateRoomSettingsResult) => {
+      if ('error' in result) {
+        // eslint-disable-next-line no-console
+        console.warn('room:updateSettings rejected:', result.error)
+      }
+    })
+  }
+
+  const handleDecade = (decadeFilter: DecadeFilter) => {
+    if (!editable) return
+    emitChange({ ...settings, decadeFilter })
+  }
+
+  const handleSongs = (delta: number) => {
+    if (!editable) return
+    const next = Math.min(MAX_SONGS_PER_PLAYER, Math.max(MIN_SONGS_PER_PLAYER, settings.songsPerPlayer + delta))
+    if (next === settings.songsPerPlayer) return
+    emitChange({ ...settings, songsPerPlayer: next })
+  }
+
+  return (
+    <div className="mb-6 rounded-2xl border border-line p-4 lg:p-5 bg-bg-2/40">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent inline-block" />
+          <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Settings</span>
+        </div>
+        <span className="font-mono text-[9px] tracking-[0.15em] uppercase text-muted">
+          {editable ? 'you can edit' : 'conductor controls'}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <DecadePicker
+          decadeFilter={settings.decadeFilter}
+          onChange={handleDecade}
+          disabled={!editable}
+        />
+
+        <div>
+          <label className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Songs to win</label>
+          <div className="mt-2 px-2 py-2 border border-line rounded-[14px] flex items-center justify-between bg-bg">
+            <button
+              type="button"
+              onClick={() => handleSongs(-1)}
+              disabled={!editable || settings.songsPerPlayer <= MIN_SONGS_PER_PLAYER}
+              aria-label="Fewer songs"
+              className="w-9 h-9 flex items-center justify-center font-mono text-[20px] text-muted enabled:hover:text-on-bg enabled:cursor-pointer bg-transparent border-none rounded-[8px] enabled:hover:bg-on-bg/5 transition-colors leading-none disabled:opacity-40 disabled:cursor-not-allowed"
+            >−</button>
+            <div className="flex flex-col items-center">
+              <span className="font-display text-[26px] text-accent leading-none">{settings.songsPerPlayer}</span>
+              <span className="font-mono text-[9px] tracking-[0.1em] uppercase text-muted mt-0.5">≈{Math.round(settings.songsPerPlayer * 2.5)} min</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleSongs(1)}
+              disabled={!editable || settings.songsPerPlayer >= MAX_SONGS_PER_PLAYER}
+              aria-label="More songs"
+              className="w-9 h-9 flex items-center justify-center font-mono text-[20px] text-muted enabled:hover:text-on-bg enabled:cursor-pointer bg-transparent border-none rounded-[8px] enabled:hover:bg-on-bg/5 transition-colors leading-none disabled:opacity-40 disabled:cursor-not-allowed"
+            >+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
   const disconnectedPlayerIds = useGameStore((s) => s.disconnectedPlayerIds)
   const playerId = useGameStore((s) => s.playerId)
+  const settings = useGameStore((s) => s.settings)
   const isHost = players.find((p) => p.id === playerId)?.isHost ?? false
 
   // Highlight rows of players who joined since this client mounted.
@@ -118,7 +202,7 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
           <Logo />
         </div>
         <div className="flex items-center gap-4">
-          <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">Room</span>
+          <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted hidden sm:inline">Room</span>
           <button
             onClick={handleCopyCode}
             aria-label={copied ? 'Room code copied' : 'Copy room code'}
@@ -129,11 +213,15 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
               {copied ? 'copied!' : 'copy'}
             </span>
           </button>
+          <div className="w-px h-4 bg-line" />
+          <MuteToggle />
         </div>
       </div>
 
       <div className="flex-1 flex items-center justify-center p-5 lg:p-10">
         <div className="w-full max-w-[480px]">
+          {settings && <SettingsPanel settings={settings} editable={isHost} />}
+
           <div className="flex items-center gap-2 mb-4">
             <span className="w-1.5 h-1.5 rounded-full bg-accent inline-block" />
             <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">

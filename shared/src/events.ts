@@ -80,6 +80,11 @@ export type ConductorKickResult = AckResult<
   | 'target_not_found' | 'server_error'
 >
 
+export type UpdateRoomSettingsResult = AckResult<
+  | 'rate_limited' | 'invalid_payload' | 'player_not_found' | 'not_in_room'
+  | 'not_conductor' | 'room_not_found' | 'not_in_lobby' | 'server_error'
+>
+
 export interface PlacementResultPayload {
   playerId: string
   correct: boolean
@@ -129,6 +134,7 @@ export interface ServerToClientEvents {
   'host:transferred': (newHostId: string) => void
   'game:reset': (players: Player[]) => void
   'player:kicked': (playerId: string) => void
+  'room:settingsUpdated': (settings: RoomSettings) => void
 }
 
 export interface ClientToServerEvents {
@@ -147,4 +153,5 @@ export interface ClientToServerEvents {
   'audio:pause': () => void
   'drag:move': (payload: DragMovePayload) => void
   'conductor:kick': (payload: KickPayload, cb: (result: ConductorKickResult) => void) => void
+  'room:updateSettings': (payload: RoomSettings, cb: (result: UpdateRoomSettingsResult) => void) => void
 }

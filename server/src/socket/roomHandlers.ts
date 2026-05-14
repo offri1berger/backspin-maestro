@@ -5,8 +5,9 @@ import {
   JoinRoomPayloadSchema,
   RejoinPayloadSchema,
   KickPayloadSchema,
+  RoomSettingsSchema,
 } from '@backspin-maestro/shared'
-import { createRoomService, joinRoomService, rejoinRoomService, resetRoomService } from '../services/roomService.js'
+import { createRoomService, joinRoomService, rejoinRoomService, resetRoomService, updateRoomSettingsService } from '../services/roomService.js'
 import { startGameService } from '../services/gameService.js'
 import { cancelDisconnectTimer, finalizeDisconnect } from './disconnectHandler.js'
 import {
@@ -138,6 +139,23 @@ export const registerRoomHandlers = (io: IoServer, socket: IoSocket) => {
       cb({ success: true })
     } catch (err) {
       logger.error({ err }, 'conductor:kick handler threw')
+      cb({ success: false, error: 'server_error' })
+    }
+  })
+
+  socket.on('room:updateSettings', async (payload, cb) => {
+    try {
+      if (!roomLimiter.allow(socket.id)) { cb({ success: false, error: 'rate_limited' }); return }
+      const data = parsePayload(RoomSettingsSchema, payload)
+      if (!data) { cb({ success: false, error: 'invalid_payload' }); return }
+
+      const result = await updateRoomSettingsService(socket.id, data)
+      if ('error' in result) { cb({ success: false, error: result.error }); return }
+
+      io.to(result.roomCode).emit('room:settingsUpdated', data)
+      cb({ success: true })
+    } catch (err) {
+      logger.error({ err }, 'room:updateSettings handler threw')
       cb({ success: false, error: 'server_error' })
     }
   })
