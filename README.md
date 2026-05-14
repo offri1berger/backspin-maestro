@@ -4,6 +4,8 @@ A real-time multiplayer music-timeline game. Players hear a 30-second song previ
 
 Built as a learning ground for production-grade real-time architecture: typed end-to-end, multi-instance-ready, observable, and restart-durable.
 
+**Live:** [backspin-maestro.pages.dev](https://backspin-maestro.pages.dev) — see [`DEPLOYMENT.md`](./DEPLOYMENT.md) for the full deploy runbook.
+
 ---
 
 ## Highlights
@@ -153,6 +155,8 @@ backspin-maestro/
 │       └── enums.ts         GamePhase, Decade, RoomStatus
 │
 ├── docker-compose.yml       Local Postgres + Redis
+├── fly.toml                 Fly.io app config
+├── DEPLOYMENT.md            Production runbook
 ├── pnpm-workspace.yaml
 └── .github/workflows/ci.yml
 ```
@@ -197,12 +201,19 @@ The client has no tests yet. Only the server has a Jest suite (ESM mode via `NOD
 | `METRICS_TOKEN` | *(unset = disabled)* | Bearer token required to scrape `/metrics`. Fail-closed: if unset, `/metrics` returns 503. |
 | `LOG_LEVEL` | `info` | pino level: `trace` / `debug` / `info` / `warn` / `error` |
 
-### Client (`client/.env`)
+### Client
 
-| Variable | Default | Purpose |
+Vite reads two files at build time:
+
+- **`client/.env`** — used by `vite dev`. `VITE_SERVER_URL` is left empty so the Vite proxy forwards `/socket.io` to `localhost:8080`.
+- **`client/.env.production`** — used by `vite build`. Holds the deployed server URL and R2 origin; baked into the JS bundle.
+
+| Variable | Where it's set in prod | Purpose |
 |---|---|---|
-| `VITE_R2_BASE_URL` | *(required)* | Cloudflare R2 origin serving the cached audio previews |
-| `VITE_SERVER_URL` | *(empty = Vite proxy in dev)* | Server origin in production, e.g. `https://api.example.com` |
+| `VITE_R2_BASE_URL` | `client/.env.production` | Cloudflare R2 origin serving avatar images |
+| `VITE_SERVER_URL` | `client/.env.production` | Fly server origin, e.g. `https://backspin-maestro-….fly.dev` |
+
+Changing either requires a **rebuild + redeploy** — they aren't read at runtime.
 
 ---
 
@@ -254,26 +265,36 @@ When writing tests that touch Redis, import from the same modules production use
 
 ## Production / Hosting
 
-The single-host happy path: **Caddy in front of a containerized server + managed Redis + managed Postgres + Cloudflare R2 for audio.** What matters:
+The project is deployed. The stack:
 
-1. **TLS + WebSocket-aware proxy.** Caddy auto-provisions Let's Encrypt and forwards WS upgrades with zero config. nginx works but needs explicit `proxy_set_header Upgrade $http_upgrade` + `Connection "upgrade"` + a high `proxy_read_timeout`.
-2. **Managed Redis with persistence enabled.** BullMQ jobs and session state must survive restarts; pick a tier that supports AOF or RDB+AOF (Upstash, Redis Cloud, ElastiCache with the right config). The dev `docker-compose.yml` uses `redis-server --appendonly yes` as the template.
-3. **Sticky sessions on the LB** if you run >1 instance — Socket.IO's polling-to-WebSocket upgrade requires multiple HTTP requests landing on the same backend.
-4. **Run migrations as a pre-deploy step**, not in app boot. `pnpm --filter @backspin-maestro/server migrate` is idempotent.
-5. **Health probes.** Hook `/health` into liveness *and* readiness for now; split into `/livez` and `/readyz` once you're large enough that DB blips would cascade.
-6. **Secrets from your platform**, not committed `.env` files. `METRICS_TOKEN`, `DATABASE_URL`, `REDIS_URL` all need to come from your secret store (Fly secrets, K8s secrets, Doppler, Vault).
-7. **Edge rate limiting and DDoS** via Cloudflare. The in-process per-socket limiter doesn't survive horizontal scale.
+| Service                                       | What it runs                            |
+| --------------------------------------------- | --------------------------------------- |
+| **Fly.io** (`fra` region)                     | Server container — Express + Socket.IO  |
+| **Cloudflare Pages**                          | Static client build                     |
+| **Cloudflare R2**                             | Avatar images (public bucket)           |
+| **Supabase**                                  | Postgres (Session Pooler)               |
+| **Upstash**                                   | Redis (TLS, regional)                   |
 
-A minimal Caddyfile:
+See [`DEPLOYMENT.md`](./DEPLOYMENT.md) for the full runbook — URLs, secrets, deploy commands, rollbacks, custom domains, troubleshooting.
 
+### Quick reference
+
+```bash
+fly deploy                                                  # Deploy server
+pnpm --filter @backspin-maestro/shared build && \
+  pnpm --filter @backspin-maestro/client build && \
+  wrangler pages deploy client/dist --project-name backspin-maestro   # Deploy client
+fly secrets set CLIENT_URL='https://...'                    # Update a server env var
 ```
-yourdomain.com {
-  encode gzip
-  reverse_proxy localhost:8080
-}
-```
 
-Out of the box, **Fly.io** and **Railway** handle TLS, WS upgrade, and sticky sessions for you — usually the lowest-friction path to a hosted Socket.IO game.
+### Design constraints that the hosting choices reflect
+
+1. **Multi-instance-ready.** Socket.IO Redis adapter + BullMQ jobs make horizontal scale possible. Currently runs one Fly machine; scaling to N requires only `fly scale count N`.
+2. **Restart-durable.** Steal/reveal timers live in BullMQ on Redis, so killing the server mid-turn never strands a round. Upstash's persistence (AOF) protects job state across cold starts.
+3. **Migrations on boot.** `server/entrypoint.sh` runs `node server/dist/db/migrate.js` before launching the server. Idempotent, safe for blue/green.
+4. **Don't auto-stop the machine.** Active sockets and delayed BullMQ jobs both die if the machine stops. `fly.toml` sets `auto_stop_machines = false` and `min_machines_running = 1`.
+5. **Secrets from Fly, not files.** `DATABASE_URL`, `REDIS_URL`, `CLIENT_URL`, `METRICS_TOKEN` are Fly secrets — `server/.env` is local-dev only.
+6. **`import 'dotenv/config'` in `server/src/index.ts`.** Load-bearing in ESM — see [`CLAUDE.md`](./CLAUDE.md). Don't refactor it back to the deferred form.
 
 ---
 

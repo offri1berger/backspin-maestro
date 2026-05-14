@@ -1,20 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 
 export const useMediaQuery = (query: string): boolean => {
-  const [matches, setMatches] = useState(() =>
-    typeof window !== 'undefined' ? window.matchMedia(query).matches : false,
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const mql = window.matchMedia(query)
+      mql.addEventListener('change', onChange)
+      return () => mql.removeEventListener('change', onChange)
+    },
+    [query],
   )
 
-  useEffect(() => {
-    const mql = window.matchMedia(query)
-    const onChange = (e: MediaQueryListEvent) => setMatches(e.matches)
-    setMatches(mql.matches)
-    mql.addEventListener('change', onChange)
-    return () => mql.removeEventListener('change', onChange)
-  }, [query])
+  const getSnapshot = useCallback(() => window.matchMedia(query).matches, [query])
 
-  return matches
+  return useSyncExternalStore(subscribe, getSnapshot, () => false)
 }
 
-// Matches the `lg:` Tailwind breakpoint used to split desktop / mobile layouts.
 export const useIsMobile = (): boolean => useMediaQuery('(max-width: 1023px)')

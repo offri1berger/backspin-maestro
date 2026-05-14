@@ -7,8 +7,6 @@ import { sfx, setMutedAccessor } from '../lib/sfx'
 
 export const useSocket = () => {
   const navigate = useNavigate()
-  // navigate is stable in react-router v7, but the lint rule doesn't know that.
-  // Funnel it through a ref so the effect can stay register-once.
   const navigateRef = useRef(navigate)
   useEffect(() => { navigateRef.current = navigate }, [navigate])
 

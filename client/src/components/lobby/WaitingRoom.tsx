@@ -74,7 +74,6 @@ const SettingsPanel = ({
     setSettings(next)
     socket.emit('room:updateSettings', next, (result: UpdateRoomSettingsResult) => {
       if ('error' in result) {
-        // eslint-disable-next-line no-console
         console.warn('room:updateSettings rejected:', result.error)
       }
     })

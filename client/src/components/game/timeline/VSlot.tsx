@@ -4,8 +4,6 @@ interface VSlotProps {
   id: number
   label: string
   ariaLabel?: string
-  // True while any card is being dragged — slot lights up to advertise itself
-  // as a drop target even before the finger is over it.
   armed?: boolean
 }
 

@@ -178,6 +178,11 @@ const processCardReveal = async (io: IoServer, data: CardRevealData): Promise<vo
   io.to(roomCode).emit('song:new', next.song)
 }
 
+/**
+ *  Starts the room worker that processes delayed jobs for game actions like steal resolution and card reveal.
+ * @param io  The Socket.IO server instance, used to emit events to clients when processing jobs.
+ * @returns   The started Worker instance. If the worker is already running, returns the existing instance.
+ */
 export const startRoomWorker = (io: IoServer): Worker => {
   if (worker) return worker
 
