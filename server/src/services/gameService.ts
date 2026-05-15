@@ -1,4 +1,4 @@
-import { getSessionRoom, getPlayersByRoomCode, updatePlayerTurnOrder, updateRoomStatus, getTimelineCount } from '../lib/session.js'
+import { getSessionRoom, getPlayersByRoomCode, updatePlayerTurnOrder, updateRoomStatus, getTimelineCount, addToTimeline } from '../lib/session.js'
 import { getFreshPreviewUrl, getRandomSong, markSongAsUsed } from './songService.js'
 import { getGameState, setGameState } from '../lib/gameCache.js'
 import { toSong, toPlayerWithTimeline } from './mappers.js'
@@ -32,6 +32,16 @@ export const startGameService = async (
   await Promise.all(shuffled.map((p, i) => updatePlayerTurnOrder(p.id, i)))
   await updateRoomStatus(roomCode, 'playing')
 
+  // Assign seed songs now, using the final decadeFilter, so timeline anchors always
+  // match whatever decade the host chose — even if they changed it in the waiting room.
+  for (const p of shuffled) {
+    const seed = await getRandomSong(roomCode, room.decadeFilter)
+    if (seed) {
+      await markSongAsUsed(roomCode, seed.id)
+      await addToTimeline(p.id, toSong(seed))
+    }
+  }
+
   const firstPlayer = shuffled[0]
   const phaseStartedAt = new Date().toISOString()
 
@@ -39,7 +49,7 @@ export const startGameService = async (
     shuffled.map(async (p, i) => ({ ...(await toPlayerWithTimeline(p)), turnOrder: i }))
   )
 
-  const dbSong = await getRandomSong(roomCode)
+  const dbSong = await getRandomSong(roomCode, room.decadeFilter)
   const songForClient: Song | null = dbSong
     ? toSong(dbSong, await getFreshPreviewUrl(dbSong.deezer_id))
     : null

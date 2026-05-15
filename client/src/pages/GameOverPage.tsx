@@ -18,7 +18,7 @@ const CONFETTI = [
 
 const GameOverPage = () => {
   const navigate = useNavigate()
-  const { players, winnerId, playerId, settings } = useGameStore()
+  const { players, winnerId, playerId, settings, leaveRoom } = useGameStore()
   const songsToWin = settings?.songsPerPlayer ?? 10
   const ranked = [...players].sort((a, b) => b.timeline.length - a.timeline.length)
   const winner = ranked[0]
@@ -33,24 +33,25 @@ const GameOverPage = () => {
   }
 
   return (
-    <div className="min-h-dvh boombox-bg-soft text-on-bg relative overflow-hidden">
-      {/* Confetti stickers */}
-      {CONFETTI.map((s, i) => (
-        <div
-          key={i}
-          className="absolute pointer-events-none pop-in font-display [text-shadow:4px_4px_0_var(--color-accent-ink)]"
-          style={{
-            left: s.x, top: s.y,
-            fontSize: s.size, color: s.c,
-            transform: `rotate(${s.r}deg)`,
-            animationDelay: `${i * 120}ms`,
-          }}
-        >
-          {s.t}
-        </div>
-      ))}
+    <div className="min-h-dvh boombox-bg-soft text-on-bg relative">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        {CONFETTI.map((s, i) => (
+          <div
+            key={i}
+            className="absolute pop-in font-display [text-shadow:4px_4px_0_var(--color-accent-ink)]"
+            style={{
+              left: s.x, top: s.y,
+              fontSize: s.size, color: s.c,
+              transform: `rotate(${s.r}deg)`,
+              animationDelay: `${i * 120}ms`,
+            }}
+          >
+            {s.t}
+          </div>
+        ))}
+      </div>
 
-      <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-10 py-5 lg:py-8 flex flex-col gap-5">
+      <div className="relative z-[1] max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-10 py-5 lg:py-8 flex flex-col gap-5">
         {/* Top bar */}
         <div className="flex items-center justify-between">
           <Logo />
@@ -61,53 +62,72 @@ const GameOverPage = () => {
           </span>
         </div>
 
-        <div className="grid lg:grid-cols-[1.1fr_1fr] gap-6 lg:gap-10 items-center">
+        <div className="grid lg:grid-cols-[1.1fr_1fr] gap-4 lg:gap-10 items-start lg:items-center">
           {/* Winner column */}
-          <div className="text-center lg:text-left">
-            <Sticker color="cyan" rotate={-6} size="lg">1ST PLACE</Sticker>
-            <h1
-              className="boombox-title boombox-title-yellow text-[clamp(56px,12vw,132px)] mt-[14px] mb-[18px]"
-            >
-              {winner?.name?.toUpperCase()}!
-            </h1>
-
-            <div className="inline-block relative">
-              <PolaroidAvatar
-                src={winner?.avatar}
-                fallback={winner?.name?.charAt(0)}
-                size={140}
-                rotate={-4}
-                active
-                name={winner?.name?.toUpperCase()}
-              />
-              <Sticker
-                color="yellow"
-                rotate={15}
-                size="md"
-                className="absolute top-[-16px] right-[-22px]"
-              >
-                WINNER ★
-              </Sticker>
-              <Sticker
-                color="hot"
-                rotate={-12}
-                size="sm"
-                className="absolute bottom-[-4px] left-[-16px]"
-              >
-                {winner?.timeline.length}/{songsToWin}
-              </Sticker>
+          <div>
+            {/* Mobile: compact horizontal row */}
+            <div className="flex items-center gap-4 lg:hidden">
+              <div className="relative shrink-0">
+                <PolaroidAvatar
+                  src={winner?.avatar}
+                  fallback={winner?.name?.charAt(0)}
+                  size={80}
+                  rotate={-4}
+                  active
+                  name={winner?.name?.toUpperCase()}
+                />
+                <Sticker
+                  color="yellow"
+                  rotate={15}
+                  size="sm"
+                  className="absolute top-[-10px] right-[-14px]"
+                >
+                  WINNER ★
+                </Sticker>
+              </div>
+              <div className="min-w-0 flex-1">
+                <Sticker color="cyan" rotate={-4} size="sm">1ST PLACE</Sticker>
+                <h1 className="boombox-title boombox-title-yellow text-[clamp(28px,7vw,56px)] mt-1 mb-1 truncate">
+                  {winner?.name?.toUpperCase()}!
+                </h1>
+                <p className="text-xs leading-snug text-[var(--color-muted)]">
+                  {winner?.timeline.length} cards · {winner?.tokens}★ ·
+                  {isWinner ? ' You crushed it!' : ' The gold standard.'}
+                </p>
+              </div>
             </div>
 
-            <p
-              className="mt-5 max-w-[480px] text-sm leading-[1.55] mx-auto lg:mx-0 text-[var(--color-muted)]"
-            >
-              {winner?.timeline.length} correct placements · {winner?.tokens} bonus ★ ·
-              {isWinner ? ' Crushed it.' : ' Their shelf is the new gold standard.'}
-            </p>
+            {/* Desktop: big centered display */}
+            <div className="hidden lg:block text-left">
+              <Sticker color="cyan" rotate={-6} size="lg">1ST PLACE</Sticker>
+              <h1 className="boombox-title boombox-title-yellow text-[clamp(56px,12vw,132px)] mt-[14px] mb-[18px]">
+                {winner?.name?.toUpperCase()}!
+              </h1>
+              <div className="inline-block relative">
+                <PolaroidAvatar
+                  src={winner?.avatar}
+                  fallback={winner?.name?.charAt(0)}
+                  size={140}
+                  rotate={-4}
+                  active
+                  name={winner?.name?.toUpperCase()}
+                />
+                <Sticker color="yellow" rotate={15} size="md" className="absolute top-[-16px] right-[-22px]">
+                  WINNER ★
+                </Sticker>
+                <Sticker color="hot" rotate={-12} size="sm" className="absolute bottom-[-4px] left-[-16px]">
+                  {winner?.timeline.length}/{songsToWin}
+                </Sticker>
+              </div>
+              <p className="mt-5 max-w-[480px] text-sm leading-[1.55] text-[var(--color-muted)]">
+                {winner?.timeline.length} correct placements · {winner?.tokens} bonus ★ ·
+                {isWinner ? ' Crushed it.' : ' Their shelf is the new gold standard.'}
+              </p>
+            </div>
           </div>
 
           {/* Leaderboard */}
-          <div className="brushed-darker panel-hardware p-4 lg:p-5">
+          <div className="brushed-darker panel-hardware p-3 lg:p-5">
             <Sticker color="hot" rotate={-4} size="sm" className="mb-4 block">CHART</Sticker>
             <div className="flex flex-col gap-3">
               {ranked.map((p, i) => {
@@ -185,7 +205,7 @@ const GameOverPage = () => {
             </div>
           )}
           <PlasticButton
-            onClick={() => navigate('/')}
+            onClick={() => { socket.emit('room:leave'); leaveRoom(); navigate('/') }}
             color="dark"
             className="h-[60px] px-6 text-[12px] flex items-center justify-center"
           >

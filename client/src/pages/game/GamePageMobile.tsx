@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { GamePageProps } from './useGamePage'
 import { GameStage } from '../../components/game/GameStage'
 import { Logo } from '../../components/ui/Logo'
@@ -12,10 +12,16 @@ const GamePageMobile = (p: GamePageProps) => {
   const [mobileConfirmed, setMobileConfirmed] = useState(false)
   const [sheetHeight, setSheetHeight] = useState(320)
   const isWaitingForNextTurn = useGameStore((s) => s.isWaitingForNextTurn)
+  const currentSongId = useGameStore((s) => s.currentSong?.id)
   const setMobilePending = (val: number | null) => {
     _setMobilePending(val)
     if (val === null) setMobileConfirmed(false)
   }
+
+  useEffect(() => {
+    _setMobilePending(null)
+    setMobileConfirmed(false)
+  }, [currentSongId])
 
   const showGuessBar = p.isMyTurn && !isWaitingForNextTurn && !mobileConfirmed
 

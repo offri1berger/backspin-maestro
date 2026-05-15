@@ -100,7 +100,7 @@ const AudioPlayer = ({ song, isMyTurn, compact = false }: Props) => {
 
   const fmt = (s: number) => `0:${String(Math.floor(s)).padStart(2, '0')}`
   
-  const canControlPlayback = hasPreview
+  const canControlPlayback = hasPreview && isMyTurn
 
   if (compact) {
     return (

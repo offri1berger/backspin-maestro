@@ -1,23 +1,14 @@
 import { randomUUID } from 'crypto'
 import { generateRoomCode } from '../lib/roomCode.js'
-import { createSessionRoom, createSessionPlayer, getSessionRoom, getPlayersByRoomCode, getSessionPlayer, updatePlayerSocketId, getTimeline, resetSessionPlayer, updateRoomStatus, updateRoomSettings, addToTimeline } from '../lib/session.js'
+import { createSessionRoom, createSessionPlayer, getSessionRoom, getPlayersByRoomCode, getSessionPlayer, updatePlayerSocketId, getTimeline, resetSessionPlayer, updateRoomStatus, updateRoomSettings } from '../lib/session.js'
 import { getGameState, deleteGameState, deleteUsedSongs } from '../lib/gameCache.js'
 import { db } from '../db/database.js'
-import { getRandomSong, markSongAsUsed } from './songService.js'
 import { toSong, toPlayer, toPlayerWithTimeline } from './mappers.js'
 import { config } from '../lib/config.js'
 import { requireConductor } from '../lib/authz.js'
 import type { CreateRoomPayload, JoinRoomPayload, JoinRoomResult, RejoinResult, Player, GameState, RoomSettings, TimelineEntry } from '@backspin-maestro/shared'
 
 type CreateRoomSuccess = { roomCode: string; playerId: string; timeline: TimelineEntry[] }
-
-const assignStarterSong = async (roomCode: string, playerId: string) => {
-  const dbSong = await getRandomSong(roomCode)
-  if (!dbSong) return
-  const song = toSong(dbSong)
-  await markSongAsUsed(roomCode, song.id)
-  await addToTimeline(playerId, song)
-}
 
 export const createRoomService = async (
   payload: CreateRoomPayload,
@@ -44,8 +35,6 @@ export const createRoomService = async (
     turnOrder: 0,
   })
 
-  await assignStarterSong(code, hostId)
-
   return { roomCode: code, playerId: hostId, timeline: await getTimeline(hostId) }
 }
 
@@ -70,8 +59,6 @@ export const joinRoomService = async (
     isHost: false,
     turnOrder: 0,
   })
-
-  await assignStarterSong(payload.roomCode, player.id)
 
   return {
     success: true,
@@ -172,9 +159,6 @@ export const resetRoomService = async (
   await deleteGameState(roomCode)
   await deleteUsedSongs(roomCode)
   await Promise.all(sessionPlayers.map((p) => resetSessionPlayer(p.id)))
-  for (const p of sessionPlayers) {
-    await assignStarterSong(roomCode, p.id)
-  }
 
   const freshPlayers = await getPlayersByRoomCode(roomCode)
   const players: Player[] = await Promise.all(freshPlayers.map(toPlayerWithTimeline))

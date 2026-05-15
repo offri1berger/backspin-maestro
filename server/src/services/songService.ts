@@ -3,13 +3,11 @@ import { addUsedSong, getUsedSongIds } from '../lib/gameCache.js'
 import { getSessionRoom } from '../lib/session.js'
 import { deezerFetches } from '../lib/metrics.js'
 import { logger } from '../lib/logger.js'
+import type { DecadeFilter } from '@backspin-maestro/shared'
 
-export const getRandomSong = async (roomCode: string) => {
-  const [usedIds, room] = await Promise.all([
-    getUsedSongIds(roomCode),
-    getSessionRoom(roomCode),
-  ])
-  const decadeFilter = room?.decadeFilter ?? 'all'
+export const getRandomSong = async (roomCode: string, overrideDecadeFilter?: DecadeFilter) => {
+  const usedIds = await getUsedSongIds(roomCode)
+  const decadeFilter = overrideDecadeFilter ?? (await getSessionRoom(roomCode))?.decadeFilter ?? 'all'
   const decadesIn: string[] | null = decadeFilter === 'all'
     ? null
     : Array.isArray(decadeFilter) ? decadeFilter : [decadeFilter]
