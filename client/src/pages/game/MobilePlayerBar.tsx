@@ -28,8 +28,7 @@ const MobilePlayerBar: React.FC<Props> = ({ songsToWin }) => {
   return (
     <>
       <div
-        className="flex items-center gap-2.5 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0"
-        style={{ background: '#1a1a1c', borderBottom: '2px solid #000' }}
+        className="flex items-center gap-2.5 px-3 py-2.5 overflow-x-auto no-scrollbar shrink-0 bg-[#1a1a1c] border-b-2 border-[#000]"
       >
         {players.map((p, i) => {
           const active = p.id === currentPlayerId
@@ -40,8 +39,7 @@ const MobilePlayerBar: React.FC<Props> = ({ songsToWin }) => {
               key={p.id}
               onClick={() => setExpandedId(p.id)}
               aria-label={`View ${p.name}'s details`}
-              className="shrink-0 flex flex-col items-center gap-1 bg-transparent border-0 p-0 cursor-pointer"
-              style={{ opacity: offline ? 0.4 : 1 }}
+              className={`shrink-0 flex flex-col items-center gap-1 bg-transparent border-0 p-0 cursor-pointer ${offline ? 'opacity-40' : 'opacity-100'}`}
             >
               <PolaroidAvatar
                 src={p.avatar}
@@ -51,8 +49,7 @@ const MobilePlayerBar: React.FC<Props> = ({ songsToWin }) => {
                 active={active}
               />
               <span
-                className="font-display"
-                style={{ fontSize: 10, color: active ? 'var(--color-accent)' : 'var(--color-cream)', letterSpacing: '.05em' }}
+                className={`font-display text-[10px] tracking-[.05em] ${active ? 'text-accent' : 'text-cream'}`}
               >
                 {p.timeline.length}/{songsToWin}{isMe ? ' YOU' : ''}
               </span>
@@ -63,8 +60,7 @@ const MobilePlayerBar: React.FC<Props> = ({ songsToWin }) => {
 
       {expanded && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)' }}
+          className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(0,0,0,0.72)] [backdrop-filter:blur(6px)]"
           onClick={(e) => { if (e.target === e.currentTarget) setExpandedId(null) }}
         >
           <div
@@ -72,13 +68,7 @@ const MobilePlayerBar: React.FC<Props> = ({ songsToWin }) => {
             role="dialog"
             aria-modal="true"
             aria-label={`${expanded.name}'s details`}
-            className="sheet-slide-up w-full max-w-[480px] brushed-darker p-5 max-h-[70vh] overflow-y-auto"
-            style={{
-              borderTopLeftRadius: 18, borderTopRightRadius: 18,
-              borderTop: '2px solid #0a0a0a',
-              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)',
-              boxShadow: '0 -10px 30px rgba(0,0,0,.6)',
-            }}
+            className="sheet-slide-up w-full max-w-[480px] brushed-darker p-5 max-h-[70vh] overflow-y-auto rounded-tl-[18px] rounded-tr-[18px] border-t-2 border-[#0a0a0a] pb-[calc(env(safe-area-inset-bottom,0px)+20px)] [box-shadow:0_-10px_30px_rgba(0,0,0,.6)]"
           >
             <div className="flex items-center gap-3 mb-4">
               <PolaroidAvatar
@@ -89,12 +79,11 @@ const MobilePlayerBar: React.FC<Props> = ({ songsToWin }) => {
                 active
               />
               <div className="flex-1 min-w-0">
-                <div className="font-display" style={{ fontSize: 16, color: 'var(--color-cream)' }}>
+                <div className="font-display text-base text-cream">
                   {expanded.name}{expanded.id === playerId ? ' (YOU)' : ''}
                 </div>
                 <div
-                  className="font-mono mt-0.5"
-                  style={{ fontSize: 13, color: 'var(--color-muted)', letterSpacing: '.05em' }}
+                  className="font-mono mt-0.5 text-[13px] text-[var(--color-muted)] tracking-[.05em]"
                 >
                   {expanded.timeline.length}/{songsToWin} CARDS · {expanded.tokens}★
                   {expanded.id === currentPlayerId && ' · THEIR TURN'}
@@ -103,8 +92,7 @@ const MobilePlayerBar: React.FC<Props> = ({ songsToWin }) => {
               <button
                 onClick={() => setExpandedId(null)}
                 aria-label="Close"
-                className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer"
-                style={{ color: 'var(--color-cream)' }}
+                className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer text-cream"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -116,8 +104,7 @@ const MobilePlayerBar: React.FC<Props> = ({ songsToWin }) => {
             <div className="mt-2.5">
               {expanded.timeline.length === 0 ? (
                 <p
-                  className="text-[12px] italic"
-                  style={{ color: 'var(--color-muted)' }}
+                  className="text-xs italic text-[var(--color-muted)]"
                 >
                   No cards placed yet.
                 </p>

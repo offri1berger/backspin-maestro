@@ -9,22 +9,19 @@ import LedDisplay from '../../components/boombox/LedDisplay'
 const GamePageDesktop = (p: GamePageProps) => (
   <div className="hidden lg:flex flex-col flex-1 min-h-0 boombox-bg">
     {/* Top bar */}
-    <div
-      className="px-6 py-3 flex items-center justify-between shrink-0"
-      style={{ background: 'linear-gradient(180deg, #1a1a1c, #0a0a0a)', borderBottom: '2px solid #000', boxShadow: '0 2px 8px rgba(0,0,0,.5)' }}
-    >
+    <div className="px-6 py-3 flex items-center justify-between shrink-0 bg-[linear-gradient(180deg,#1a1a1c,#0a0a0a)] border-b-2 border-[#000] [box-shadow:0_2px_8px_rgba(0,0,0,.5)]">
       <div className="flex items-center gap-4">
         <Logo />
-        <LedDisplay color="green" style={{ fontSize: 14, padding: '4px 10px' }}>
+        <LedDisplay color="green" className="text-sm px-[10px] py-1">
           {p.roomCode} · {p.players.length} PLAYERS
         </LedDisplay>
       </div>
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full" style={{ background: 'var(--color-bad)', boxShadow: '0 0 8px var(--color-bad)' }} />
-          <span className="font-display text-[10px] tracking-[0.1em]" style={{ color: 'var(--color-bad)' }}>REC</span>
+          <span className="w-2 h-2 rounded-full bg-bad [box-shadow:0_0_8px_var(--color-bad)]" />
+          <span className="font-display text-[10px] tracking-[0.1em] text-bad">REC</span>
         </div>
-        <span className="font-display text-[10px] tracking-[0.1em]" style={{ color: 'var(--color-cream)' }}>
+        <span className="font-display text-[10px] tracking-[0.1em] text-cream">
           FIRST TO {p.songsToWin}
         </span>
         <button

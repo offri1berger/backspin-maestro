@@ -52,7 +52,7 @@ export const DecadePicker = ({ decadeFilter, onChange, disabled = false }: Props
 
   return (
     <div>
-      <div className="font-display text-[10px] tracking-[0.1em] uppercase mb-2" style={{ color: 'var(--color-cyan)' }}>
+      <div className="font-display text-[10px] tracking-[0.1em] uppercase mb-2 text-cyan">
         DECADE
       </div>
       <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
@@ -60,15 +60,9 @@ export const DecadePicker = ({ decadeFilter, onChange, disabled = false }: Props
           type="button"
           onClick={() => !disabled && onChange('all')}
           disabled={disabled}
-          className={chip(isAll)}
-          style={isAll
-            ? {
-                background: 'linear-gradient(180deg, var(--color-hot), color-mix(in srgb, var(--color-hot) 70%, #000))',
-                color: '#fff',
-                boxShadow: '0 2px 0 #000, 0 0 10px color-mix(in srgb, var(--color-hot) 50%, transparent)',
-              }
-            : { boxShadow: 'inset 0 2px 4px rgba(0,0,0,.6)' }
-          }
+          className={`${chip(isAll)} ${isAll
+            ? 'bg-[linear-gradient(180deg,var(--color-hot),color-mix(in_srgb,var(--color-hot)_70%,#000))] text-white [box-shadow:0_2px_0_#000,0_0_10px_color-mix(in_srgb,var(--color-hot)_50%,transparent)]'
+            : '[box-shadow:inset_0_2px_4px_rgba(0,0,0,.6)]'}`}
         >
           ALL
         </button>
@@ -80,15 +74,9 @@ export const DecadePicker = ({ decadeFilter, onChange, disabled = false }: Props
               type="button"
               onClick={() => handleChip(d.value)}
               disabled={disabled}
-              className={chip(active)}
-              style={active
-                ? {
-                    background: 'linear-gradient(180deg, var(--color-hot), color-mix(in srgb, var(--color-hot) 70%, #000))',
-                    color: '#fff',
-                    boxShadow: '0 2px 0 #000, 0 0 10px color-mix(in srgb, var(--color-hot) 50%, transparent)',
-                  }
-                : { boxShadow: 'inset 0 2px 4px rgba(0,0,0,.6)' }
-              }
+              className={`${chip(active)} ${active
+                ? 'bg-[linear-gradient(180deg,var(--color-hot),color-mix(in_srgb,var(--color-hot)_70%,#000))] text-white [box-shadow:0_2px_0_#000,0_0_10px_color-mix(in_srgb,var(--color-hot)_50%,transparent)]'
+                : '[box-shadow:inset_0_2px_4px_rgba(0,0,0,.6)]'}`}
             >
               {d.label.toUpperCase()}
             </button>

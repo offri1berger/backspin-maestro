@@ -65,8 +65,7 @@ const ImagePicker = ({ options, value, onChange, fallback = '?', label = 'image'
           <button
             type="button"
             onClick={open}
-            className="font-display text-[10px] tracking-[0.05em] uppercase cursor-pointer bg-transparent border-0 p-0"
-            style={{ color: 'var(--color-hot)' }}
+            className="font-display text-[10px] tracking-[0.05em] uppercase cursor-pointer bg-transparent border-0 p-0 text-hot"
           >
             {value ? 'CHANGE ★' : 'PICK FACE ★'}
           </button>
@@ -75,8 +74,7 @@ const ImagePicker = ({ options, value, onChange, fallback = '?', label = 'image'
 
       {showModal && (
         <div
-          style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)' }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-5"
+          className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-[rgba(0,0,0,0.72)] backdrop-blur-[8px]"
           onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false) }}
         >
           <div
@@ -92,14 +90,12 @@ const ImagePicker = ({ options, value, onChange, fallback = '?', label = 'image'
                 type="button"
                 onClick={() => setShowModal(false)}
                 aria-label="Close"
-                className="w-9 h-9 rounded-md cursor-pointer flex items-center justify-center"
-                style={{ background: '#1a1a1c', border: '2px solid #000', color: 'var(--color-cream)' }}
+                className="w-9 h-9 rounded-md cursor-pointer flex items-center justify-center bg-[#1a1a1c] border-2 border-black text-cream"
               >✕</button>
             </div>
 
             <div
-              className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 grid content-start gap-3"
-              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))' }}
+              className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 grid content-start gap-3 [grid-template-columns:repeat(auto-fill,minmax(88px,1fr))]"
             >
               {options.map((src) => {
                 const selected = pending === src
@@ -108,21 +104,12 @@ const ImagePicker = ({ options, value, onChange, fallback = '?', label = 'image'
                     key={src}
                     type="button"
                     onClick={() => setPending(src)}
-                    className="aspect-square p-1 cursor-pointer rounded-[4px]"
-                    style={{
-                      background: 'var(--color-cream)',
-                      border: '2px solid #000',
-                      boxShadow: selected
-                        ? '0 0 0 2px var(--color-hot), 0 0 12px color-mix(in srgb, var(--color-hot) 50%, transparent), 0 2px 4px rgba(0,0,0,.4)'
-                        : '0 2px 4px rgba(0,0,0,.4)',
-                      opacity: selected ? 1 : 0.85,
-                    }}
+                    className={`aspect-square p-1 cursor-pointer rounded bg-cream border-2 border-black ${selected ? 'opacity-100 [box-shadow:0_0_0_2px_var(--color-hot),0_0_12px_color-mix(in_srgb,var(--color-hot)_50%,transparent),0_2px_4px_rgba(0,0,0,.4)]' : 'opacity-[.85] [box-shadow:0_2px_4px_rgba(0,0,0,.4)]'}`}
                   >
                     <img
                       src={src}
                       alt=""
-                      className="w-full h-full object-cover block"
-                      style={{ filter: 'brightness(1.08) saturate(1.15)' }}
+                      className="w-full h-full object-cover block [filter:brightness(1.08)_saturate(1.15)]"
                     />
                   </button>
                 )

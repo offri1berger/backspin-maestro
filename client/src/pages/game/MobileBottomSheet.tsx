@@ -47,32 +47,24 @@ const MobileBottomSheet: React.FC<Props> = ({
   return (
     <div
       ref={ref}
-      className="sheet-slide-up fixed bottom-0 left-0 right-0 z-20 px-3 pt-3 flex flex-col gap-2.5"
-      style={{
-        background: 'rgba(26,26,28,.95)',
-        backdropFilter: 'blur(10px)',
-        borderTop: '2px solid #000',
-        paddingBottom: 'max(14px, env(safe-area-inset-bottom, 14px))',
-      }}
+      className="sheet-slide-up fixed bottom-0 left-0 right-0 z-20 px-3 pt-3 flex flex-col gap-2.5 bg-[rgba(26,26,28,.95)] [backdrop-filter:blur(10px)] border-t-2 border-[#000] pb-[max(14px,env(safe-area-inset-bottom,14px))]"
     >
       {isStealWindowOpen && (
         <div
-          className="flex items-center justify-between px-3.5 py-2 rounded-[8px] gap-2"
+          className="flex items-center justify-between px-3.5 py-2 rounded-[8px] gap-2 bg-[#0a0a0a]"
           style={{
-            background: '#0a0a0a',
             border: `2px solid ${stealerName ? 'var(--color-hot)' : 'var(--color-muted-2)'}`,
             boxShadow: stealerName ? '0 0 12px color-mix(in srgb, var(--color-hot) 50%, transparent)' : 'none',
           }}
         >
           <span
-            className="font-display"
-            style={{ fontSize: 11, color: stealerName ? 'var(--color-hot)' : 'var(--color-muted)', letterSpacing: '.05em' }}
+            className={`font-display text-[11px] tracking-[.05em] ${stealerName ? 'text-hot' : 'text-[var(--color-muted)]'}`}
           >
             {stealerName ? `⚡ ${stealerName.toUpperCase()} IS STEALING…` : 'STEAL WINDOW OPEN'}
           </span>
           <LedDisplay
             color={countdown <= 3 ? 'red' : 'yellow'}
-            style={{ fontSize: 18, padding: '4px 10px' }}
+            className="text-lg px-[10px] py-1"
           >
             {countdown}s
           </LedDisplay>
@@ -96,14 +88,7 @@ const MobileBottomSheet: React.FC<Props> = ({
       {showSecondary && mobilePending === null && (myPlayer?.tokens ?? 0) >= 1 && (
         <button
           onClick={onSkip}
-          className="w-full h-9 rounded-[8px] cursor-pointer font-display"
-          style={{
-            background: '#1a1a1c',
-            border: '2px solid #000',
-            color: 'var(--color-cream)',
-            fontSize: 11, letterSpacing: '.05em',
-            boxShadow: '0 2px 0 #000',
-          }}
+          className="w-full h-9 rounded-[8px] cursor-pointer font-display bg-[#1a1a1c] border-2 border-[#000] text-cream text-[11px] tracking-[.05em] [box-shadow:0_2px_0_#000]"
         >
           SKIP · SPEND 1 ★
         </button>

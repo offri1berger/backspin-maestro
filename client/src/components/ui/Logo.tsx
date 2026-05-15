@@ -6,25 +6,12 @@ export const Logo = ({ variant = 'full' }: LogoProps) => {
   return (
     <div className="flex items-center gap-2 select-none">
       <span
-        className="font-display"
-        style={{
-          padding: '6px 12px',
-          background: 'var(--color-accent)',
-          color: 'var(--color-accent-ink)',
-          fontSize: variant === 'compact' ? 14 : 17,
-          letterSpacing: '.02em',
-          transform: 'rotate(-3deg)',
-          boxShadow: '3px 3px 0 rgba(0,0,0,.6)',
-          borderRadius: 4,
-        }}
+        className={`font-display bg-accent text-accent-ink tracking-[.02em] -rotate-3 [box-shadow:3px_3px_0_rgba(0,0,0,.6)] rounded px-3 py-[6px] ${variant === 'compact' ? 'text-sm' : 'text-[17px]'}`}
       >
         BACKSPIN!
       </span>
       {variant === 'full' && (
-        <span
-          className="hidden sm:inline font-display"
-          style={{ fontSize: 12, letterSpacing: '.08em', color: 'var(--color-cream)' }}
-        >
+        <span className="hidden sm:inline font-display text-xs tracking-[.08em] text-cream">
           MAESTRO 808
         </span>
       )}

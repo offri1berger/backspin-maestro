@@ -31,7 +31,13 @@ The client has no tests. Only the server has a Jest suite (ESM mode via `NODE_OP
 
 **Always use arrow functions, never `function` declarations.** This applies to top-level functions, exported helpers, React components, and callbacks. The codebase is consistent on this — match it.
 
-**Prefer Tailwind utility classes over inline `style={{ ... }}`.** The project is Tailwind v4 — reach for `className` first. Reserve inline styles for values that have to be computed at runtime (e.g. progress widths, conditional colors via interpolation) or CSS features Tailwind can't express cleanly. A static inline style is a smell — convert it.
+**No `style={{ ... }}` on JSX elements — use Tailwind exclusively.** The project is Tailwind v4. Every static CSS value must be expressed as a `className`. The only permitted exception is a value that is genuinely computed at runtime and cannot be expressed as a static string — e.g. `style={{ width: \`${progress}%\` }}` or `style={{ animationDelay: \`${i * 70}ms\` }}`. If it's a static string, it is not an exception; convert it.
+
+**Tailwind v4 utility reference for this project:**
+- Theme colors defined in `index.css @theme` are available as direct utilities: `text-accent`, `text-hot`, `text-cyan`, `text-good`, `text-bad`, `text-cream`, `text-orange`, `text-accent-ink`, `bg-accent`, `bg-surface`, `border-hot`, etc. Use `text-[var(--color-muted)]` for `--color-muted` and `--color-muted-2` (hyphenated names conflict with Tailwind's scale).
+- Theme fonts: `font-display`, `font-mono`, `font-code`, `font-marker`, `font-body` (defined in `@theme`).
+- Arbitrary values for complex static styles: `bg-[#0a0a0a]`, `text-[11px]`, `tracking-[.05em]`, `[box-shadow:0_4px_12px_rgba(0,0,0,.4)]` (underscores replace spaces inside arbitrary values).
+- Reusable CSS utility classes are defined in `client/src/index.css`: `.brushed`, `.brushed-dark`, `.brushed-darker`, `.panel-hardware`, `.screw`, `.led`, `.led-yellow/cyan/hot/red/green`, `.sticker`, `.sticker-sm`, `.plastic-btn`, `.plastic-btn-pink/green/dark`, `.knob-btn`, `.boombox-bg`, `.boombox-bg-soft`, `.polaroid`, `.polaroid-active`, `.boombox-title`, `.boombox-title-yellow`. Prefer these over re-specifying the same properties inline. Add new utility classes to `index.css` for patterns used in 3+ places.
 
 ## Architecture
 

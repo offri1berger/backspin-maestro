@@ -18,8 +18,7 @@ export function HeroPanel() {
         >
           {/* handle */}
           <div
-            className="absolute left-1/2 -top-2 -translate-x-1/2 w-32 xl:w-40 h-3.5 rounded-[10px]"
-            style={{ background: 'linear-gradient(180deg, #5a5a60, #2a2a2c)', boxShadow: '0 3px 6px rgba(0,0,0,.5)' }}
+            className="absolute left-1/2 -top-2 -translate-x-1/2 w-32 xl:w-40 h-3.5 rounded-[10px] bg-[linear-gradient(180deg,#5a5a60,#2a2a2c)] [box-shadow:0_3px_6px_rgba(0,0,0,.5)]"
           />
           {/* speakers — scale with viewport */}
           <div className="absolute left-3 top-3 xl:left-4 xl:top-4">
@@ -31,26 +30,18 @@ export function HeroPanel() {
 
           {/* center deck */}
           <div
-            className="absolute left-[32%] right-[32%] top-4 rounded-[8px] p-2"
-            style={{
-              background: '#0a0a0a',
-              border: '2px solid #1a1a1a',
-              boxShadow: 'inset 0 2px 6px rgba(0,0,0,.8)',
-              height: 64,
-            }}
+            className="absolute left-[32%] right-[32%] top-4 rounded-lg p-2 h-16 bg-[#0a0a0a] border-2 border-[#1a1a1a] [box-shadow:inset_0_2px_6px_rgba(0,0,0,.8)]"
           >
-            <div className="font-mono text-[12px] tracking-[0.1em]" style={{ color: 'var(--color-good)', textShadow: '0 0 6px var(--color-good)' }}>
+            <div className="font-mono text-xs tracking-[0.1em] text-good [text-shadow:0_0_6px_var(--color-good)]">
               ● REC ▸ 30s
             </div>
             <div className="mt-1.5 flex items-end gap-[3px] h-[28px]">
               {Array.from({ length: 14 }).map((_, i) => (
                 <span
                   key={i}
-                  className="wave-bar"
+                  className="wave-bar bg-accent [box-shadow:0_0_6px_var(--color-accent)]"
                   style={{
                     height: `${30 + (i % 4) * 18}%`,
-                    background: 'var(--color-accent)',
-                    boxShadow: '0 0 6px var(--color-accent)',
                     animationDelay: `${i * 70}ms`,
                   }}
                 />
@@ -65,11 +56,9 @@ export function HeroPanel() {
               return (
                 <div
                   key={i}
-                  className="relative"
+                  className="relative w-[22px] h-[22px] rounded-full [box-shadow:inset_0_-2px_4px_rgba(0,0,0,.4),0_2px_4px_rgba(0,0,0,.5)]"
                   style={{
-                    width: 22, height: 22, borderRadius: '50%',
                     background: `conic-gradient(${c}, color-mix(in srgb, ${c} 60%, #000))`,
-                    boxShadow: 'inset 0 -2px 4px rgba(0,0,0,.4), 0 2px 4px rgba(0,0,0,.5)',
                   }}
                 >
                   <div className="absolute left-1/2 -translate-x-1/2 top-0.5 w-0.5 h-1.5 bg-white" />
@@ -83,12 +72,12 @@ export function HeroPanel() {
       {/* Big title with stickers */}
       <div className="relative shrink-0">
         <Sticker color="cyan" rotate={-5} className="absolute -top-3 left-0">SIDE A</Sticker>
-        <h1 className="boombox-title" style={{ fontSize: 'clamp(48px, 6vw, 80px)' }}>
+        <h1 className="boombox-title text-[clamp(48px,6vw,80px)]">
           CRANK IT,<br />
           <span className="boombox-title-yellow">NAME IT.</span>
         </h1>
         <Sticker color="hot" rotate={4} className="absolute -bottom-1 right-4 xl:left-72 xl:right-auto">★ HOT ★</Sticker>
-        <p className="mt-5 max-w-[440px] text-[13px] leading-[1.5]" style={{ color: 'var(--color-muted)' }}>
+        <p className="mt-5 max-w-[440px] text-[13px] leading-[1.5] text-[var(--color-muted)]">
           Hear a hit. Drop the cassette on the right year. Steal your friends' picks. Loudest deck wins.
         </p>
       </div>
@@ -98,18 +87,18 @@ export function HeroPanel() {
         {STATS.map(({ val, label, color }) => (
           <div key={label}>
             <div
-              className="font-display"
-              style={{ fontSize: 24, lineHeight: 1, color, textShadow: '2px 2px 0 var(--color-accent-ink)' }}
+              className="font-display text-2xl leading-none [text-shadow:2px_2px_0_var(--color-accent-ink)]"
+              style={{ color }}
             >
               {val}
             </div>
-            <div className="font-display text-[9px] tracking-[0.2em] mt-1" style={{ color: 'var(--color-muted)' }}>
+            <div className="font-display text-[9px] tracking-[0.2em] mt-1 text-[var(--color-muted)]">
               {label}
             </div>
           </div>
         ))}
         <div className="ml-auto">
-          <LedDisplay color="green" style={{ fontSize: 13, padding: '5px 9px' }}>● ONLINE</LedDisplay>
+          <LedDisplay color="green" className="text-[13px] py-[5px] px-[9px]">● ONLINE</LedDisplay>
         </div>
       </div>
     </div>

@@ -37,8 +37,7 @@ function PlayerPolaroid({
 
   return (
     <div
-      className={`relative ${isNew ? 'player-joined-glow' : ''}`}
-      style={{ opacity: offline ? 0.4 : 1, transition: 'opacity .15s' }}
+      className={`relative ${isNew ? 'player-joined-glow' : ''} ${offline ? 'opacity-40' : 'opacity-100'} transition-opacity duration-[150ms]`}
     >
       <PolaroidAvatar
         src={player.avatar}
@@ -53,7 +52,7 @@ function PlayerPolaroid({
           color="yellow"
           rotate={index % 2 ? -8 : 8}
           size="sm"
-          style={{ position: 'absolute', top: -10, right: -10 }}
+          className="absolute top-[-10px] right-[-10px]"
         >
           HOST
         </Sticker>
@@ -63,7 +62,7 @@ function PlayerPolaroid({
           color="cyan"
           rotate={-6}
           size="sm"
-          style={{ position: 'absolute', bottom: -2, left: -8 }}
+          className="absolute bottom-[-2px] left-[-8px]"
         >
           JOINED
         </Sticker>
@@ -73,7 +72,7 @@ function PlayerPolaroid({
           color="red"
           rotate={3}
           size="sm"
-          style={{ position: 'absolute', bottom: 4, left: -8 }}
+          className="absolute bottom-1 left-[-8px]"
         >
           OFFLINE
         </Sticker>
@@ -82,14 +81,7 @@ function PlayerPolaroid({
         <button
           onClick={handleKick}
           aria-label={`Remove ${player.name}`}
-          className="absolute -top-2 -right-2 w-7 h-7 rounded-full cursor-pointer flex items-center justify-center"
-          style={{
-            background: '#0a0a0a',
-            color: 'var(--color-bad)',
-            border: '2px solid var(--color-bad)',
-            boxShadow: '0 2px 0 #000',
-            fontSize: 14, lineHeight: 1, fontWeight: 700,
-          }}
+          className="absolute -top-2 -right-2 w-7 h-7 rounded-full cursor-pointer flex items-center justify-center bg-[#0a0a0a] text-bad border-2 border-bad [box-shadow:0_2px_0_#000] text-sm leading-none font-bold"
         >
           ✕
         </button>
@@ -137,14 +129,14 @@ const SettingsPanel = ({
 
   return (
     <div className="relative panel-hardware brushed-dark p-4 lg:p-5 flex flex-col gap-3.5">
-      <span className="screw" style={{ top: 6, left: 6 }} />
-      <span className="screw" style={{ top: 6, right: 6 }} />
-      <span className="screw" style={{ bottom: 6, left: 6 }} />
-      <span className="screw" style={{ bottom: 6, right: 6 }} />
+      <span className="screw top-1.5 left-1.5" />
+      <span className="screw top-1.5 right-1.5" />
+      <span className="screw bottom-1.5 left-1.5" />
+      <span className="screw bottom-1.5 right-1.5" />
 
       <div className="flex items-center justify-between">
         <Sticker color="yellow" rotate={-3} size="sm">MIX RULES</Sticker>
-        <span className="font-display text-[9px] tracking-[0.1em]" style={{ color: 'var(--color-muted)' }}>
+        <span className="font-display text-[9px] tracking-[0.1em] text-[var(--color-muted)]">
           {editable ? 'YOU CONTROL THE DECK' : 'CONDUCTOR CONTROLS'}
         </span>
       </div>
@@ -156,7 +148,7 @@ const SettingsPanel = ({
       />
 
       <div>
-        <div className="font-display text-[10px] tracking-[0.1em] mb-1.5" style={{ color: 'var(--color-cyan)' }}>
+        <div className="font-display text-[10px] tracking-[0.1em] mb-1.5 text-cyan">
           FIRST TO {settings.songsPerPlayer}
         </div>
         <div className="flex items-center gap-2">
@@ -165,18 +157,11 @@ const SettingsPanel = ({
             onClick={() => handleSongs(-1)}
             disabled={!editable || settings.songsPerPlayer <= MIN_SONGS_PER_PLAYER}
             aria-label="Fewer songs"
-            className="knob-btn shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{
-              width: 36, height: 36,
-              background: 'radial-gradient(circle at 30% 25%, var(--color-bad), color-mix(in srgb, var(--color-bad) 50%, #000))',
-              boxShadow: 'inset 0 -3px 6px rgba(0,0,0,.4), inset 0 2px 4px rgba(255,255,255,.4), 0 3px 0 color-mix(in srgb, var(--color-bad) 40%, #000)',
-              color: '#fff', fontSize: 16,
-            }}
+            className="knob-btn shrink-0 disabled:opacity-40 disabled:cursor-not-allowed w-9 h-9 bg-[radial-gradient(circle_at_30%_25%,var(--color-bad),color-mix(in_srgb,var(--color-bad)_50%,#000))] [box-shadow:inset_0_-3px_6px_rgba(0,0,0,.4),inset_0_2px_4px_rgba(255,255,255,.4),0_3px_0_color-mix(in_srgb,var(--color-bad)_40%,#000)] text-white text-base"
           >−</button>
           <LedDisplay
             color="yellow"
-            className="flex-1 text-center"
-            style={{ fontSize: 14, padding: '6px 10px' }}
+            className="flex-1 text-center text-sm py-1.5 px-[10px]"
           >
             {settings.songsPerPlayer}·{Math.round(settings.songsPerPlayer * 2.5)}M
           </LedDisplay>
@@ -185,13 +170,7 @@ const SettingsPanel = ({
             onClick={() => handleSongs(1)}
             disabled={!editable || settings.songsPerPlayer >= MAX_SONGS_PER_PLAYER}
             aria-label="More songs"
-            className="knob-btn shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{
-              width: 36, height: 36,
-              background: 'radial-gradient(circle at 30% 25%, var(--color-good), color-mix(in srgb, var(--color-good) 50%, #000))',
-              boxShadow: 'inset 0 -3px 6px rgba(0,0,0,.4), inset 0 2px 4px rgba(255,255,255,.4), 0 3px 0 color-mix(in srgb, var(--color-good) 40%, #000)',
-              color: 'var(--color-accent-ink)', fontSize: 16,
-            }}
+            className="knob-btn shrink-0 disabled:opacity-40 disabled:cursor-not-allowed w-9 h-9 bg-[radial-gradient(circle_at_30%_25%,var(--color-good),color-mix(in_srgb,var(--color-good)_50%,#000))] [box-shadow:inset_0_-3px_6px_rgba(0,0,0,.4),inset_0_2px_4px_rgba(255,255,255,.4),0_3px_0_color-mix(in_srgb,var(--color-good)_40%,#000)] text-accent-ink text-base"
           >+</button>
         </div>
       </div>
@@ -252,8 +231,7 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
           <button
             onClick={onLeave}
             aria-label="Leave"
-            className="font-display text-[10px] tracking-[0.1em] cursor-pointer bg-transparent border-0 p-0 hidden sm:flex items-center gap-1.5"
-            style={{ color: 'var(--color-cream)' }}
+            className="font-display text-[10px] tracking-[0.1em] cursor-pointer bg-transparent border-0 p-0 hidden sm:flex items-center gap-1.5 text-cream"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -264,8 +242,8 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--color-bad)', boxShadow: '0 0 10px var(--color-bad)' }} />
-            <span className="font-display text-[10px] tracking-[0.1em]" style={{ color: 'var(--color-bad)' }}>REC</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-bad [box-shadow:0_0_10px_var(--color-bad)]" />
+            <span className="font-display text-[10px] tracking-[0.1em] text-bad">REC</span>
           </div>
           <div className="hidden sm:block w-px h-4 bg-[#0a0a0a]" />
           <MuteToggle />
@@ -278,7 +256,7 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
           {/* Room code card */}
           <div className="relative panel-hardware brushed-dark p-4 lg:p-5 flex flex-col sm:flex-row items-center gap-4">
             <Sticker color="cyan" rotate={-4} size="sm" className="absolute -top-2 left-4">ROOM CODE</Sticker>
-            <LedDisplay color="cyan" className="text-center w-full sm:w-auto" style={{ fontSize: 36, letterSpacing: '.3em', padding: '14px 22px' }}>
+            <LedDisplay color="cyan" className="text-center w-full sm:w-auto text-[36px] tracking-[.3em] py-[14px] px-[22px]">
               {roomCode}
             </LedDisplay>
             <PlasticButton
@@ -294,8 +272,8 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
           {settings ? (
             <SettingsPanel settings={settings} editable={isHost} />
           ) : (
-            <div className="relative panel-hardware brushed-dark p-4 lg:p-5 flex items-center justify-center" style={{ minHeight: 120 }}>
-              <span className="font-display text-[11px] tracking-[0.1em]" style={{ color: 'var(--color-muted)' }}>
+            <div className="relative panel-hardware brushed-dark p-4 lg:p-5 flex items-center justify-center min-h-[120px]">
+              <span className="font-display text-[11px] tracking-[0.1em] text-[var(--color-muted)]">
                 LOADING SETTINGS…
               </span>
             </div>
@@ -304,16 +282,11 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
 
         {/* Player polaroid corkboard */}
         <div
-          className="relative panel-hardware brushed-darker p-4 lg:p-6"
-          style={{ minHeight: 240 }}
+          className="relative panel-hardware brushed-darker p-4 lg:p-6 min-h-[240px]"
         >
           {/* cork pin */}
           <div
-            className="absolute top-2.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full"
-            style={{
-              background: 'radial-gradient(circle at 35% 30%, #ff5050, #a01010)',
-              boxShadow: '0 2px 3px rgba(0,0,0,.5), inset 0 -2px 3px rgba(0,0,0,.3)',
-            }}
+            className="absolute top-2.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-[radial-gradient(circle_at_35%_30%,#ff5050,#a01010)] [box-shadow:0_2px_3px_rgba(0,0,0,.5),inset_0_-2px_3px_rgba(0,0,0,.3)]"
           />
           <Sticker
             color="hot"
@@ -338,15 +311,8 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
             {Array.from({ length: emptySlots }).map((_, i) => (
               <div
                 key={`empty-${i}`}
-                className="flex items-center justify-center font-display text-[10px] tracking-[0.1em]"
-                style={{
-                  width: 100, height: 124, padding: 7,
-                  background: 'rgba(0,0,0,.3)',
-                  border: '2px dashed var(--color-muted)',
-                  borderRadius: 4,
-                  color: 'var(--color-muted)',
-                  transform: `rotate(${i % 2 ? 4 : -4}deg)`,
-                }}
+                className="flex items-center justify-center font-display text-[10px] tracking-[0.1em] w-[100px] h-[124px] p-[7px] bg-black/30 border-2 border-dashed border-[var(--color-muted)] rounded-sm text-[var(--color-muted)]"
+                style={{ transform: `rotate(${i % 2 ? 4 : -4}deg)` }}
               >
                 EMPTY SLOT
               </div>
@@ -376,12 +342,7 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
             </>
           ) : (
             <div
-              className="flex-1 h-[60px] flex items-center justify-center font-display text-[12px] tracking-[0.1em] rounded-[10px]"
-              style={{
-                background: '#0a0a0a',
-                border: '2px solid var(--color-muted-2)',
-                color: 'var(--color-muted)',
-              }}
+              className="flex-1 h-[60px] flex items-center justify-center font-display text-xs tracking-[0.1em] rounded-[10px] bg-[#0a0a0a] border-2 border-[var(--color-muted-2)] text-[var(--color-muted)]"
             >
               {ready ? 'WAITING FOR THE CONDUCTOR…' : 'WAITING FOR MORE PLAYERS…'}
             </div>
@@ -389,7 +350,7 @@ export function WaitingRoom({ roomCode, players, onStart, onLeave }: Props) {
         </div>
 
         {isHost && !ready && (
-          <p className="text-center font-display text-[10px] tracking-[0.1em]" style={{ color: 'var(--color-muted)' }}>
+          <p className="text-center font-display text-[10px] tracking-[0.1em] text-[var(--color-muted)]">
             WAITING FOR MORE PLAYERS…
           </p>
         )}

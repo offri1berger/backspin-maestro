@@ -22,19 +22,17 @@ const GamePageMobile = (p: GamePageProps) => {
   return (
     <div className="flex flex-col lg:hidden min-h-dvh boombox-bg">
       <div
-        className="px-4 py-2.5 flex items-center justify-between shrink-0"
-        style={{ background: 'linear-gradient(180deg, #1a1a1c, #0a0a0a)', borderBottom: '2px solid #000' }}
+        className="px-4 py-2.5 flex items-center justify-between shrink-0 bg-[linear-gradient(180deg,#1a1a1c,#0a0a0a)] border-b-2 border-[#000]"
       >
         <Logo variant="compact" />
         <div className="flex items-center gap-2">
-          <LedDisplay color="green" style={{ fontSize: 12, padding: '3px 8px' }}>
+          <LedDisplay color="green" className="text-xs px-2 py-[3px]">
             {p.roomCode}
           </LedDisplay>
           <button
             onClick={p.handleLeave}
             aria-label="Leave room"
-            className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer"
-            style={{ color: 'var(--color-cream)' }}
+            className="w-9 h-9 flex items-center justify-center bg-transparent border-0 cursor-pointer text-cream"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -48,8 +46,7 @@ const GamePageMobile = (p: GamePageProps) => {
 
       {showGuessBar && (
         <div
-          className="px-3 py-2 flex gap-2 shrink-0"
-          style={{ background: '#111113', borderBottom: '2px solid #000' }}
+          className="px-3 py-2 flex gap-2 shrink-0 bg-[#111113] border-b-2 border-[#000]"
         >
           {(['artist', 'title'] as const).map((field) => (
             <input
@@ -57,18 +54,7 @@ const GamePageMobile = (p: GamePageProps) => {
               placeholder={field === 'artist' ? 'Artist guess…' : 'Title guess…'}
               value={p.guess[field]}
               onChange={(e) => p.onGuessChange(field, e.target.value)}
-              style={{
-                flex: 1, minWidth: 0,
-                height: 38,
-                background: 'var(--color-cream)',
-                color: 'var(--color-accent-ink)',
-                border: '2px solid #000',
-                borderRadius: 6,
-                padding: '0 10px',
-                fontFamily: 'var(--font-code)', fontSize: 13,
-                outline: 'none',
-                boxShadow: 'inset 0 2px 4px rgba(0,0,0,.2)',
-              }}
+              className="flex-1 min-w-0 h-[38px] bg-cream text-accent-ink border-2 border-[#000] rounded-[6px] px-[10px] py-0 font-code text-[13px] outline-none [box-shadow:inset_0_2px_4px_rgba(0,0,0,.2)]"
             />
           ))}
         </div>

@@ -38,12 +38,11 @@ const GameOverPage = () => {
       {CONFETTI.map((s, i) => (
         <div
           key={i}
-          className="absolute pointer-events-none pop-in"
+          className="absolute pointer-events-none pop-in font-display [text-shadow:4px_4px_0_var(--color-accent-ink)]"
           style={{
             left: s.x, top: s.y,
-            fontFamily: 'var(--font-display)', fontSize: s.size, color: s.c,
+            fontSize: s.size, color: s.c,
             transform: `rotate(${s.r}deg)`,
-            textShadow: '4px 4px 0 var(--color-accent-ink)',
             animationDelay: `${i * 120}ms`,
           }}
         >
@@ -56,8 +55,7 @@ const GameOverPage = () => {
         <div className="flex items-center justify-between">
           <Logo />
           <span
-            className="font-display"
-            style={{ fontSize: 11, color: 'var(--color-muted)', letterSpacing: '.1em' }}
+            className="font-display text-[11px] text-[var(--color-muted)] tracking-[.1em]"
           >
             SET LIST FINI ◆ {useGameStore.getState().roomCode ?? '------'}
           </span>
@@ -68,8 +66,7 @@ const GameOverPage = () => {
           <div className="text-center lg:text-left">
             <Sticker color="cyan" rotate={-6} size="lg">1ST PLACE</Sticker>
             <h1
-              className="boombox-title boombox-title-yellow"
-              style={{ fontSize: 'clamp(56px, 12vw, 132px)', margin: '14px 0 18px' }}
+              className="boombox-title boombox-title-yellow text-[clamp(56px,12vw,132px)] mt-[14px] mb-[18px]"
             >
               {winner?.name?.toUpperCase()}!
             </h1>
@@ -87,7 +84,7 @@ const GameOverPage = () => {
                 color="yellow"
                 rotate={15}
                 size="md"
-                style={{ position: 'absolute', top: -16, right: -22 }}
+                className="absolute top-[-16px] right-[-22px]"
               >
                 WINNER ★
               </Sticker>
@@ -95,15 +92,14 @@ const GameOverPage = () => {
                 color="hot"
                 rotate={-12}
                 size="sm"
-                style={{ position: 'absolute', bottom: -4, left: -16 }}
+                className="absolute bottom-[-4px] left-[-16px]"
               >
                 {winner?.timeline.length}/{songsToWin}
               </Sticker>
             </div>
 
             <p
-              className="mt-5 max-w-[480px] text-[14px] leading-[1.55] mx-auto lg:mx-0"
-              style={{ color: 'var(--color-muted)' }}
+              className="mt-5 max-w-[480px] text-sm leading-[1.55] mx-auto lg:mx-0 text-[var(--color-muted)]"
             >
               {winner?.timeline.length} correct placements · {winner?.tokens} bonus ★ ·
               {isWinner ? ' Crushed it.' : ' Their shelf is the new gold standard.'}
@@ -119,22 +115,10 @@ const GameOverPage = () => {
                 return (
                   <div
                     key={p.id}
-                    className="flex items-center gap-3 pb-3"
-                    style={{ borderBottom: i < ranked.length - 1 ? '2px dashed rgba(255,255,255,.08)' : 'none' }}
+                    className={`flex items-center gap-3 pb-3 ${i < ranked.length - 1 ? 'border-b-2 border-dashed border-white/[.08]' : ''}`}
                   >
                     <div
-                      className="font-display flex items-center justify-center"
-                      style={{
-                        width: 38, height: 38, borderRadius: 6,
-                        background: i === 0
-                          ? 'linear-gradient(135deg, var(--color-accent), var(--color-orange))'
-                          : '#2a2a2c',
-                        color: i === 0 ? 'var(--color-accent-ink)' : 'var(--color-muted)',
-                        fontSize: 16,
-                        boxShadow: i === 0
-                          ? '0 3px 0 color-mix(in srgb, var(--color-accent) 55%, #000)'
-                          : '0 2px 0 #000',
-                      }}
+                      className={`font-display flex items-center justify-center w-[38px] h-[38px] rounded-[6px] text-base ${i === 0 ? 'bg-[linear-gradient(135deg,var(--color-accent),var(--color-orange))] text-accent-ink [box-shadow:0_3px_0_color-mix(in_srgb,var(--color-accent)_55%,#000)]' : 'bg-[#2a2a2c] text-[var(--color-muted)] [box-shadow:0_2px_0_#000]'}`}
                     >
                       {i + 1}
                     </div>
@@ -146,38 +130,23 @@ const GameOverPage = () => {
                       active={i === 0}
                     />
                     <div className="flex-1 min-w-0">
-                      <div
-                        className="font-display"
-                        style={{ fontSize: 14, color: 'var(--color-cream)' }}
-                      >
+                      <div className="font-display text-sm text-cream">
                         {p.name}
                       </div>
-                      <div
-                        className="font-mono mt-0.5"
-                        style={{ fontSize: 13, color: 'var(--color-muted)', letterSpacing: '.05em' }}
-                      >
+                      <div className="font-mono mt-0.5 text-[13px] text-[var(--color-muted)] tracking-[.05em]">
                         {p.timeline.length} CARDS · {p.tokens} ★
                       </div>
                       {/* mini progress */}
-                      <div
-                        className="mt-1 h-1 rounded relative overflow-hidden"
-                        style={{ background: '#0a0a0a' }}
-                      >
+                      <div className="mt-1 h-1 rounded relative overflow-hidden bg-[#0a0a0a]">
                         <div
-                          className="absolute inset-0"
-                          style={{
-                            width: `${filledPct * 100}%`,
-                            background: i === 0
-                              ? 'linear-gradient(90deg, var(--color-accent), var(--color-hot))'
-                              : 'var(--color-muted-2)',
-                            boxShadow: i === 0 ? '0 0 6px var(--color-accent)' : 'none',
-                          }}
+                          className={`absolute inset-0 ${i === 0 ? 'bg-[linear-gradient(90deg,var(--color-accent),var(--color-hot))] [box-shadow:0_0_6px_var(--color-accent)]' : 'bg-[var(--color-muted-2)]'}`}
+                          style={{ width: `${filledPct * 100}%` }}
                         />
                       </div>
                     </div>
                     <LedDisplay
                       color={i === 0 ? 'yellow' : 'muted'}
-                      style={{ fontSize: 20, padding: '4px 10px', minWidth: 56, textAlign: 'center' }}
+                      className="text-xl py-1 px-[10px] min-w-[56px] text-center"
                     >
                       {String(p.timeline.length).padStart(2, '0')}
                     </LedDisplay>
@@ -210,12 +179,7 @@ const GameOverPage = () => {
             </PlasticButton>
           ) : (
             <div
-              className="flex-1 h-[60px] flex items-center justify-center font-display text-[12px] tracking-[0.1em] rounded-[10px]"
-              style={{
-                background: '#0a0a0a',
-                border: '2px solid var(--color-muted-2)',
-                color: 'var(--color-muted)',
-              }}
+              className="flex-1 h-[60px] flex items-center justify-center font-display text-xs tracking-[0.1em] rounded-[10px] bg-[#0a0a0a] border-2 border-[var(--color-muted-2)] text-[var(--color-muted)]"
             >
               WAITING FOR THE CONDUCTOR…
             </div>

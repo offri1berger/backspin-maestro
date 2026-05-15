@@ -47,22 +47,19 @@ export const GameStage = ({
               activeTimeline.length > 0 ? (
                 <div className="flex items-baseline gap-2 flex-wrap">
                   <span
-                    className="font-display"
-                    style={{ fontSize: 18, color: 'var(--color-cream)' }}
+                    className="font-display text-lg text-cream"
                   >
                     PLACE BETWEEN
                   </span>
                   <span className="inline-flex items-center gap-1.5">
                     <span
-                      className="font-mono px-2 py-1 rounded-md"
-                      style={{ background: 'var(--color-cream)', color: 'var(--color-accent-ink)', fontSize: 13, fontWeight: 700 }}
+                      className="font-mono px-2 py-1 rounded-md bg-cream text-accent-ink text-[13px] font-bold"
                     >
                       {activeTimeline[0]?.song.year ?? '?'}
                     </span>
-                    <span style={{ color: 'var(--color-muted)' }}>&amp;</span>
+                    <span className="text-[var(--color-muted)]">&amp;</span>
                     <span
-                      className="font-mono px-2 py-1 rounded-md"
-                      style={{ background: 'var(--color-cream)', color: 'var(--color-accent-ink)', fontSize: 13, fontWeight: 700 }}
+                      className="font-mono px-2 py-1 rounded-md bg-cream text-accent-ink text-[13px] font-bold"
                     >
                       {activeTimeline[activeTimeline.length - 1]?.song.year ?? '?'}
                     </span>
@@ -70,20 +67,18 @@ export const GameStage = ({
                 </div>
               ) : (
                 <h2
-                  className="font-display"
-                  style={{ fontSize: 22, color: 'var(--color-cream)' }}
+                  className="font-display text-[22px] text-cream"
                 >
-                  PLACE YOUR <span style={{ color: 'var(--color-accent)' }}>FIRST CARD</span>
+                  PLACE YOUR <span className="text-accent">FIRST CARD</span>
                 </h2>
               )
             ) : (
               <div className="flex items-center gap-2">
                 <span
-                  className="inline-flex w-2 h-2 rounded-full animate-pulse"
-                  style={{ background: 'var(--color-hot)', boxShadow: '0 0 8px var(--color-hot)' }}
+                  className="inline-flex w-2 h-2 rounded-full animate-pulse bg-hot [box-shadow:0_0_8px_var(--color-hot)]"
                 />
-                <span className="text-[13px]" style={{ color: 'var(--color-muted)' }}>
-                  <strong style={{ color: 'var(--color-cream)' }}>{activePlayer?.name}</strong> is placing…
+                <span className="text-[13px] text-[var(--color-muted)]">
+                  <strong className="text-cream">{activePlayer?.name}</strong> is placing…
                 </span>
               </div>
             )
@@ -93,24 +88,22 @@ export const GameStage = ({
                 <Sticker color="yellow" rotate={-3} size="sm">YOUR SHELF</Sticker>
                 {isMyTurn && activeTimeline.length > 0 && (
                   <h2
-                    className="font-display"
-                    style={{ fontSize: 18, color: 'var(--color-cream)' }}
+                    className="font-display text-lg text-cream"
                   >
                     PLACE BETWEEN{' '}
-                    <span style={{ color: 'var(--color-accent)' }}>{activeTimeline[0]?.song.year ?? '?'}</span>
+                    <span className="text-accent">{activeTimeline[0]?.song.year ?? '?'}</span>
                     {' '}AND{' '}
-                    <span style={{ color: 'var(--color-accent)' }}>{activeTimeline[activeTimeline.length - 1]?.song.year ?? '?'}</span>.
+                    <span className="text-accent">{activeTimeline[activeTimeline.length - 1]?.song.year ?? '?'}</span>.
                   </h2>
                 )}
                 {!isMyTurn && (
-                  <p className="text-[13px]" style={{ color: 'var(--color-muted)' }}>
-                    Watching <strong style={{ color: 'var(--color-cream)' }}>{activePlayer?.name}</strong>'s turn
+                  <p className="text-[13px] text-[var(--color-muted)]">
+                    Watching <strong className="text-cream">{activePlayer?.name}</strong>'s turn
                   </p>
                 )}
               </div>
               <span
-                className="font-mono"
-                style={{ fontSize: 14, color: 'var(--color-accent)', letterSpacing: '.1em' }}
+                className="font-mono text-sm text-accent tracking-[.1em]"
               >
                 {activeTimeline.length}/{myPlayer ? '10' : '10'} SLOTTED
               </span>
@@ -138,8 +131,7 @@ export const GameStage = ({
             >
               SKIP SONG
               <span
-                className="px-2 py-0.5 rounded-md"
-                style={{ background: 'color-mix(in srgb, var(--color-bad) 25%, transparent)', color: 'var(--color-bad)', fontSize: 10 }}
+                className="px-2 py-0.5 rounded-md text-[10px] text-bad bg-[color-mix(in_srgb,var(--color-bad)_25%,transparent)]"
               >
                 −1 ★
               </span>
@@ -155,8 +147,7 @@ export const GameStage = ({
             {otherPlayers.map((p) => (
               <div
                 key={p.id}
-                className="rounded-[12px] p-3 brushed-darker"
-                style={{ border: '2px solid #0a0a0a' }}
+                className="rounded-[12px] p-3 brushed-darker border-2 border-[#0a0a0a]"
               >
                 <div className="flex items-center gap-2.5 mb-2">
                   <PolaroidAvatar
@@ -166,14 +157,12 @@ export const GameStage = ({
                     rotate={players.indexOf(p) % 2 ? -3 : 3}
                   />
                   <span
-                    className="font-display"
-                    style={{ fontSize: 13, color: 'var(--color-cream)' }}
+                    className="font-display text-[13px] text-cream"
                   >
                     {p.name}
                   </span>
                   <span
-                    className="font-mono ml-auto"
-                    style={{ fontSize: 14, color: 'var(--color-muted)', letterSpacing: '.05em' }}
+                    className="font-mono ml-auto text-sm text-[var(--color-muted)] tracking-[.05em]"
                   >
                     {p.timeline.length} cards · {p.tokens}★
                   </span>
@@ -182,8 +171,7 @@ export const GameStage = ({
                   {p.timeline.length === 0
                     ? (
                       <span
-                        className="text-[11px] italic"
-                        style={{ color: 'var(--color-muted)' }}
+                        className="text-[11px] italic text-[var(--color-muted)]"
                       >
                         Waiting for {p.name}'s first card…
                       </span>

@@ -8,11 +8,7 @@ export const PlayerRail = () => {
 
   return (
     <aside
-      className="overflow-y-auto p-4 flex flex-col gap-3"
-      style={{
-        background: 'linear-gradient(180deg, #1c1c1f 0%, #0a0a0c 100%)',
-        borderRight: '2px solid #000',
-      }}
+      className="overflow-y-auto p-4 flex flex-col gap-3 bg-[linear-gradient(180deg,#1c1c1f_0%,#0a0a0c_100%)] border-r-2 border-[#000]"
     >
       <Sticker color="cyan" rotate={-4} size="sm">THE CREW</Sticker>
 
@@ -24,15 +20,7 @@ export const PlayerRail = () => {
           return (
             <div
               key={p.id}
-              className="flex items-center gap-3 p-2.5 rounded-[8px]"
-              style={{
-                opacity: offline ? 0.4 : 1,
-                background: active
-                  ? `linear-gradient(135deg, color-mix(in srgb, var(--color-hot) 25%, transparent), transparent)`
-                  : '#1a1a1c',
-                border: active ? '2px solid var(--color-hot)' : '2px solid transparent',
-                transition: 'all .15s',
-              }}
+              className={`flex items-center gap-3 p-2.5 rounded-[8px] transition-all duration-[150ms] ${offline ? 'opacity-40' : 'opacity-100'} ${active ? 'bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-hot)_25%,transparent),transparent)] border-2 border-hot' : 'bg-[#1a1a1c] border-2 border-transparent'}`}
             >
               <PolaroidAvatar
                 src={p.avatar}
@@ -43,8 +31,7 @@ export const PlayerRail = () => {
               />
               <div className="flex-1 min-w-0">
                 <div
-                  className="font-display"
-                  style={{ fontSize: 13, color: 'var(--color-cream)' }}
+                  className="font-display text-[13px] text-cream"
                 >
                   {p.name}{isMe ? ' (YOU)' : ''}
                 </div>
@@ -54,27 +41,20 @@ export const PlayerRail = () => {
                     return (
                       <div
                         key={k}
-                        style={{
-                          width: 4, height: 12,
-                          background: filled ? 'var(--color-accent)' : '#0a0a0a',
-                          boxShadow: filled ? '0 0 4px var(--color-accent)' : 'inset 0 0 0 1px rgba(255,255,255,.05)',
-                          borderRadius: 1,
-                        }}
+                        className={`w-1 h-3 rounded-[1px] ${filled ? 'bg-accent [box-shadow:0_0_4px_var(--color-accent)]' : 'bg-[#0a0a0a] [box-shadow:inset_0_0_0_1px_rgba(255,255,255,.05)]'}`}
                       />
                     )
                   })}
                 </div>
                 <div
-                  className="font-mono mt-1"
-                  style={{ fontSize: 12, color: 'var(--color-muted)', letterSpacing: '.05em' }}
+                  className="font-mono mt-1 text-xs text-[var(--color-muted)] tracking-[.05em]"
                 >
                   {p.timeline.length}/{songsToWin} · {'★'.repeat(Math.max(0, p.tokens))}{'·'.repeat(Math.max(0, 2 - p.tokens))} TOKENS
                 </div>
               </div>
               {active && (
                 <span
-                  className="font-display"
-                  style={{ fontSize: 9, color: 'var(--color-hot)', letterSpacing: '.15em' }}
+                  className="font-display text-[9px] text-hot tracking-[.15em]"
                 >
                   NOW
                 </span>

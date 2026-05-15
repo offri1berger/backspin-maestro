@@ -13,13 +13,7 @@ const ConnectionBanner = () => {
     <div
       role="status"
       aria-live="polite"
-      className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-2 px-4 py-2"
-      style={{
-        background: reconnecting ? '#1a1a1c' : 'var(--color-bad)',
-        color: reconnecting ? 'var(--color-cream)' : '#fff',
-        borderBottom: '2px solid #000',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
-      }}
+      className={`fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-2 px-4 py-2 border-b-2 border-[#000] [box-shadow:0_2px_12px_rgba(0,0,0,0.5)] ${reconnecting ? 'bg-[#1a1a1c] text-cream' : 'bg-bad text-white'}`}
     >
       {reconnecting && (
         <span
@@ -27,10 +21,7 @@ const ConnectionBanner = () => {
           aria-hidden
         />
       )}
-      <span
-        className="font-display"
-        style={{ fontSize: 11, letterSpacing: '.14em' }}
-      >
+      <span className="font-display text-[11px] tracking-[.14em]">
         {label}
       </span>
     </div>

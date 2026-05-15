@@ -11,17 +11,11 @@ interface Props {
 
 const TOKEN = ({ filled }: { filled: boolean }) => (
   <div
-    style={{
-      width: 36, height: 36, borderRadius: '50%',
-      background: filled
-        ? `radial-gradient(circle at 30% 25%, var(--color-accent) 0%, var(--color-accent) 35%, color-mix(in srgb, var(--color-accent) 50%, #000) 100%)`
-        : '#0a0a0a',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--color-accent-ink)',
-      boxShadow: filled
-        ? 'inset 0 -3px 6px rgba(0,0,0,.4), inset 0 2px 4px rgba(255,255,255,.5), 0 3px 0 color-mix(in srgb, var(--color-accent) 45%, #000), 0 0 14px color-mix(in srgb, var(--color-accent) 40%, transparent)'
-        : 'inset 0 2px 4px rgba(0,0,0,.8)',
-    }}
+    className={`w-9 h-9 rounded-full flex items-center justify-center font-display text-lg text-accent-ink ${
+      filled
+        ? '[background:radial-gradient(circle_at_30%_25%,var(--color-accent)_0%,var(--color-accent)_35%,color-mix(in_srgb,var(--color-accent)_50%,#000)_100%)] [box-shadow:inset_0_-3px_6px_rgba(0,0,0,.4),inset_0_2px_4px_rgba(255,255,255,.5),0_3px_0_color-mix(in_srgb,var(--color-accent)_45%,#000),0_0_14px_color-mix(in_srgb,var(--color-accent)_40%,transparent)]'
+        : 'bg-[#0a0a0a] [box-shadow:inset_0_2px_4px_rgba(0,0,0,.8)]'
+    }`}
   >
     {filled ? '★' : ''}
   </div>
@@ -38,15 +32,11 @@ export const GuessRail = ({ guess, onGuessChange, isMyTurn, isWaiting }: Props) 
 
   return (
     <aside
-      className="overflow-y-auto p-4 flex flex-col gap-4"
-      style={{
-        background: 'linear-gradient(180deg, #1c1c1f 0%, #0a0a0c 100%)',
-        borderLeft: '2px solid #000',
-      }}
+      className="overflow-y-auto p-4 flex flex-col gap-4 bg-[linear-gradient(180deg,#1c1c1f_0%,#0a0a0c_100%)] border-l-2 border-l-black"
     >
       <Sticker color="yellow" rotate={-4} size="sm">BONUS GUESS</Sticker>
-      <p className="text-[11px] leading-snug" style={{ color: 'var(--color-muted)' }}>
-        Name artist OR title before placing = <span style={{ color: 'var(--color-accent)' }}>+1 ★</span>
+      <p className="text-[11px] leading-snug text-[var(--color-muted)]">
+        Name artist OR title before placing = <span className="text-accent">+1 ★</span>
       </p>
 
       <div className="flex flex-col gap-2.5">
@@ -58,23 +48,12 @@ export const GuessRail = ({ guess, onGuessChange, isMyTurn, isWaiting }: Props) 
             onChange={(e) => onGuessChange(field, e.target.value)}
             disabled={disabled}
             title={disabled ? 'Not your turn — bonus guesses are only for the active player' : undefined}
-            style={{
-              height: 42,
-              background: 'var(--color-cream)',
-              color: 'var(--color-accent-ink)',
-              border: '2px solid #000',
-              borderRadius: 6,
-              padding: '0 12px',
-              fontFamily: 'var(--font-code)', fontSize: 14,
-              outline: 'none',
-              opacity: disabled ? 0.5 : 1,
-              boxShadow: 'inset 0 2px 4px rgba(0,0,0,.2)',
-            }}
+            className={`h-[42px] bg-cream text-accent-ink border-2 border-black rounded-[6px] px-3 font-code text-sm outline-none [box-shadow:inset_0_2px_4px_rgba(0,0,0,.2)] ${disabled ? 'opacity-50' : 'opacity-100'}`}
           />
         ))}
       </div>
 
-      <div className="h-0.5 my-1" style={{ background: '#000' }} />
+      <div className="h-0.5 my-1 bg-black" />
 
       <Sticker color="cyan" rotate={3} size="sm">YOUR TOKENS</Sticker>
       <div className="flex gap-2.5 justify-center">
@@ -83,7 +62,7 @@ export const GuessRail = ({ guess, onGuessChange, isMyTurn, isWaiting }: Props) 
         ))}
       </div>
 
-      <div className="h-0.5 my-1" style={{ background: '#000' }} />
+      <div className="h-0.5 my-1 bg-black" />
 
       <Sticker color="hot" rotate={-3} size="sm">ACTION LOG</Sticker>
       <div className="flex flex-col gap-2.5">
@@ -92,10 +71,9 @@ export const GuessRail = ({ guess, onGuessChange, isMyTurn, isWaiting }: Props) 
           return (
             <div className="flex items-start gap-2.5">
               <span
-                className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 inline-block"
-                style={{ background: stealResult.correct ? 'var(--color-good)' : 'var(--color-bad)', boxShadow: `0 0 6px ${stealResult.correct ? 'var(--color-good)' : 'var(--color-bad)'}` }}
+                className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 inline-block ${stealResult.correct ? 'bg-good [box-shadow:0_0_6px_var(--color-good)]' : 'bg-bad [box-shadow:0_0_6px_var(--color-bad)]'}`}
               />
-              <div className="text-[12px] leading-snug" style={{ color: 'var(--color-cream)' }}>
+              <div className="text-[12px] leading-snug text-cream">
                 <b>{stealerName}</b> {stealResult.correct ? 'stole successfully' : 'failed to steal'}
               </div>
             </div>
@@ -104,13 +82,12 @@ export const GuessRail = ({ guess, onGuessChange, isMyTurn, isWaiting }: Props) 
         {placementResult && (
           <div className="flex items-start gap-2.5">
             <span
-              className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 inline-block"
-              style={{ background: placementResult.correct ? 'var(--color-good)' : 'var(--color-bad)', boxShadow: `0 0 6px ${placementResult.correct ? 'var(--color-good)' : 'var(--color-bad)'}` }}
+              className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 inline-block ${placementResult.correct ? 'bg-good [box-shadow:0_0_6px_var(--color-good)]' : 'bg-bad [box-shadow:0_0_6px_var(--color-bad)]'}`}
             />
-            <div className="text-[12px] leading-snug" style={{ color: 'var(--color-cream)' }}>
+            <div className="text-[12px] leading-snug text-cream">
               <b>{activePlayer?.name}</b> {placementResult.correct ? 'placed correctly' : 'missed placement'}
               {placementResult.song && !placementResult.correct && (
-                <span style={{ color: 'var(--color-muted)' }}>
+                <span className="text-[var(--color-muted)]">
                   {' '}· {placementResult.song.title} ({placementResult.song.year})
                 </span>
               )}
@@ -119,7 +96,7 @@ export const GuessRail = ({ guess, onGuessChange, isMyTurn, isWaiting }: Props) 
         )}
       </div>
 
-      <div className="h-0.5 my-1" style={{ background: '#000' }} />
+      <div className="h-0.5 my-1 bg-black" />
 
       <Sticker color="cyan" rotate={-3} size="sm">DECK</Sticker>
       <div className="grid grid-cols-2 gap-2">
@@ -129,8 +106,8 @@ export const GuessRail = ({ guess, onGuessChange, isMyTurn, isWaiting }: Props) 
           ['CARDS', `${myPlayer?.timeline.length ?? 0}`, 'hot'],
           ['★', `${myPlayer?.tokens ?? 0}`, 'green'],
         ] as const).map(([k, v, c]) => (
-          <LedDisplay key={k} color={c as 'cyan' | 'yellow' | 'hot' | 'green'} style={{ fontSize: 18, padding: '6px 10px' }}>
-            <div style={{ fontSize: 10, letterSpacing: '.15em' }}>{k}</div>
+          <LedDisplay key={k} color={c as 'cyan' | 'yellow' | 'hot' | 'green'} className="text-lg px-2.5 py-1.5">
+            <div className="text-[10px] tracking-[.15em]">{k}</div>
             <div>{v}</div>
           </LedDisplay>
         ))}

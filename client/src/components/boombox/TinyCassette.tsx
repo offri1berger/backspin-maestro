@@ -22,35 +22,28 @@ export const TinyCassette = ({ color = 'yellow', width = 64, className = '', sty
   const c = COLOR_TO_VAR[color]
   return (
     <div
-      className={className}
+      className={`relative rounded [box-shadow:inset_0_0_0_2px_rgba(0,0,0,.25),0_2px_4px_rgba(0,0,0,.4)] ${className}`}
       style={{
         width,
         height: width * 0.62,
-        position: 'relative',
         background: `linear-gradient(180deg, ${c}, color-mix(in srgb, ${c} 70%, #000))`,
-        borderRadius: 4,
-        boxShadow: 'inset 0 0 0 2px rgba(0,0,0,.25), 0 2px 4px rgba(0,0,0,.4)',
         ...style,
       }}
     >
       <div
-        style={{
-          position: 'absolute', left: '8%', right: '8%', top: '12%', height: '40%',
-          background: 'var(--color-cream)',
-          borderRadius: 1,
-        }}
+        className="absolute left-[8%] right-[8%] top-[12%] h-[40%] bg-cream rounded-sm"
       />
       <div
+        className="absolute left-[15%] bottom-[15%] rounded-full bg-black"
         style={{
-          position: 'absolute', left: '15%', bottom: '15%', width: width * 0.18, height: width * 0.18,
-          borderRadius: '50%', background: '#000',
+          width: width * 0.18, height: width * 0.18,
           boxShadow: `inset 0 0 0 ${Math.max(2, width * 0.045)}px ${c}`,
         }}
       />
       <div
+        className="absolute right-[15%] bottom-[15%] rounded-full bg-black"
         style={{
-          position: 'absolute', right: '15%', bottom: '15%', width: width * 0.18, height: width * 0.18,
-          borderRadius: '50%', background: '#000',
+          width: width * 0.18, height: width * 0.18,
           boxShadow: `inset 0 0 0 ${Math.max(2, width * 0.045)}px ${c}`,
         }}
       />

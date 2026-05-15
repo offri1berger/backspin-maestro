@@ -14,17 +14,7 @@ const MuteToggle = ({ className = '' }: Props) => {
       onClick={() => setMuted(!muted)}
       aria-label={muted ? 'Unmute sound effects' : 'Mute sound effects'}
       aria-pressed={muted}
-      className={`flex items-center gap-1.5 cursor-pointer ${className}`}
-      style={{
-        background: '#1a1a1c',
-        color: muted ? 'var(--color-muted)' : 'var(--color-cream)',
-        border: '2px solid #000',
-        borderRadius: 6,
-        padding: '6px 10px',
-        fontFamily: 'var(--font-display)',
-        fontSize: 10, letterSpacing: '.05em',
-        boxShadow: '0 2px 0 #000',
-      }}
+      className={`flex items-center gap-1.5 cursor-pointer bg-[#1a1a1c] border-2 border-[#000] rounded-[6px] px-[10px] py-[6px] font-display text-[10px] tracking-[.05em] [box-shadow:0_2px_0_#000] ${muted ? 'text-[var(--color-muted)]' : 'text-cream'} ${className}`}
     >
       {muted ? (
         <svg width="14" height="14" viewBox="0 0 18 18" fill="none">

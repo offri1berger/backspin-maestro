@@ -41,51 +41,41 @@ export const ResultToast = () => {
 
     return (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4 [background:rgba(0,0,0,0.6)] [backdrop-filter:blur(8px)]"
         role="alert"
         aria-live="assertive"
-        style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
       >
         <div
-          className="brushed-darker panel-hardware min-w-[320px] max-w-[420px] overflow-hidden pop-in"
-          style={{ borderRadius: 16 }}
+          className="brushed-darker panel-hardware min-w-[320px] max-w-[420px] overflow-hidden pop-in rounded-2xl"
         >
           <div
             className="px-6 py-5 text-center"
-            style={{
-              background: `linear-gradient(180deg, ${bgVar}, color-mix(in srgb, ${bgVar} 70%, #000))`,
-            }}
+            style={{ background: `linear-gradient(180deg, ${bgVar}, color-mix(in srgb, ${bgVar} 70%, #000))` }}
           >
             <div className="text-[36px] mb-1" aria-hidden>{isGoodForMe ? '🎉' : '😬'}</div>
             <span className="sr-only">{isGoodForMe ? 'Success: ' : 'Failure: '}</span>
             <div
-              className="font-display"
-              style={{ fontSize: 18, color: '#fff', textShadow: '3px 3px 0 rgba(0,0,0,.5)', letterSpacing: '.02em' }}
+              className="font-display text-lg text-white [text-shadow:3px_3px_0_rgba(0,0,0,.5)] tracking-[.02em]"
             >
               {headline}
             </div>
             {subline && (
-              <div className="text-[13px] mt-1.5" style={{ color: 'rgba(255,255,255,0.9)' }}>{subline}</div>
+              <div className="text-[13px] mt-1.5 text-[rgba(255,255,255,0.9)]">{subline}</div>
             )}
           </div>
-          <div className="px-5 py-3 flex justify-between items-center" style={{ background: '#0a0a0a' }}>
+          <div className="px-5 py-3 flex justify-between items-center bg-[#0a0a0a]">
             <div>
               <div
-                className="font-display"
-                style={{ fontSize: 13, color: 'var(--color-cream)' }}
+                className="font-display text-[13px] text-cream"
               >
                 {stealResult.song.title}
               </div>
-              <div className="font-mono mt-0.5" style={{ fontSize: 13, color: 'var(--color-muted)' }}>
+              <div className="font-mono mt-0.5 text-[13px] text-[var(--color-muted)]">
                 {stealResult.song.artist}
               </div>
             </div>
             <div
-              className="font-display"
-              style={{
-                fontSize: 32, color: 'var(--color-accent)', lineHeight: 1,
-                textShadow: '2px 2px 0 var(--color-hot), 4px 4px 0 var(--color-accent-ink)',
-              }}
+              className="font-display text-[32px] text-accent leading-none [text-shadow:2px_2px_0_var(--color-hot),4px_4px_0_var(--color-accent-ink)]"
             >
               {stealResult.song.year}
             </div>
@@ -102,43 +92,29 @@ export const ResultToast = () => {
     const bgVar = correct ? 'var(--color-good)' : 'var(--color-bad)'
     return (
       <div
-        className="fixed top-6 left-1/2 z-40 w-[320px] overflow-hidden pop-in"
+        className="fixed top-6 left-1/2 z-40 w-[320px] overflow-hidden pop-in -translate-x-1/2 rounded-xl border-2 border-[#0a0a0a] [box-shadow:0_8px_22px_rgba(0,0,0,.4)]"
         role={correct ? 'status' : 'alert'}
         aria-live={correct ? 'polite' : 'assertive'}
-        style={{
-          transform: 'translateX(-50%)',
-          borderRadius: 12,
-          border: '2px solid #0a0a0a',
-          boxShadow: '0 8px 22px rgba(0,0,0,.4)',
-        }}
       >
         <div
-          className="px-4 py-2 text-center font-display"
-          style={{
-            background: `linear-gradient(180deg, ${bgVar}, color-mix(in srgb, ${bgVar} 70%, #000))`,
-            color: '#fff', letterSpacing: '.05em', fontSize: 14,
-            textShadow: '2px 2px 0 rgba(0,0,0,.4)',
-          }}
+          className="px-4 py-2 text-center font-display text-white text-sm tracking-[.05em] [text-shadow:2px_2px_0_rgba(0,0,0,.4)]"
+          style={{ background: `linear-gradient(180deg, ${bgVar}, color-mix(in srgb, ${bgVar} 70%, #000))` }}
         >
           <span aria-hidden>{correct ? '✓ ' : '✗ '}</span>
           {headline.toUpperCase()}
         </div>
         {song && (
-          <div className="px-4 py-2.5 flex justify-between items-center gap-3" style={{ background: '#0a0a0a' }}>
+          <div className="px-4 py-2.5 flex justify-between items-center gap-3 bg-[#0a0a0a]">
             <div className="min-w-0">
-              <div className="font-display truncate" style={{ fontSize: 13, color: 'var(--color-cream)' }}>
+              <div className="font-display truncate text-[13px] text-cream">
                 {song.title}
               </div>
-              <div className="font-mono mt-0.5 truncate" style={{ fontSize: 13, color: 'var(--color-muted)' }}>
+              <div className="font-mono mt-0.5 truncate text-[13px] text-[var(--color-muted)]">
                 {song.artist}
               </div>
             </div>
             <div
-              className="font-display shrink-0"
-              style={{
-                fontSize: 28, color: 'var(--color-accent)', lineHeight: 1,
-                textShadow: '2px 2px 0 var(--color-hot)',
-              }}
+              className="font-display shrink-0 text-[28px] text-accent leading-none [text-shadow:2px_2px_0_var(--color-hot)]"
             >
               {song.year}
             </div>

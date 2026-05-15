@@ -91,7 +91,7 @@ const LobbyPage = () => {
       {/* Top nav — desktop only */}
       <div className="hidden lg:flex col-span-2 px-12 py-5 items-center justify-between border-b-2 border-line bg-surface">
         <Logo />
-        <span className="font-display text-[11px] tracking-[0.2em] text-cyan-300" style={{ color: 'var(--color-cyan)' }}>
+        <span className="font-display text-[11px] tracking-[0.2em] text-cyan">
           ◆ SIDE A · INSERT TAPE
         </span>
       </div>

@@ -225,8 +225,7 @@ const Timeline = ({
                   <MysteryCardFace fullWidth />
                 ) : (
                   <div
-                    className="h-9 rounded-[8px]"
-                    style={{ border: '2px dashed var(--color-muted-2)' }}
+                    className="h-9 rounded-[8px] [border:2px_dashed_var(--color-muted-2)]"
                   />
                 )}
                 {timeline[i] && <VerticalYearCard entry={timeline[i]} index={i} />}
@@ -263,10 +262,7 @@ const Timeline = ({
         <DragOverlay dropAnimation={null}>
           {dragging && (
             <div
-              className="w-full -rotate-2 scale-[1.04]"
-              style={{
-                filter: 'drop-shadow(0 18px 32px rgba(0,0,0,0.5)) drop-shadow(0 0 24px color-mix(in srgb, var(--color-hot) 50%, transparent))',
-              }}
+              className="w-full -rotate-2 scale-[1.04] [filter:drop-shadow(0_18px_32px_rgba(0,0,0,0.5))_drop-shadow(0_0_24px_color-mix(in_srgb,var(--color-hot)_50%,transparent))]"
             >
               <MysteryCardFace fullWidth />
             </div>
@@ -289,14 +285,9 @@ const Timeline = ({
     >
       <div className="flex flex-col gap-3">
         <div
-          className="relative p-[18px_14px] rounded-[12px]"
-          style={{
-            background: 'linear-gradient(180deg, #28282b 0%, #1a1a1c 30%, #1a1a1c 70%, #28282b 100%)',
-            border: '2px solid #0a0a0a',
-            boxShadow: 'inset 0 -6px 12px rgba(0,0,0,.6), inset 0 2px 4px rgba(255,255,255,.04), 0 12px 30px rgba(0,0,0,.5)',
-          }}
+          className="relative p-[18px_14px] rounded-[12px] bg-[linear-gradient(180deg,#28282b_0%,#1a1a1c_30%,#1a1a1c_70%,#28282b_100%)] border-2 border-[#0a0a0a] [box-shadow:inset_0_-6px_12px_rgba(0,0,0,.6),inset_0_2px_4px_rgba(255,255,255,.04),0_12px_30px_rgba(0,0,0,.5)]"
         >
-          <div className="absolute left-5 right-5 top-1/2 h-px" style={{ background: 'rgba(255,255,255,.05)' }} />
+          <div className="absolute left-5 right-5 top-1/2 h-px bg-[rgba(255,255,255,.05)]" />
           <div className="flex items-center overflow-x-auto relative pb-0.5 gap-0 no-scrollbar">
             {Array.from({ length: slots }).map((_, i) => {
               const showHover = hoverSlot === i && currentSong != null
@@ -316,13 +307,12 @@ const Timeline = ({
                     )
                   ) : (
                     <div
-                      className="shrink-0 h-[96px] flex items-center justify-center transition-[width] duration-[180ms] ease-in-out"
-                      style={{ width: showSpectator ? 100 : 24 }}
+                      className={`shrink-0 h-[96px] flex items-center justify-center transition-[width] duration-[180ms] ease-in-out ${showSpectator ? 'w-[100px]' : 'w-6'}`}
                     >
                       {showSpectator ? (
                         <MysteryCardFace />
                       ) : (
-                        <div className="w-px h-16" style={{ borderLeft: '2px dashed var(--color-muted-2)' }} />
+                        <div className="w-px h-16 [border-left:2px_dashed_var(--color-muted-2)]" />
                       )}
                     </div>
                   )}
@@ -335,7 +325,7 @@ const Timeline = ({
 
         {isMyTurn && currentSong && !isWaiting && pendingPos === null && (
           <div className="flex flex-col items-center gap-2">
-            <span className="font-display text-[10px] tracking-[0.15em]" style={{ color: 'var(--color-muted)' }}>
+            <span className="font-display text-[10px] tracking-[0.15em] text-[var(--color-muted)]">
               ↓ DRAG ONTO YOUR SHELF ↓
             </span>
             <SongCard draggable isWaiting={false} />

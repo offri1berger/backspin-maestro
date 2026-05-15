@@ -49,10 +49,10 @@ export const SetupForm = ({
         className="relative panel-hardware brushed-dark flex-1 lg:overflow-y-auto p-5 lg:p-6 flex flex-col gap-3.5 lg:gap-4"
       >
         {/* Corner screws */}
-        <span className="screw" style={{ top: 8, left: 8 }} />
-        <span className="screw" style={{ top: 8, right: 8 }} />
-        <span className="screw" style={{ bottom: 8, left: 8 }} />
-        <span className="screw" style={{ bottom: 8, right: 8 }} />
+        <span className="screw top-2 left-2" />
+        <span className="screw top-2 right-2" />
+        <span className="screw bottom-2 left-2" />
+        <span className="screw bottom-2 right-2" />
 
         <LedDisplay color="green" className="text-[18px] lg:text-[22px]">
           {tab === 'create' ? '▶ NEW MIX' : '◀ JOIN MIX'}
@@ -68,15 +68,14 @@ export const SetupForm = ({
             label="avatar"
           />
           <div className="flex-1 min-w-0">
-            <div className="font-display text-[10px] tracking-[0.1em] mb-1.5" style={{ color: 'var(--color-accent)' }}>
+            <div className="font-display text-[10px] tracking-[0.1em] mb-1.5 text-accent">
               YOUR DJ NAME
             </div>
             <input
               value={name}
               onChange={(e) => onNameChange(e.target.value)}
               placeholder="DJ_BOOMBAP"
-              style={{ fontSize: 16, fontFamily: 'var(--font-code)', fontWeight: 700 }}
-              className="block w-full h-[48px] lg:h-[52px] rounded-[8px] border-2 border-[#0a0a0a] px-3.5 outline-none box-border"
+              className="block w-full h-[48px] lg:h-[52px] rounded-[8px] border-2 border-[#0a0a0a] px-3.5 outline-none box-border text-base font-code font-bold"
             />
             <style>{`input { background: var(--color-cream); color: var(--color-accent-ink); box-shadow: inset 0 2px 4px rgba(0,0,0,.2); }`}</style>
           </div>
@@ -84,23 +83,16 @@ export const SetupForm = ({
 
         {/* Tab toggle — segmented plastic */}
         <div
-          className="flex gap-0 rounded-[8px] p-1"
-          style={{ background: '#0a0a0a', boxShadow: 'inset 0 2px 4px rgba(0,0,0,.8)' }}
+          className="flex gap-0 rounded-[8px] p-1 bg-[#0a0a0a] [box-shadow:inset_0_2px_4px_rgba(0,0,0,.8)]"
         >
           {(['create', 'join'] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => onTabChange(t)}
-              className="flex-1 px-3 py-2.5 rounded-[6px] border-0 cursor-pointer font-display text-[12px] tracking-[0.05em]"
-              style={tab === t
-                ? {
-                    background: 'linear-gradient(180deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 75%, #000))',
-                    color: 'var(--color-accent-ink)',
-                    boxShadow: 'inset 0 -2px 0 rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.4)',
-                  }
-                : { background: 'transparent', color: 'var(--color-cream)' }
-              }
+              className={`flex-1 px-3 py-2.5 rounded-[6px] border-0 cursor-pointer font-display text-[12px] tracking-[0.05em] ${tab === t
+                ? 'bg-[linear-gradient(180deg,var(--color-accent),color-mix(in_srgb,var(--color-accent)_75%,#000))] text-accent-ink [box-shadow:inset_0_-2px_0_rgba(0,0,0,.2),inset_0_1px_0_rgba(255,255,255,.4)]'
+                : 'bg-transparent text-cream'}`}
             >
               {t === 'create' ? 'CREATE' : 'JOIN CODE'}
             </button>
@@ -109,11 +101,11 @@ export const SetupForm = ({
 
         {!isCreate && (
           <div>
-            <div className="font-display text-[10px] tracking-[0.1em] mb-1.5" style={{ color: 'var(--color-cyan)' }}>
+            <div className="font-display text-[10px] tracking-[0.1em] mb-1.5 text-cyan">
               TUNE IN ▸ ROOM CODE
             </div>
             <div className="relative">
-              <LedDisplay color="cyan" className="text-center" style={{ fontSize: 28, letterSpacing: '.35em', padding: '12px 16px' }}>
+              <LedDisplay color="cyan" className="text-center text-[28px] tracking-[0.35em] py-3 px-4">
                 {(roomCode || '______').padEnd(6, '_')}
               </LedDisplay>
               <input
@@ -122,8 +114,7 @@ export const SetupForm = ({
                 placeholder=""
                 maxLength={6}
                 aria-label="Room code"
-                style={{ fontSize: 16 }}
-                className="absolute inset-0 w-full opacity-0 cursor-text"
+                className="absolute inset-0 w-full opacity-0 cursor-text text-base"
               />
             </div>
           </div>
@@ -134,7 +125,7 @@ export const SetupForm = ({
             <DecadePicker decadeFilter={decadeFilter} onChange={onDecadeChange} />
 
             <div>
-              <div className="font-display text-[10px] tracking-[0.1em] mb-1.5" style={{ color: 'var(--color-cyan)' }}>
+              <div className="font-display text-[10px] tracking-[0.1em] mb-1.5 text-cyan">
                 FIRST TO {songsPerPlayer} SONGS
               </div>
               <div className="flex items-center gap-2">
@@ -142,18 +133,11 @@ export const SetupForm = ({
                   type="button"
                   onClick={() => onSongsPerPlayerChange(Math.max(3, songsPerPlayer - 1))}
                   aria-label="Fewer songs"
-                  className="knob-btn shrink-0"
-                  style={{
-                    width: 40, height: 40,
-                    background: 'radial-gradient(circle at 30% 25%, var(--color-bad), color-mix(in srgb, var(--color-bad) 50%, #000))',
-                    boxShadow: 'inset 0 -3px 6px rgba(0,0,0,.4), inset 0 2px 4px rgba(255,255,255,.4), 0 3px 0 color-mix(in srgb, var(--color-bad) 40%, #000)',
-                    color: '#fff', fontSize: 18,
-                  }}
+                  className="knob-btn shrink-0 w-10 h-10 bg-[radial-gradient(circle_at_30%_25%,var(--color-bad),color-mix(in_srgb,var(--color-bad)_50%,#000))] [box-shadow:inset_0_-3px_6px_rgba(0,0,0,.4),inset_0_2px_4px_rgba(255,255,255,.4),0_3px_0_color-mix(in_srgb,var(--color-bad)_40%,#000)] text-white text-lg"
                 >−</button>
                 <LedDisplay
                   color="yellow"
-                  className="flex-1 text-center"
-                  style={{ fontSize: 16, padding: '8px 12px' }}
+                  className="flex-1 text-center text-base py-2 px-3"
                 >
                   {songsPerPlayer}·{Math.round(songsPerPlayer * 2.5)}M
                 </LedDisplay>
@@ -161,28 +145,17 @@ export const SetupForm = ({
                   type="button"
                   onClick={() => onSongsPerPlayerChange(Math.min(20, songsPerPlayer + 1))}
                   aria-label="More songs"
-                  className="knob-btn shrink-0"
-                  style={{
-                    width: 40, height: 40,
-                    background: 'radial-gradient(circle at 30% 25%, var(--color-good), color-mix(in srgb, var(--color-good) 50%, #000))',
-                    boxShadow: 'inset 0 -3px 6px rgba(0,0,0,.4), inset 0 2px 4px rgba(255,255,255,.4), 0 3px 0 color-mix(in srgb, var(--color-good) 40%, #000)',
-                    color: 'var(--color-accent-ink)', fontSize: 18,
-                  }}
+                  className="knob-btn shrink-0 w-10 h-10 bg-[radial-gradient(circle_at_30%_25%,var(--color-good),color-mix(in_srgb,var(--color-good)_50%,#000))] [box-shadow:inset_0_-3px_6px_rgba(0,0,0,.4),inset_0_2px_4px_rgba(255,255,255,.4),0_3px_0_color-mix(in_srgb,var(--color-good)_40%,#000)] text-accent-ink text-lg"
                 >+</button>
               </div>
             </div>
 
             <div
-              className="rounded-[8px] flex gap-3 items-start p-3.5"
-              style={{
-                background: '#0a0a0a',
-                border: '2px solid color-mix(in srgb, var(--color-accent) 40%, transparent)',
-                boxShadow: 'inset 0 2px 4px rgba(0,0,0,.8)',
-              }}
+              className="rounded-[8px] flex gap-3 items-start p-3.5 bg-[#0a0a0a] border-2 border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] [box-shadow:inset_0_2px_4px_rgba(0,0,0,.8)]"
             >
-              <div className="font-display text-[22px] leading-none" style={{ color: 'var(--color-accent)', textShadow: '2px 2px 0 #000' }}>★</div>
-              <div className="text-[11px] leading-snug" style={{ color: 'var(--color-cream)' }}>
-                <div className="font-display text-[11px] mb-0.5" style={{ color: 'var(--color-accent)' }}>READY THE BOOTH</div>
+              <div className="font-display text-[22px] leading-none text-accent [text-shadow:2px_2px_0_#000]">★</div>
+              <div className="text-[11px] leading-snug text-cream">
+                <div className="font-display text-[11px] mb-0.5 text-accent">READY THE BOOTH</div>
                 Decade dial, win count, and steal rules wait in the waiting room.
                 Get a name + face down first.
               </div>
@@ -196,8 +169,7 @@ export const SetupForm = ({
           <p
             role="alert"
             aria-live="polite"
-            className="font-display text-center text-[11px] tracking-[0.1em]"
-            style={{ color: 'var(--color-bad)' }}
+            className="font-display text-center text-[11px] tracking-[0.1em] text-bad"
           >
             {error}
           </p>

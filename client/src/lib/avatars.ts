@@ -43,4 +43,9 @@ export const AVATARS: string[] = [
   `${R2}/snoop%20dogg.jpg`,
   `${R2}/the%20weekend.jpg`,
   `${R2}/whitney%20houston.jpg`,
+  `${R2}/bono.jpg`,
+  `${R2}/steven%20tyler.jpg`,
+  `${R2}/sting.jpg`,  
+  `${R2}/mr%20shadows.jpg`,
+  `${R2}/stevie%20nicks.jpg`,   
 ];
