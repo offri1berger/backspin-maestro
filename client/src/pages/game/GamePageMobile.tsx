@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { GamePageProps } from './useGamePage'
 import { GameStage } from '../../components/game/GameStage'
 import { Logo } from '../../components/ui/Logo'
@@ -8,20 +8,20 @@ import LedDisplay from '../../components/boombox/LedDisplay'
 import { useGameStore } from '../../store/gameStore'
 
 const GamePageMobile = (p: GamePageProps) => {
-  const [mobilePending, _setMobilePending] = useState<number | null>(null)
-  const [mobileConfirmed, setMobileConfirmed] = useState(false)
+  const [pendingState, setPendingState] = useState<{ forSongId: string | undefined; slot: number | null }>({ forSongId: undefined, slot: null })
+  const [confirmedSongId, setConfirmedSongId] = useState<string | undefined>(undefined)
   const [sheetHeight, setSheetHeight] = useState(320)
   const isWaitingForNextTurn = useGameStore((s) => s.isWaitingForNextTurn)
   const currentSongId = useGameStore((s) => s.currentSong?.id)
-  const setMobilePending = (val: number | null) => {
-    _setMobilePending(val)
-    if (val === null) setMobileConfirmed(false)
-  }
 
-  useEffect(() => {
-    _setMobilePending(null)
-    setMobileConfirmed(false)
-  }, [currentSongId])
+  // Derived — automatically resets to null/false when currentSongId changes
+  const mobilePending = pendingState.forSongId === currentSongId ? pendingState.slot : null
+  const mobileConfirmed = confirmedSongId === currentSongId
+
+  const setMobilePending = (val: number | null) => {
+    setPendingState({ forSongId: currentSongId, slot: val })
+    if (val === null) setConfirmedSongId(undefined)
+  }
 
   const showGuessBar = p.isMyTurn && !isWaitingForNextTurn && !mobileConfirmed
 
@@ -95,8 +95,8 @@ const GamePageMobile = (p: GamePageProps) => {
         onSkip={p.handleSkip}
         onGuessChange={p.onGuessChange}
         onConfirm={() => {
-          setMobileConfirmed(true)
-          p.handlePlace(mobilePending!, () => setMobileConfirmed(false))
+          setConfirmedSongId(currentSongId)
+          p.handlePlace(mobilePending!, () => setConfirmedSongId(undefined))
         }}
         onHeightChange={setSheetHeight}
       />
