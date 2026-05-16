@@ -32,8 +32,6 @@ export const startGameService = async (
   await Promise.all(shuffled.map((p, i) => updatePlayerTurnOrder(p.id, i)))
   await updateRoomStatus(roomCode, 'playing')
 
-  // Assign seed songs now, using the final decadeFilter, so timeline anchors always
-  // match whatever decade the host chose — even if they changed it in the waiting room.
   for (const p of shuffled) {
     const seed = await getRandomSong(roomCode, room.decadeFilter)
     if (seed) {
