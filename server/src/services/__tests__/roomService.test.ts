@@ -101,18 +101,13 @@ describe('createRoomService', () => {
     expect(host?.socketId).toBe('socket-1')
   })
 
-  it('seeds the host with a starter song in their timeline', async () => {
-    songQueue.push(stockSong('starter-song', 1985))
+  it('does not pre-seed the host timeline (seeds are assigned at game start)', async () => {
     const result = await createRoomService(
       { hostName: 'Alice', settings: { songsPerPlayer: 10, decadeFilter: 'all' } },
       'socket-1',
     )
-
     const tl = await getTimeline(result.playerId)
-    expect(tl.length).toBe(1)
-    expect(tl[0].song.id).toBe('starter-song')
-
-    expect(markedAsUsed).toContainEqual({ roomCode: result.roomCode, songId: 'starter-song' })
+    expect(tl.length).toBe(0)
   })
 
   it('survives an empty song catalog (no starter card)', async () => {
@@ -180,8 +175,7 @@ describe('joinRoomService', () => {
     }
   })
 
-  it('seeds the new player with a starter song', async () => {
-    songQueue.push(stockSong('starter-bob'))
+  it('does not pre-seed the joining player timeline (seeds are assigned at game start)', async () => {
     const result = await joinRoomService(
       { roomCode: 'ROOM', playerName: 'Bob' },
       's-bob',
@@ -189,7 +183,7 @@ describe('joinRoomService', () => {
     if (!result.success) throw new Error('unexpected')
 
     const tl = await getTimeline(result.playerId!)
-    expect(tl[0]?.song.id).toBe('starter-bob')
+    expect(tl.length).toBe(0)
   })
 })
 
@@ -289,20 +283,17 @@ describe('resetRoomService', () => {
   })
 
   it('moves the room back to lobby status', async () => {
-    songQueue.push(stockSong('starter-1'), stockSong('starter-2'))
     await resetRoomService('ROOM', 's-host')
     const room = await getSessionRoom('ROOM')
     expect(room?.status).toBe('lobby')
   })
 
   it('clears the cached game state', async () => {
-    songQueue.push(stockSong('starter-1'), stockSong('starter-2'))
     await resetRoomService('ROOM', 's-host')
     expect(await getGameState('ROOM')).toBeNull()
   })
 
-  it('resets every player to 2 tokens, turn order 0, and clears their timeline before re-seeding the starter card', async () => {
-    songQueue.push(stockSong('starter-1'), stockSong('starter-2'))
+  it('resets every player to 2 tokens, turn order 0, and clears their timeline', async () => {
     await resetRoomService('ROOM', 's-host')
 
     const host = await getSessionPlayer('host')
@@ -310,34 +301,21 @@ describe('resetRoomService', () => {
     expect(host?.turnOrder).toBe(0)
     expect(host?.isHost).toBe(true)
 
+    // Timeline cleared; seeds are assigned at the next game start, not at reset
     const tl = await getTimeline('host')
-    // Old 'old' card cleared, replaced by exactly one starter card
-    expect(tl.length).toBe(1)
-    expect(['starter-1', 'starter-2']).toContain(tl[0].song.id)
+    expect(tl.length).toBe(0)
   })
 
-  it('returns the player list with starter cards', async () => {
-    songQueue.push(stockSong('starter-1'), stockSong('starter-2'))
+  it('returns the player list with cleared timelines', async () => {
     const result = await resetRoomService('ROOM', 's-host')
     if ('error' in result) throw new Error('unexpected')
 
     expect(result.players.length).toBe(2)
     expect(result.players.every((p) => p.tokens === 2)).toBe(true)
-    expect(result.players.every((p) => p.timeline.length === 1)).toBe(true)
-  })
-
-  it('survives when the catalog is too small to seed everyone', async () => {
-    songQueue.push(stockSong('only-one'))
-    const result = await resetRoomService('ROOM', 's-host')
-    if ('error' in result) throw new Error('unexpected')
-
-    // Only first player gets a starter card; second has no timeline
-    const totalCards = result.players.reduce((sum, p) => sum + p.timeline.length, 0)
-    expect(totalCards).toBe(1)
+    expect(result.players.every((p) => p.timeline.length === 0)).toBe(true)
   })
 
   it('uses getPlayersByRoomCode after reset to confirm both players persisted', async () => {
-    songQueue.push(stockSong('starter-1'), stockSong('starter-2'))
     await resetRoomService('ROOM', 's-host')
     const players = await getPlayersByRoomCode('ROOM')
     expect(players.length).toBe(2)

@@ -100,7 +100,8 @@ describe('startGameService', () => {
     beforeEach(async () => {
       await seedRoom('R', 'p0')
       await seedPlayers('R', 3)
-      songQueue.push(seedSong('first-song', 1990))
+      // 3 seed songs (one per player at game start) + the first active game song
+      songQueue.push(seedSong('seed-0'), seedSong('seed-1'), seedSong('seed-2'), seedSong('first-song', 1990))
     })
 
     it('assigns sequential turn orders 0..n-1 across all players', async () => {
