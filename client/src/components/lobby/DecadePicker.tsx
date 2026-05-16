@@ -8,6 +8,7 @@ const SPECIFIC_DECADES: { label: string; value: SpecificDecade }[] = [
   { label: '90s', value: '90s' },
   { label: '00s', value: '00s' },
   { label: '10s', value: '10s' },
+  { label: '20s', value: '20s' },
 ]
 
 const toggleAndFill = (current: SpecificDecade[], clicked: SpecificDecade): SpecificDecade[] => {
@@ -55,7 +56,7 @@ export const DecadePicker = ({ decadeFilter, onChange, disabled = false }: Props
       <div className="font-display text-[10px] tracking-[0.1em] uppercase mb-2 text-cyan">
         DECADE
       </div>
-      <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
+      <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
         <button
           type="button"
           onClick={() => !disabled && onChange('all')}

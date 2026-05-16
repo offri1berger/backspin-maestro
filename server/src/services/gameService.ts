@@ -76,8 +76,9 @@ export const startGameService = async (
 export const nextTurnService = async (
   roomCode: string
 ): Promise<{ nextPlayerId: string, song: Song } | { error: string }> => {
-  const gameState = await getGameState(roomCode)
+  const [gameState, room] = await Promise.all([getGameState(roomCode), getSessionRoom(roomCode)])
   if (!gameState) return { error: 'game_not_found' }
+  if (!room) return { error: 'room_not_found' }
 
   const players = await getPlayersByRoomCode(roomCode)
   if (players.length === 0) return { error: 'no_players' }
@@ -89,7 +90,7 @@ export const nextTurnService = async (
       ? sorted[gameState.roundNumber % sorted.length]
       : sorted[(currentIndex + 1) % sorted.length];
 
-  const song = await getRandomSong(roomCode);
+  const song = await getRandomSong(roomCode, room.decadeFilter);
   if (!song) return { error: 'no_songs_left' };
 
   await markSongAsUsed(roomCode, song.id);

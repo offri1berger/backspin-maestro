@@ -14,6 +14,7 @@ import { getGameState, setGameState } from '../lib/gameCache.js'
 import {
   getPlayerBySocketId,
   updatePlayerTokens,
+  getSessionRoom,
 } from '../lib/session.js'
 import { placeLimiter, stealLimiter, skipLimiter, guessLimiter } from '../lib/rateLimit.js'
 import {
@@ -111,8 +112,8 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
     const roomCode = getSocketRoomCode(socket)
     if (!roomCode) { cb({ success: false, error: 'not_in_room' }); return }
 
-    const gameState = await getGameState(roomCode)
-    if (!gameState) { cb({ success: false, error: 'game_not_found' }); return }
+    const [gameState, room] = await Promise.all([getGameState(roomCode), getSessionRoom(roomCode)])
+    if (!gameState || !room) { cb({ success: false, error: 'game_not_found' }); return }
     if (gameState.phase !== 'song_phase') { cb({ success: false, error: 'wrong_phase' }); return }
 
     const player = await getPlayerBySocketId(socket.id)
@@ -120,7 +121,7 @@ export const registerGameHandlers = (io: IoServer, socket: IoSocket) => {
     if (player.id !== gameState.currentPlayerId) { cb({ success: false, error: 'not_your_turn' }); return }
     if (player.tokens < 1) { cb({ success: false, error: 'insufficient_tokens' }); return }
 
-    const song = await getRandomSong(roomCode)
+    const song = await getRandomSong(roomCode, room.decadeFilter)
     if (!song) { cb({ success: false, error: 'no_songs_left' }); return }
 
     await updatePlayerTokens(player.id, player.tokens - 1)

@@ -73,6 +73,13 @@ export const joinRoomService = async (
   }
 }
 
+/**
+ * Handles a player's attempt to rejoin a room after a disconnection. It verifies the player's identity and room status, updates their socket ID, and retrieves the current game state if the game is in progress. This allows players to seamlessly rejoin ongoing games without losing their progress or timeline.
+ * @param playerId the unique identifier of the player attempting to rejoin, used to verify their identity and retrieve their session data
+ * @param roomCode the code of the room the player is trying to rejoin, used to verify the room's existence and status
+ * @param socketId the new socket ID for the player, which will be updated in their session data to allow them to receive real-time updates and participate in the game
+ * @returns an object indicating the success or failure of the rejoin attempt, along with relevant data such as the current room status, player list, game settings, and game state if applicable. This allows the client to properly restore the player's session and update the UI accordingly.
+ */
 export const rejoinRoomService = async (
   playerId: string,
   roomCode: string,

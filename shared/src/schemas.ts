@@ -20,8 +20,8 @@ const PlayerIdSchema = z.string().uuid()
 
 const PositionSchema = z.number().int().min(0)
 
-const SpecificDecadeSchema = z.enum(['60s', '70s', '80s', '90s', '00s', '10s']);
-const SPECIFIC_DECADES_ORDER = ['60s', '70s', '80s', '90s', '00s', '10s'] as const;
+const SpecificDecadeSchema = z.enum(['60s', '70s', '80s', '90s', '00s', '10s', '20s']);
+const SPECIFIC_DECADES_ORDER = ['60s', '70s', '80s', '90s', '00s', '10s', '20s'] as const;
 const DecadeFilterSchema = z.preprocess(
   (val) => (typeof val === 'string' && val !== 'all' ? [val] : val),
   z.union([
